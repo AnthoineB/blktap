@@ -534,7 +534,9 @@ static void *qemu_thread_start(void *args)
      */
 #pragma GCC diagnostic push
 #ifndef __clang__
+#if __GNUC_PREREQ(8,0)
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 #endif
 
     pthread_cleanup_push(qemu_thread_atexit_notify, NULL);

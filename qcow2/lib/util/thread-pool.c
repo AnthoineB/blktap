@@ -297,6 +297,7 @@ void thread_pool_submit(ThreadPoolFunc *func, void *arg)
 
 void thread_pool_update_params(ThreadPool *pool, AioContext *ctx)
 {
+    int i;
     qemu_mutex_lock(&pool->lock);
 
     pool->min_threads = ctx->thread_pool_min;
@@ -311,11 +312,11 @@ void thread_pool_update_params(ThreadPool *pool, AioContext *ctx)
      *  - Do nothing. The current number of threads fall in between the min and
      *    max thresholds. We'll let the pool manage itself.
      */
-    for (int i = pool->cur_threads; i < pool->min_threads; i++) {
+    for (i = pool->cur_threads; i < pool->min_threads; i++) {
         spawn_thread(pool);
     }
 
-    for (int i = pool->cur_threads; i > pool->max_threads; i--) {
+    for (i = pool->cur_threads; i > pool->max_threads; i--) {
         qemu_cond_signal(&pool->request_cond);
     }
 

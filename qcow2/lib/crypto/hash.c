@@ -18,6 +18,7 @@
  *
  */
 
+#include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
 
 #include "qemu/osdep.h"

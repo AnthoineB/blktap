@@ -2008,6 +2008,7 @@ static int handle_aiocb_write_zeroes_unmap(void *opaque)
     return handle_aiocb_write_zeroes(aiocb);
 }
 
+#if __GLIBC_MINOR__ < 27
 #ifndef HAVE_COPY_FILE_RANGE
 static off_t copy_file_range(int in_fd, off_t *in_off, int out_fd,
                              off_t *out_off, size_t len, unsigned int flags)
@@ -2020,6 +2021,7 @@ static off_t copy_file_range(int in_fd, off_t *in_off, int out_fd,
     return -1;
 #endif
 }
+#endif
 #endif
 
 /*

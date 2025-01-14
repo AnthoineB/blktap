@@ -438,6 +438,7 @@ static inline uint64_t uabs64(int64_t v)
     return v < 0 ? -v : v;
 }
 
+#if 0
 /**
  * sadd32_overflow - addition with overflow indication
  * @x, @y: addends
@@ -681,6 +682,7 @@ static inline uint64_t usub64_borrow(uint64_t x, uint64_t y, bool *pborrow)
     return x;
 #endif
 }
+#endif
 
 /* Host type specific sizes of these routines.  */
 

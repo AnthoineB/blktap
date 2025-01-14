@@ -441,7 +441,7 @@
 
 #define HAVE_BTRFS_H
 
-#define HAVE_COPY_FILE_RANGE
+//#define HAVE_COPY_FILE_RANGE
 
 #define HAVE_DRM_H
 
