@@ -898,7 +898,7 @@ tapdisk_control_close_image(struct tapdisk_ctl_conn *conn,
 		tapdisk_nbdserver_pause(vbd->nbdserver_new, true);
 
     err = 0;
-    list_for_each_entry_safe(blkif, _blkif, &vbd->rings, entry) {
+    tapdisk_vbd_for_each_blkif(vbd, blkif, _blkif) {
 
         DPRINTF("implicitly disconnecting ring %p domid=%d, devid=%d\n",
                 blkif, blkif->domid, blkif->devid);
