@@ -135,6 +135,11 @@ struct td_xenblkif {
     struct td_vbd_handle *vbd;
 
     /**
+     * Protect requests list
+     */
+    pthread_mutex_t mutex;
+
+    /**
      * stats
      */
     struct td_xenblkif_stats stats;

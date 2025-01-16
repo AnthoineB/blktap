@@ -295,10 +295,13 @@ tapdisk_xenio_ctx_process_ring(struct td_xenblkif *blkif,
     blkif_request_t **reqs;
     int limit;
 
+    pthread_mutex_lock(&blkif->mutex);
     start = blkif->n_reqs_free;
 
-	if (unlikely(blkif->barrier.msg))
-		return 0;
+    if (unlikely(blkif->barrier.msg)) {
+        pthread_mutex_unlock(&blkif->mutex);
+        return 0;
+    }
 
     /*
      * In each iteration, copy as many request descriptors from the shared ring
@@ -340,7 +343,7 @@ tapdisk_xenio_ctx_process_ring(struct td_xenblkif *blkif,
 
     n_reqs = start - blkif->n_reqs_free;
 
-    if (!n_reqs)
+    if (!n_reqs) {
 		/*
 		 * We got a notification but the ring is empty. This is because we had
 		 * previously suspended the operation of the ring because of a
@@ -350,7 +353,9 @@ tapdisk_xenio_ctx_process_ring(struct td_xenblkif *blkif,
 		 * notification. This notification is the one we should have consumed,
 		 * and can be ignored.
 		 */
+		pthread_mutex_unlock(&blkif->mutex);
 		return 0;
+    }
 
     if (blkif->in_polling)
         /* We found at least one request, so keep polling some more */
@@ -364,6 +369,7 @@ tapdisk_xenio_ctx_process_ring(struct td_xenblkif *blkif,
 	reqs = alloca(sizeof(blkif_request_t*) * n_reqs);
 	memcpy(reqs, &blkif->reqs_free[blkif->ring_size - start],
 			sizeof(blkif_request_t*) * n_reqs);
+	pthread_mutex_unlock(&blkif->mutex);
 
 	tapdisk_xenblkif_queue_requests(blkif, reqs, n_reqs);
 
