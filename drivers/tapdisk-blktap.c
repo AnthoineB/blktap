@@ -85,18 +85,20 @@ struct td_blktap_req {
         struct timeval          ts;
 };
 
-td_blktap_req_t *
+static td_blktap_req_t *
 tapdisk_blktap_alloc_request(td_blktap_t *tap)
 {
 	td_blktap_req_t *req = NULL;
 
+	pthread_mutex_lock(&tap->mutex);
 	if (likely(tap->n_reqs_free))
 		req = tap->reqs_free[--tap->n_reqs_free];
+	pthread_mutex_unlock(&tap->mutex);
 
 	return req;
 }
 
-void
+static void
 tapdisk_blktap_free_request(td_blktap_t *tap, td_blktap_req_t *req)
 {
 	BUG_ON(tap->n_reqs_free >= tap->n_reqs);
@@ -115,12 +117,16 @@ tapdisk_blktap_reqs_free(td_blktap_t *tap)
 		free(tap->reqs_free);
 		tap->reqs_free = NULL;
 	}
+
+	pthread_mutex_destroy(&tap->mutex);
 }
 
 static int
 tapdisk_blktap_reqs_init(td_blktap_t *tap, int n_reqs)
 {
 	int i, err;
+
+	pthread_mutex_init(&tap->mutex, NULL);
 
 	tap->reqs = malloc(n_reqs * sizeof(td_blktap_req_t));
 	if (!tap->reqs) {
@@ -198,6 +204,7 @@ tapdisk_blktap_fail_request(td_blktap_t *tap,
 
 	BUG_ON(!tap->vma);
 
+	pthread_mutex_lock(&tap->mutex);
 	rsp = BLKTAP_GET_RESPONSE(tap, tap->rsp_prod_pvt);
 
 	rsp->id        = msg->id;
@@ -205,6 +212,7 @@ tapdisk_blktap_fail_request(td_blktap_t *tap,
 	rsp->status    = tapdisk_blktap_error_status(tap, error);
 
 	__tapdisk_blktap_push_response(tap, 1);
+	pthread_mutex_unlock(&tap->mutex);
 }
 
 static void
@@ -216,6 +224,7 @@ tapdisk_blktap_put_response(td_blktap_t *tap,
         unsigned long long interval;
         struct timeval now;
 
+	pthread_mutex_lock(&tap->mutex);
 	BUG_ON(!tap->vma);
 
 	rsp = BLKTAP_GET_RESPONSE(tap, tap->rsp_prod_pvt);
@@ -244,7 +253,10 @@ tapdisk_blktap_put_response(td_blktap_t *tap,
 	rsp->operation = op;
 	rsp->status    = tapdisk_blktap_error_status(tap, error);
 
+	tapdisk_blktap_free_request(tap, req);
+
 	__tapdisk_blktap_push_response(tap, final);
+	pthread_mutex_unlock(&tap->mutex);
 }
 
 static void
@@ -254,8 +266,6 @@ tapdisk_blktap_complete_request(td_blktap_t *tap,
 {
 	if (likely(tap->vma))
 		tapdisk_blktap_put_response(tap, req, error, final);
-
-	tapdisk_blktap_free_request(tap, req);
 }
 
 static void
