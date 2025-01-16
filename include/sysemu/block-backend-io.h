@@ -46,6 +46,7 @@ BlockAIOCB *blk_aio_pwritev(BlockBackend *blk, int64_t offset,
                             BlockCompletionFunc *cb, void *opaque);
 BlockAIOCB *blk_aio_flush(BlockBackend *blk,
                           BlockCompletionFunc *cb, void *opaque);
+#if 0
 BlockAIOCB *blk_aio_zone_report(BlockBackend *blk, int64_t offset,
                                 unsigned int *nr_zones,
                                 BlockZoneDescriptor *zones,
@@ -56,6 +57,7 @@ BlockAIOCB *blk_aio_zone_mgmt(BlockBackend *blk, BlockZoneOp op,
 BlockAIOCB *blk_aio_zone_append(BlockBackend *blk, int64_t *offset,
                                 QEMUIOVector *qiov, BdrvRequestFlags flags,
                                 BlockCompletionFunc *cb, void *opaque);
+#endif
 BlockAIOCB *blk_aio_pdiscard(BlockBackend *blk, int64_t offset, int64_t bytes,
                              BlockCompletionFunc *cb, void *opaque);
 void blk_aio_cancel_async(BlockAIOCB *acb);
@@ -92,11 +94,13 @@ void *blk_blockalign(BlockBackend *blk, size_t size);
 bool blk_is_writable(BlockBackend *blk);
 bool blk_enable_write_cache(BlockBackend *blk);
 BlockdevOnError blk_get_on_error(BlockBackend *blk, bool is_read);
+#if 0
 BlockErrorAction blk_get_error_action(BlockBackend *blk, bool is_read,
                                       int error);
 void blk_error_action(BlockBackend *blk, BlockErrorAction action,
                       bool is_read, int error);
 void blk_iostatus_set_err(BlockBackend *blk, int error);
+#endif
 int blk_get_max_iov(BlockBackend *blk);
 int blk_get_max_hw_iov(BlockBackend *blk);
 

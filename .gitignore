@@ -12,6 +12,7 @@
 *.trs
 .deps
 .libs
+.dirstamp
 cscope.*
 TAGS
 VERSION
@@ -51,6 +52,7 @@ Makefile.in
 /vhd/vhd-util
 /vhd/lib/test/random-copy
 /vhd/lib/test/test-snapshot
+/qcow2/qemu-img
 /tapback/tapback
 /test-driver
 
@@ -73,6 +75,8 @@ Makefile.in
 /vhd/Makefile
 /vhd/lib/Makefile
 /vhd/lib/test/Makefile
+/qcow2/Makefile
+/qcow2/lib/Makefile
 /tapback/Makefile
 mk/config.log
 

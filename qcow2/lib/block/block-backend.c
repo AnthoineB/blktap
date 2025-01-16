@@ -15,18 +15,18 @@
 #include "block/block_int.h"
 #include "block/blockjob.h"
 #include "block/coroutines.h"
-#include "block/throttle-groups.h"
-#include "hw/qdev-core.h"
-#include "sysemu/blockdev.h"
-#include "sysemu/runstate.h"
-#include "sysemu/replay.h"
+//#include "block/throttle-groups.h"
+//#include "hw/qdev-core.h"
+//#include "sysemu/blockdev.h"
+//#include "sysemu/runstate.h"
+//#include "sysemu/replay.h"
 #include "qapi/error.h"
-#include "qapi/qapi-events-block.h"
+//#include "qapi/qapi-events-block.h"
 #include "qemu/id.h"
 #include "qemu/main-loop.h"
 #include "qemu/option.h"
-#include "trace.h"
-#include "migration/misc.h"
+//#include "trace.h"
+//#include "migration/misc.h"
 
 /* Number of coroutines to reserve per attached device model */
 #define COROUTINE_POOL_RESERVATION 64
@@ -48,7 +48,7 @@ struct BlockBackend {
     DriveInfo *legacy_dinfo;    /* null unless created by drive_new() */
     QTAILQ_ENTRY(BlockBackend) link;         /* for block_backends */
     QTAILQ_ENTRY(BlockBackend) monitor_link; /* for monitor_block_backends */
-    BlockBackendPublic public;
+    //BlockBackendPublic public;
 
     DeviceState *dev;           /* attached device model, if any */
     const BlockDevOps *dev_ops;
@@ -163,6 +163,7 @@ static const char *blk_root_get_name(BdrvChild *child)
     return blk_name(child->opaque);
 }
 
+#if 0
 static void blk_vm_state_changed(void *opaque, bool running, RunState state)
 {
     Error *local_err = NULL;
@@ -179,6 +180,7 @@ static void blk_vm_state_changed(void *opaque, bool running, RunState state)
         error_report_err(local_err);
     }
 }
+#endif
 
 /*
  * Notifies the user of the BlockBackend that migration has completed. qdev
@@ -216,6 +218,7 @@ static void GRAPH_RDLOCK blk_root_activate(BdrvChild *child, Error **errp)
     }
     blk->shared_perm = saved_shared_perm;
 
+#if 0
     if (runstate_check(RUN_STATE_INMIGRATE)) {
         /* Activation can happen when migration process is still active, for
          * example when nbd_server_add is called during non-shared storage
@@ -226,6 +229,7 @@ static void GRAPH_RDLOCK blk_root_activate(BdrvChild *child, Error **errp)
         }
         return;
     }
+#endif
 
     blk_set_perm_locked(blk, blk->perm, blk->shared_perm, &local_err);
     if (local_err) {
@@ -285,7 +289,7 @@ static void blk_root_attach(BdrvChild *child)
     BlockBackend *blk = child->opaque;
     BlockBackendAioNotifier *notifier;
 
-    trace_blk_root_attach(child, blk, child->bs);
+    //trace_blk_root_attach(child, blk, child->bs);
 
     QLIST_FOREACH(notifier, &blk->aio_notifiers, list) {
         bdrv_add_aio_context_notifier(child->bs,
@@ -300,7 +304,7 @@ static void blk_root_detach(BdrvChild *child)
     BlockBackend *blk = child->opaque;
     BlockBackendAioNotifier *notifier;
 
-    trace_blk_root_detach(child, blk, child->bs);
+    //trace_blk_root_detach(child, blk, child->bs);
 
     QLIST_FOREACH(notifier, &blk->aio_notifiers, list) {
         bdrv_remove_aio_context_notifier(child->bs,
@@ -480,16 +484,20 @@ static void blk_delete(BlockBackend *blk)
     assert(!blk->refcnt);
     assert(!blk->name);
     assert(!blk->dev);
+#if 0
     if (blk->public.throttle_group_member.throttle_state) {
         blk_io_limits_disable(blk);
     }
+#endif
     if (blk->root) {
         blk_remove_bs(blk);
     }
+#if 0
     if (blk->vmsh) {
         qemu_del_vm_change_state_handler(blk->vmsh);
         blk->vmsh = NULL;
     }
+#endif
     assert(QLIST_EMPTY(&blk->remove_bs_notifiers.notifiers));
     assert(QLIST_EMPTY(&blk->insert_bs_notifiers.notifiers));
     assert(QLIST_EMPTY(&blk->aio_notifiers));
@@ -506,7 +514,7 @@ static void drive_info_del(DriveInfo *dinfo)
     if (!dinfo) {
         return;
     }
-    qemu_opts_del(dinfo->opts);
+    //qemu_opts_del(dinfo->opts);
     g_free(dinfo);
 }
 
@@ -630,7 +638,7 @@ BlockDriverState *bdrv_next(BdrvNextIterator *it)
      * BDSes that are attached to a BlockBackend here; they have been handled
      * by the above block already */
     do {
-        it->bs = bdrv_next_monitor_owned(it->bs);
+        it->bs = NULL /*bdrv_next_monitor_owned(it->bs)*/;
         bs = it->bs;
     } while (bs && bdrv_has_blk(bs));
 
@@ -672,6 +680,7 @@ void bdrv_next_cleanup(BdrvNextIterator *it)
     bdrv_next_reset(it);
 }
 
+#if 0
 /*
  * Add a BlockBackend into the list of backends referenced by the monitor, with
  * the given @name acting as the handle for the monitor.
@@ -724,6 +733,7 @@ void monitor_remove_blk(BlockBackend *blk)
     g_free(blk->name);
     blk->name = NULL;
 }
+#endif
 
 /*
  * Return @blk's name, a non-null string.
@@ -806,6 +816,7 @@ bool bdrv_is_root_node(BlockDriverState *bs)
     return true;
 }
 
+#if 0
 /*
  * Return @blk's DriveInfo if any, else null.
  */
@@ -861,18 +872,20 @@ BlockBackend *blk_by_public(BlockBackendPublic *public)
     GLOBAL_STATE_CODE();
     return container_of(public, BlockBackend, public);
 }
+#endif
 
 /*
  * Disassociates the currently associated BlockDriverState from @blk.
  */
 void blk_remove_bs(BlockBackend *blk)
 {
-    ThrottleGroupMember *tgm = &blk->public.throttle_group_member;
+    //ThrottleGroupMember *tgm = &blk->public.throttle_group_member;
     BdrvChild *root;
 
     GLOBAL_STATE_CODE();
 
     notifier_list_notify(&blk->remove_bs_notifiers, blk);
+#if 0
     if (tgm->throttle_state) {
         BlockDriverState *bs = blk_bs(blk);
 
@@ -887,6 +900,7 @@ void blk_remove_bs(BlockBackend *blk)
         bdrv_drained_end(bs);
         bdrv_unref(bs);
     }
+#endif
 
     blk_update_root_state(blk);
 
@@ -908,7 +922,7 @@ void blk_remove_bs(BlockBackend *blk)
  */
 int blk_insert_bs(BlockBackend *blk, BlockDriverState *bs, Error **errp)
 {
-    ThrottleGroupMember *tgm = &blk->public.throttle_group_member;
+    //ThrottleGroupMember *tgm = &blk->public.throttle_group_member;
 
     GLOBAL_STATE_CODE();
     bdrv_ref(bs);
@@ -923,14 +937,17 @@ int blk_insert_bs(BlockBackend *blk, BlockDriverState *bs, Error **errp)
     }
 
     notifier_list_notify(&blk->insert_bs_notifiers, blk);
+#if 0
     if (tgm->throttle_state) {
         throttle_group_detach_aio_context(tgm);
         throttle_group_attach_aio_context(tgm, bdrv_get_aio_context(bs));
     }
+#endif
 
     return 0;
 }
 
+#if 0
 /*
  * Change BlockDriverState associated with @blk.
  */
@@ -939,6 +956,7 @@ int blk_replace_bs(BlockBackend *blk, BlockDriverState *new_bs, Error **errp)
     GLOBAL_STATE_CODE();
     return bdrv_replace_child_bs(blk->root, new_bs, errp);
 }
+#endif
 
 /*
  * Sets the permission bitmasks that the user of the BlockBackend needs.
@@ -972,6 +990,7 @@ int blk_set_perm(BlockBackend *blk, uint64_t perm, uint64_t shared_perm,
     return blk_set_perm_locked(blk, perm, shared_perm, errp);
 }
 
+#if 0
 void blk_get_perm(BlockBackend *blk, uint64_t *perm, uint64_t *shared_perm)
 {
     GLOBAL_STATE_CODE();
@@ -1018,6 +1037,7 @@ void blk_detach_dev(BlockBackend *blk, DeviceState *dev)
     blk_set_perm(blk, 0, BLK_PERM_ALL, &error_abort);
     blk_unref(blk);
 }
+#endif
 
 /*
  * Return the device model attached to @blk if any, else null.
@@ -1032,18 +1052,19 @@ DeviceState *blk_get_attached_dev(BlockBackend *blk)
  * device attached to the BlockBackend. */
 char *blk_get_attached_dev_id(BlockBackend *blk)
 {
-    DeviceState *dev = blk->dev;
+    //DeviceState *dev = blk->dev;
     IO_CODE();
 
-    if (!dev) {
+    //if (!dev) {
         return g_strdup("");
-    } else if (dev->id) {
-        return g_strdup(dev->id);
-    }
+    //} else if (dev->id) {
+    //    return g_strdup(dev->id);
+    //}
 
-    return object_get_canonical_path(OBJECT(dev)) ?: g_strdup("");
+    //return object_get_canonical_path(OBJECT(dev)) ?: g_strdup("");
 }
 
+#if 0
 /*
  * Return the BlockBackend which has the device model @dev attached if it
  * exists, else null.
@@ -1082,6 +1103,7 @@ void blk_set_dev_ops(BlockBackend *blk, const BlockDevOps *ops,
         ops->drained_begin(opaque);
     }
 }
+#endif
 
 /*
  * Notify @blk's attached device model of media change.
@@ -1111,7 +1133,7 @@ void blk_dev_change_media_cb(BlockBackend *blk, bool load, Error **errp)
 
         if (tray_was_open != tray_is_open) {
             char *id = blk_get_attached_dev_id(blk);
-            qapi_event_send_device_tray_moved(blk_name(blk), id, tray_is_open);
+            //qapi_event_send_device_tray_moved(blk_name(blk), id, tray_is_open);
             g_free(id);
         }
     }
@@ -1190,12 +1212,14 @@ static void blk_root_resize(BdrvChild *child)
     }
 }
 
+#if 0
 void blk_iostatus_enable(BlockBackend *blk)
 {
     GLOBAL_STATE_CODE();
     blk->iostatus_enabled = true;
     blk->iostatus = BLOCK_DEVICE_IO_STATUS_OK;
 }
+#endif
 
 /* The I/O status is only enabled if the drive explicitly
  * enables it _and_ the VM is configured to stop on errors */
@@ -1214,6 +1238,7 @@ BlockDeviceIoStatus blk_iostatus(const BlockBackend *blk)
     return blk->iostatus;
 }
 
+#if 0
 void blk_iostatus_disable(BlockBackend *blk)
 {
     GLOBAL_STATE_CODE();
@@ -1237,6 +1262,7 @@ void blk_iostatus_set_err(BlockBackend *blk, int error)
                                           BLOCK_DEVICE_IO_STATUS_FAILED;
     }
 }
+#endif
 
 void blk_set_allow_write_beyond_eof(BlockBackend *blk, bool allow)
 {
@@ -1329,7 +1355,7 @@ blk_co_do_preadv_part(BlockBackend *blk, int64_t offset, int64_t bytes,
 
     /* Call blk_bs() only after waiting, the graph may have changed */
     bs = blk_bs(blk);
-    trace_blk_co_preadv(blk, bs, offset, bytes, flags);
+    //trace_blk_co_preadv(blk, bs, offset, bytes, flags);
 
     ret = blk_check_byte_request(blk, offset, bytes);
     if (ret < 0) {
@@ -1338,11 +1364,13 @@ blk_co_do_preadv_part(BlockBackend *blk, int64_t offset, int64_t bytes,
 
     bdrv_inc_in_flight(bs);
 
+#if 0
     /* throttling disk I/O */
     if (blk->public.throttle_group_member.throttle_state) {
         throttle_group_co_io_limits_intercept(&blk->public.throttle_group_member,
                 bytes, THROTTLE_READ);
     }
+#endif
 
     ret = bdrv_co_preadv_part(blk->root, offset, bytes, qiov, qiov_offset,
                               flags);
@@ -1404,7 +1432,7 @@ blk_co_do_pwritev_part(BlockBackend *blk, int64_t offset, int64_t bytes,
 
     /* Call blk_bs() only after waiting, the graph may have changed */
     bs = blk_bs(blk);
-    trace_blk_co_pwritev(blk, bs, offset, bytes, flags);
+    //trace_blk_co_pwritev(blk, bs, offset, bytes, flags);
 
     ret = blk_check_byte_request(blk, offset, bytes);
     if (ret < 0) {
@@ -1412,11 +1440,13 @@ blk_co_do_pwritev_part(BlockBackend *blk, int64_t offset, int64_t bytes,
     }
 
     bdrv_inc_in_flight(bs);
+#if 0
     /* throttling disk I/O */
     if (blk->public.throttle_group_member.throttle_state) {
         throttle_group_co_io_limits_intercept(&blk->public.throttle_group_member,
                 bytes, THROTTLE_WRITE);
     }
+#endif
 
     if (!blk->enable_write_cache) {
         flags |= BDRV_REQ_FUA;
@@ -1861,6 +1891,7 @@ int coroutine_fn blk_co_flush(BlockBackend *blk)
     return ret;
 }
 
+#if 0
 static void coroutine_fn blk_aio_zone_report_entry(void *opaque)
 {
     BlkAioEmAIOCB *acb = opaque;
@@ -2058,6 +2089,7 @@ int coroutine_fn blk_co_zone_append(BlockBackend *blk, int64_t *offset,
     blk_dec_in_flight(blk);
     return ret;
 }
+#endif
 
 void blk_drain(BlockBackend *blk)
 {
@@ -2109,6 +2141,7 @@ BlockdevOnError blk_get_on_error(BlockBackend *blk, bool is_read)
     return is_read ? blk->on_read_error : blk->on_write_error;
 }
 
+#if 0
 BlockErrorAction blk_get_error_action(BlockBackend *blk, bool is_read,
                                       int error)
 {
@@ -2203,6 +2236,7 @@ bool blk_is_writable(BlockBackend *blk)
     IO_CODE();
     return blk->perm & BLK_PERM_WRITE;
 }
+#endif
 
 bool blk_is_sg(BlockBackend *blk)
 {
@@ -2228,6 +2262,7 @@ void blk_set_enable_write_cache(BlockBackend *blk, bool wce)
     blk->enable_write_cache = wce;
 }
 
+#if 0
 void blk_activate(BlockBackend *blk, Error **errp)
 {
     BlockDriverState *bs = blk_bs(blk);
@@ -2249,6 +2284,7 @@ void blk_activate(BlockBackend *blk, Error **errp)
         bdrv_activate(bs, errp);
     }
 }
+#endif
 
 bool coroutine_fn blk_co_is_inserted(BlockBackend *blk)
 {
@@ -2279,7 +2315,7 @@ void coroutine_fn blk_co_lock_medium(BlockBackend *blk, bool locked)
 void coroutine_fn blk_co_eject(BlockBackend *blk, bool eject_flag)
 {
     BlockDriverState *bs = blk_bs(blk);
-    char *id;
+    //char *id;
     IO_CODE();
     GRAPH_RDLOCK_GUARD();
 
@@ -2289,12 +2325,15 @@ void coroutine_fn blk_co_eject(BlockBackend *blk, bool eject_flag)
 
     /* Whether or not we ejected on the backend,
      * the frontend experienced a tray event. */
+#if 0
     id = blk_get_attached_dev_id(blk);
     qapi_event_send_device_tray_moved(blk_name(blk), id,
                                       eject_flag);
     g_free(id);
+#endif
 }
 
+#if 0
 int blk_get_flags(BlockBackend *blk)
 {
     BlockDriverState *bs = blk_bs(blk);
@@ -2354,6 +2393,7 @@ int blk_get_max_iov(BlockBackend *blk)
     IO_CODE();
     return blk->root->bs->bl.max_iov;
 }
+#endif
 
 void *blk_try_blockalign(BlockBackend *blk, size_t size)
 {
@@ -2367,6 +2407,7 @@ void *blk_blockalign(BlockBackend *blk, size_t size)
     return qemu_blockalign(blk ? blk_bs(blk) : NULL, size);
 }
 
+#if 0
 bool blk_op_is_blocked(BlockBackend *blk, BlockOpType op, Error **errp)
 {
     BlockDriverState *bs = blk_bs(blk);
@@ -2409,6 +2450,7 @@ void blk_op_unblock_all(BlockBackend *blk, Error *reason)
         bdrv_op_unblock_all(bs, reason);
     }
 }
+#endif
 
 /**
  * Return BB's current AioContext.  Note that this context may change
@@ -2465,13 +2507,15 @@ static void blk_root_set_aio_ctx_commit(void *opaque)
     BdrvStateBlkRootContext *s = opaque;
     BlockBackend *blk = s->blk;
     AioContext *new_context = s->new_ctx;
-    ThrottleGroupMember *tgm = &blk->public.throttle_group_member;
+    //ThrottleGroupMember *tgm = &blk->public.throttle_group_member;
 
     qatomic_set(&blk->ctx, new_context);
+#if 0
     if (tgm->throttle_state) {
         throttle_group_detach_aio_context(tgm);
         throttle_group_attach_aio_context(tgm, new_context);
     }
+#endif
 }
 
 static TransactionActionDrv set_blk_root_context = {
@@ -2614,6 +2658,7 @@ int coroutine_fn blk_co_truncate(BlockBackend *blk, int64_t offset, bool exact,
     return bdrv_co_truncate(blk->root, offset, exact, prealloc, flags, errp);
 }
 
+#if 0
 int blk_save_vmstate(BlockBackend *blk, const uint8_t *buf,
                      int64_t pos, int size)
 {
@@ -2645,6 +2690,7 @@ int blk_load_vmstate(BlockBackend *blk, uint8_t *buf, int64_t pos, int size)
 
     return bdrv_load_vmstate(blk_bs(blk), buf, pos, size);
 }
+#endif
 
 int blk_probe_blocksizes(BlockBackend *blk, BlockSizes *bsz)
 {
@@ -2681,6 +2727,7 @@ void blk_update_root_state(BlockBackend *blk)
     blk->root_state.detect_zeroes = blk->root->bs->detect_zeroes;
 }
 
+#if 0
 /*
  * Returns the detect-zeroes setting to be used for bdrv_open() of a
  * BlockDriverState which is supposed to inherit the root state.
@@ -2780,11 +2827,12 @@ void blk_io_limits_update_group(BlockBackend *blk, const char *group)
     blk_io_limits_disable(blk);
     blk_io_limits_enable(blk, group);
 }
+#endif
 
 static void blk_root_drained_begin(BdrvChild *child)
 {
     BlockBackend *blk = child->opaque;
-    ThrottleGroupMember *tgm = &blk->public.throttle_group_member;
+    //ThrottleGroupMember *tgm = &blk->public.throttle_group_member;
 
     if (qatomic_fetch_inc(&blk->quiesce_counter) == 0) {
         if (blk->dev_ops && blk->dev_ops->drained_begin) {
@@ -2795,9 +2843,11 @@ static void blk_root_drained_begin(BdrvChild *child)
     /* Note that blk->root may not be accessible here yet if we are just
      * attaching to a BlockDriverState that is drained. Use child instead. */
 
+#if 0
     if (qatomic_fetch_inc(&tgm->io_limits_disabled) == 0) {
         throttle_group_restart_tgm(tgm);
     }
+#endif
 }
 
 static bool blk_root_drained_poll(BdrvChild *child)
@@ -2817,8 +2867,8 @@ static void blk_root_drained_end(BdrvChild *child)
     BlockBackend *blk = child->opaque;
     assert(qatomic_read(&blk->quiesce_counter));
 
-    assert(blk->public.throttle_group_member.io_limits_disabled);
-    qatomic_dec(&blk->public.throttle_group_member.io_limits_disabled);
+    //assert(blk->public.throttle_group_member.io_limits_disabled);
+    //qatomic_dec(&blk->public.throttle_group_member.io_limits_disabled);
 
     if (qatomic_fetch_dec(&blk->quiesce_counter) == 1) {
         if (blk->dev_ops && blk->dev_ops->drained_end) {

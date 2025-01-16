@@ -12,7 +12,7 @@
 
 #include "qemu/osdep.h"
 #include "qapi/error.h"
-#include "qapi-visit-job.h"
+#include "qapi/qapi-visit-job.h"
 
 bool visit_type_JobType(Visitor *v, const char *name,
                  JobType *obj, Error **errp)

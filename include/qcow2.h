@@ -25,7 +25,7 @@
 #ifndef BLOCK_QCOW2_H
 #define BLOCK_QCOW2_H
 
-#include "crypto/block.h"
+//#include "crypto/block.h"
 #include "qemu/coroutine.h"
 #include "qemu/units.h"
 #include "block/block_int.h"
@@ -231,10 +231,12 @@ typedef struct QCowSnapshot {
 struct Qcow2Cache;
 typedef struct Qcow2Cache Qcow2Cache;
 
+#if 0
 typedef struct Qcow2CryptoHeaderExtension {
     uint64_t offset;
     uint64_t length;
 } QEMU_PACKED Qcow2CryptoHeaderExtension;
+#endif
 
 typedef struct Qcow2UnknownHeaderExtension {
     uint32_t magic;
@@ -359,12 +361,12 @@ typedef struct BDRVQcow2State {
 
     CoMutex lock;
 
-    Qcow2CryptoHeaderExtension crypto_header; /* QCow2 header extension */
-    QCryptoBlockOpenOptions *crypto_opts; /* Disk encryption runtime options */
-    QCryptoBlock *crypto; /* Disk encryption format driver */
-    bool crypt_physical_offset; /* Whether to use virtual or physical offset
-                                   for encryption initialization vector tweak */
-    uint32_t crypt_method_header;
+    //Qcow2CryptoHeaderExtension crypto_header; /* QCow2 header extension */
+    //QCryptoBlockOpenOptions *crypto_opts; /* Disk encryption runtime options */
+    //QCryptoBlock *crypto; /* Disk encryption format driver */
+    //bool crypt_physical_offset; /* Whether to use virtual or physical offset
+    //                               for encryption initialization vector tweak */
+    //uint32_t crypt_method_header;
     uint64_t snapshots_offset;
     int snapshots_size;
     unsigned int nb_snapshots;
@@ -892,9 +894,11 @@ int coroutine_fn qcow2_check_refcounts(BlockDriverState *bs, BdrvCheckResult *re
 
 void GRAPH_RDLOCK qcow2_process_discards(BlockDriverState *bs, int ret);
 
+#if 0
 int GRAPH_RDLOCK
 qcow2_check_metadata_overlap(BlockDriverState *bs, int ign, int64_t offset,
                              int64_t size);
+#endif
 int GRAPH_RDLOCK
 qcow2_pre_write_overlap_check(BlockDriverState *bs, int ign, int64_t offset,
                               int64_t size, bool data_file);
@@ -924,9 +928,11 @@ int coroutine_fn GRAPH_RDLOCK
 qcow2_shrink_l1_table(BlockDriverState *bs, uint64_t max_size);
 
 int GRAPH_RDLOCK qcow2_write_l1_entry(BlockDriverState *bs, int l1_index);
+#if 0
 int qcow2_encrypt_sectors(BDRVQcow2State *s, int64_t sector_num,
                           uint8_t *buf, int nb_sectors, bool enc, Error **errp);
 
+#endif
 int GRAPH_RDLOCK
 qcow2_get_host_offset(BlockDriverState *bs, uint64_t offset,
                       unsigned int *bytes, uint64_t *host_offset,
@@ -1064,11 +1070,13 @@ qcow2_co_compress(BlockDriverState *bs, void *dest, size_t dest_size,
 ssize_t coroutine_fn
 qcow2_co_decompress(BlockDriverState *bs, void *dest, size_t dest_size,
                     const void *src, size_t src_size);
+#if 0
 int coroutine_fn
 qcow2_co_encrypt(BlockDriverState *bs, uint64_t host_offset,
                  uint64_t guest_offset, void *buf, size_t len);
 int coroutine_fn
 qcow2_co_decrypt(BlockDriverState *bs, uint64_t host_offset,
                  uint64_t guest_offset, void *buf, size_t len);
+#endif
 
 #endif

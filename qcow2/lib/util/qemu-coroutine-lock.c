@@ -31,7 +31,7 @@
 #include "qemu/processor.h"
 #include "qemu/queue.h"
 #include "block/aio.h"
-#include "trace.h"
+//#include "trace.h"
 
 void qemu_co_queue_init(CoQueue *queue)
 {
@@ -198,7 +198,7 @@ static void coroutine_fn qemu_co_mutex_lock_slowpath(AioContext *ctx,
     CoWaitRecord w;
     unsigned old_handoff;
 
-    trace_qemu_co_mutex_lock_entry(mutex, self);
+    //trace_qemu_co_mutex_lock_entry(mutex, self);
     push_waiter(mutex, &w);
 
     /*
@@ -230,7 +230,7 @@ static void coroutine_fn qemu_co_mutex_lock_slowpath(AioContext *ctx,
     }
 
     qemu_coroutine_yield();
-    trace_qemu_co_mutex_lock_return(mutex, self);
+    //trace_qemu_co_mutex_lock_return(mutex, self);
 }
 
 void coroutine_fn qemu_co_mutex_lock(CoMutex *mutex)
@@ -264,7 +264,7 @@ retry_fast_path:
 
     if (waiters == 0) {
         /* Uncontended.  */
-        trace_qemu_co_mutex_lock_uncontended(mutex, self);
+        //trace_qemu_co_mutex_lock_uncontended(mutex, self);
         mutex->ctx = ctx;
     } else {
         qemu_co_mutex_lock_slowpath(ctx, mutex);
@@ -277,7 +277,7 @@ void coroutine_fn qemu_co_mutex_unlock(CoMutex *mutex)
 {
     Coroutine *self = qemu_coroutine_self();
 
-    trace_qemu_co_mutex_unlock_entry(mutex, self);
+    //trace_qemu_co_mutex_unlock_entry(mutex, self);
 
     assert(mutex->locked);
     assert(mutex->holder == self);
@@ -326,7 +326,7 @@ void coroutine_fn qemu_co_mutex_unlock(CoMutex *mutex)
         }
     }
 
-    trace_qemu_co_mutex_unlock_return(mutex, self);
+    //trace_qemu_co_mutex_unlock_return(mutex, self);
 }
 
 struct CoRwTicket {

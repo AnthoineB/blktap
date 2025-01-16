@@ -31,20 +31,20 @@
 
 #include <glib/gprintf.h>
 
-#include "sysemu/sysemu.h"
-#include "trace.h"
+//#include "sysemu/sysemu.h"
+//#include "trace.h"
 #include "qapi/error.h"
 #include "qemu/error-report.h"
-#include "qemu/madvise.h"
-#include "qemu/sockets.h"
+//#include "qemu/madvise.h"
+//#include "qemu/sockets.h"
 #include "qemu/thread.h"
 #include <libgen.h>
 #include "qemu/cutils.h"
 #include "qemu/units.h"
-#include "qemu/thread-context.h"
+//#include "qemu/thread-context.h"
 #include "qemu/main-loop.h"
 
-#ifdef CONFIG_LINUX
+#if defined(__linux__)
 #include <sys/syscall.h>
 #endif
 
@@ -58,14 +58,14 @@
 #include <lwp.h>
 #endif
 
-#include "qemu/mmap-alloc.h"
+//#include "qemu/mmap-alloc.h"
 
 #define MAX_MEM_PREALLOC_THREAD_COUNT 16
 
 struct MemsetThread;
 
-static QLIST_HEAD(, MemsetContext) memset_contexts =
-    QLIST_HEAD_INITIALIZER(memset_contexts);
+//static QLIST_HEAD(, MemsetContext) memset_contexts =
+//    QLIST_HEAD_INITIALIZER(memset_contexts);
 
 typedef struct MemsetContext {
     bool all_threads_created;
@@ -86,12 +86,12 @@ struct MemsetThread {
 typedef struct MemsetThread MemsetThread;
 
 /* used by sigbus_handler() */
-static MemsetContext *sigbus_memset_context;
-struct sigaction sigbus_oldact;
-static QemuMutex sigbus_mutex;
+//static MemsetContext *sigbus_memset_context;
+//struct sigaction sigbus_oldact;
+//static QemuMutex sigbus_mutex;
 
-static QemuMutex page_mutex;
-static QemuCond page_cond;
+//static QemuMutex page_mutex;
+//static QemuCond page_cond;
 
 int qemu_get_thread_id(void)
 {
@@ -188,6 +188,7 @@ fail_close:
     return false;
 }
 
+#if 0
 /* alloc shared memory pages */
 void *qemu_anon_ram_alloc(size_t size, uint64_t *alignment, bool shared,
                           bool noreserve)
@@ -655,6 +656,7 @@ char *qemu_get_pid_name(pid_t pid)
 
     return name;
 }
+#endif
 
 
 void *qemu_alloc_stack(size_t *sz)
@@ -775,6 +777,7 @@ void sigaction_invoke(struct sigaction *action,
     action->sa_sigaction(info->ssi_signo, &si, NULL);
 }
 
+#if 0
 size_t qemu_get_host_physmem(void)
 {
 #ifdef _SC_PHYS_PAGES
@@ -931,3 +934,4 @@ void qemu_close_all_open_fd(const int *skip, unsigned int nskip)
         qemu_close_all_open_fd_fallback(skip, nskip, open_max);
     }
 }
+#endif

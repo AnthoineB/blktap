@@ -12,7 +12,7 @@
 #include "qemu/osdep.h"
 #include "qemu/hbitmap.h"
 #include "qemu/host-utils.h"
-#include "trace.h"
+//#include "trace.h"
 #include "crypto/hash.h"
 
 /* HBitmaps provides an array of bits.  The bits are stored as usual in an
@@ -140,7 +140,7 @@ static unsigned long hbitmap_iter_skip_words(HBitmapIter *hbi)
     }
 
     hbi->pos = pos;
-    trace_hbitmap_iter_skip_words(hbi->hb, hbi, pos, cur);
+    //trace_hbitmap_iter_skip_words(hbi->hb, hbi, pos, cur);
 
     assert(cur);
     return cur;
@@ -471,8 +471,8 @@ void hbitmap_set(HBitmap *hb, uint64_t start, uint64_t count)
         return;
     }
 
-    trace_hbitmap_set(hb, start, count,
-                      start >> hb->granularity, last >> hb->granularity);
+    //trace_hbitmap_set(hb, start, count,
+    //                  start >> hb->granularity, last >> hb->granularity);
 
     first = start >> hb->granularity;
     last >>= hb->granularity;
@@ -569,8 +569,8 @@ void hbitmap_reset(HBitmap *hb, uint64_t start, uint64_t count)
     assert(QEMU_IS_ALIGNED(start, gran));
     assert(QEMU_IS_ALIGNED(count, gran) || (start + count == hb->orig_size));
 
-    trace_hbitmap_reset(hb, start, count,
-                        start >> hb->granularity, last >> hb->granularity);
+    //trace_hbitmap_reset(hb, start, count,
+    //                    start >> hb->granularity, last >> hb->granularity);
 
     first = start >> hb->granularity;
     last >>= hb->granularity;

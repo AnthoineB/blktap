@@ -2190,6 +2190,7 @@ int blk_pwrite_zeroes(BlockBackend *blk, int64_t offset, int64_t bytes, BdrvRequ
 }
 
 
+#if 0
 /*
  * Wrappers for blk_co_zone_report
  */
@@ -2335,6 +2336,7 @@ int blk_zone_append(BlockBackend *blk, int64_t *offset, QEMUIOVector *qiov, Bdrv
         return s.ret;
     }
 }
+#endif
 
 
 /*
@@ -2589,6 +2591,7 @@ int bdrv_common_block_status_above(BlockDriverState *bs, BlockDriverState *base,
 }
 
 
+#if 0
 /*
  * Wrappers for nbd_co_do_establish_connection
  */
@@ -2634,3 +2637,4 @@ int nbd_do_establish_connection(BlockDriverState *bs, bool blocking, Error **err
         return s.ret;
     }
 }
+#endif

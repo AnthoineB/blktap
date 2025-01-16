@@ -211,11 +211,13 @@ list_del_init(struct list_head *node)
 #define container_off(containing_type, member)	\
 	offsetof(containing_type, member)
 
+#ifndef container_of
 #define container_of(member_ptr, containing_type, member)		\
 	 ((containing_type *)						\
 	  ((char *)(member_ptr)						\
 	   - container_off(containing_type, member))			\
 	  + check_types_match(*(member_ptr), ((containing_type *)0)->member))
+#endif
 
 #define list_entry(PTR, TYPE, FIELD)    container_of(PTR, TYPE, FIELD)
 #define list_first_entry(PTR, TYPE, FIELD)              \

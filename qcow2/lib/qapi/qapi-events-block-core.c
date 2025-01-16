@@ -12,8 +12,8 @@
 
 #include "qemu/osdep.h"
 #include "qapi-emit-events.h"
-#include "qapi-events-block-core.h"
-#include "qapi-visit-block-core.h"
+#include "qapi/qapi-events-block-core.h"
+#include "qapi/qapi-visit-block-core.h"
 #include "qapi/compat-policy.h"
 #include "qapi/error.h"
 #include "qapi/qmp/qdict.h"
@@ -43,7 +43,7 @@ void qapi_event_send_block_image_corrupted(const char *device, const char *node_
     } else {
         qobject_unref(obj);
     }
-    qapi_event_emit(QAPI_EVENT_BLOCK_IMAGE_CORRUPTED, qmp);
+    //qapi_event_emit(QAPI_EVENT_BLOCK_IMAGE_CORRUPTED, qmp);
 
     visit_free(v);
     qobject_unref(qmp);
@@ -73,7 +73,7 @@ void qapi_event_send_block_io_error(const char *device, const char *node_name, I
     } else {
         qobject_unref(obj);
     }
-    qapi_event_emit(QAPI_EVENT_BLOCK_IO_ERROR, qmp);
+    //qapi_event_emit(QAPI_EVENT_BLOCK_IO_ERROR, qmp);
 
     visit_free(v);
     qobject_unref(qmp);
@@ -103,7 +103,7 @@ void qapi_event_send_block_job_completed(JobType type, const char *device, int64
     } else {
         qobject_unref(obj);
     }
-    qapi_event_emit(QAPI_EVENT_BLOCK_JOB_COMPLETED, qmp);
+    //qapi_event_emit(QAPI_EVENT_BLOCK_JOB_COMPLETED, qmp);
 
     visit_free(v);
     qobject_unref(qmp);
@@ -133,7 +133,7 @@ void qapi_event_send_block_job_cancelled(JobType type, const char *device, int64
     } else {
         qobject_unref(obj);
     }
-    qapi_event_emit(QAPI_EVENT_BLOCK_JOB_CANCELLED, qmp);
+    //qapi_event_emit(QAPI_EVENT_BLOCK_JOB_CANCELLED, qmp);
 
     visit_free(v);
     qobject_unref(qmp);
@@ -163,7 +163,7 @@ void qapi_event_send_block_job_error(const char *device, IoOperationType operati
     } else {
         qobject_unref(obj);
     }
-    qapi_event_emit(QAPI_EVENT_BLOCK_JOB_ERROR, qmp);
+    //qapi_event_emit(QAPI_EVENT_BLOCK_JOB_ERROR, qmp);
 
     visit_free(v);
     qobject_unref(qmp);
@@ -193,7 +193,7 @@ void qapi_event_send_block_job_ready(JobType type, const char *device, int64_t l
     } else {
         qobject_unref(obj);
     }
-    qapi_event_emit(QAPI_EVENT_BLOCK_JOB_READY, qmp);
+    //qapi_event_emit(QAPI_EVENT_BLOCK_JOB_READY, qmp);
 
     visit_free(v);
     qobject_unref(qmp);
@@ -223,7 +223,7 @@ void qapi_event_send_block_job_pending(JobType type, const char *id)
     } else {
         qobject_unref(obj);
     }
-    qapi_event_emit(QAPI_EVENT_BLOCK_JOB_PENDING, qmp);
+    //qapi_event_emit(QAPI_EVENT_BLOCK_JOB_PENDING, qmp);
 
     visit_free(v);
     qobject_unref(qmp);
@@ -253,7 +253,7 @@ void qapi_event_send_block_write_threshold(const char *node_name, uint64_t amoun
     } else {
         qobject_unref(obj);
     }
-    qapi_event_emit(QAPI_EVENT_BLOCK_WRITE_THRESHOLD, qmp);
+    //qapi_event_emit(QAPI_EVENT_BLOCK_WRITE_THRESHOLD, qmp);
 
     visit_free(v);
     qobject_unref(qmp);
@@ -283,7 +283,7 @@ void qapi_event_send_quorum_failure(const char *reference, int64_t sector_num, i
     } else {
         qobject_unref(obj);
     }
-    qapi_event_emit(QAPI_EVENT_QUORUM_FAILURE, qmp);
+    //qapi_event_emit(QAPI_EVENT_QUORUM_FAILURE, qmp);
 
     visit_free(v);
     qobject_unref(qmp);
@@ -313,7 +313,7 @@ void qapi_event_send_quorum_report_bad(QuorumOpType type, const char *error, con
     } else {
         qobject_unref(obj);
     }
-    qapi_event_emit(QAPI_EVENT_QUORUM_REPORT_BAD, qmp);
+    //qapi_event_emit(QAPI_EVENT_QUORUM_REPORT_BAD, qmp);
 
     visit_free(v);
     qobject_unref(qmp);

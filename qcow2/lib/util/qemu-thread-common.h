@@ -14,7 +14,7 @@
 #define QEMU_THREAD_COMMON_H
 
 #include "qemu/thread.h"
-#include "trace.h"
+//#include "trace.h"
 
 static inline void qemu_mutex_post_init(QemuMutex *mutex)
 {
@@ -28,7 +28,7 @@ static inline void qemu_mutex_post_init(QemuMutex *mutex)
 static inline void qemu_mutex_pre_lock(QemuMutex *mutex,
                                        const char *file, int line)
 {
-    trace_qemu_mutex_lock(mutex, file, line);
+    //trace_qemu_mutex_lock(mutex, file, line);
 }
 
 static inline void qemu_mutex_post_lock(QemuMutex *mutex,
@@ -38,7 +38,7 @@ static inline void qemu_mutex_post_lock(QemuMutex *mutex,
     mutex->file = file;
     mutex->line = line;
 #endif
-    trace_qemu_mutex_locked(mutex, file, line);
+    //trace_qemu_mutex_locked(mutex, file, line);
 }
 
 static inline void qemu_mutex_pre_unlock(QemuMutex *mutex,
@@ -48,7 +48,7 @@ static inline void qemu_mutex_pre_unlock(QemuMutex *mutex,
     mutex->file = NULL;
     mutex->line = 0;
 #endif
-    trace_qemu_mutex_unlock(mutex, file, line);
+    //trace_qemu_mutex_unlock(mutex, file, line);
 }
 
 #endif

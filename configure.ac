@@ -29,6 +29,12 @@ AC_CHECK_LIB([uuid], [main],
              [:],
 	     AC_MSG_ERROR([Need uuid-dev]))
 
+PKG_PROG_PKG_CONFIG
+PKG_CHECK_MODULES([GLIB], [glib-2.0])
+PKG_CHECK_MODULES([ZLIB], [zlib])
+PKG_CHECK_MODULES([GNUTLS], [gnutls])
+PKG_CHECK_MODULES([LIBZSTD], [libzstd])
+
 AS_IF([test x$with_libiconv != xno],
       [AC_CHECK_LIB([iconv], [main],
 		    [AC_SUBST([LIBICONV], ["-liconv"])],
@@ -64,6 +70,8 @@ cbt/Makefile
 vhd/Makefile
 vhd/lib/Makefile
 vhd/lib/test/Makefile
+qcow2/Makefile
+qcow2/lib/Makefile
 control/Makefile
 drivers/Makefile
 drivers/crypto/Makefile

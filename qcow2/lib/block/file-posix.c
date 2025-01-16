@@ -32,15 +32,15 @@
 #include "qemu/option.h"
 #include "qemu/units.h"
 #include "qemu/memalign.h"
-#include "trace.h"
+//#include "trace.h"
 #include "block/thread-pool.h"
 #include "qemu/iov.h"
 #include "block/raw-aio.h"
 #include "qapi/qmp/qdict.h"
 #include "qapi/qmp/qstring.h"
 
-#include "scsi/pr-manager.h"
-#include "scsi/constants.h"
+//#include "scsi/pr-manager.h"
+//#include "scsi/constants.h"
 
 #if defined(__APPLE__) && (__MACH__)
 #include <sys/ioctl.h>
@@ -173,7 +173,7 @@ typedef struct BDRVRawState {
         uint64_t discard_bytes_ok;
     } stats;
 
-    PRManager *pr_mgr;
+    //PRManager *pr_mgr;
 } BDRVRawState;
 
 typedef struct BDRVRawReopenState {
@@ -317,6 +317,7 @@ static int probe_logical_blocksize(int fd, unsigned int *sector_size_p)
     return success ? 0 : -errno;
 }
 
+#if defined(HAVE_HOST_BLOCK_DEVICE)
 /**
  * Get physical block size of @fd.
  * On success, store it in @blk_size and return 0.
@@ -333,6 +334,7 @@ static int probe_physical_blocksize(int fd, unsigned int *blk_size)
     return -ENOTSUP;
 #endif
 }
+#endif
 
 /*
  * Returns true if no alignment restrictions are necessary even for files
@@ -597,7 +599,7 @@ static int raw_open_common(BlockDriverState *bs, QDict *options,
     QemuOpts *opts;
     Error *local_err = NULL;
     const char *filename = NULL;
-    const char *str;
+    //const char *str;
     BlockdevAioOptions aio, aio_default;
     int fd, ret;
     struct stat st;
@@ -670,6 +672,7 @@ static int raw_open_common(BlockDriverState *bs, QDict *options,
         abort();
     }
 
+#if 0
     str = qemu_opt_get(opts, "pr-manager");
     if (str) {
         s->pr_mgr = pr_manager_lookup(str, &local_err);
@@ -679,6 +682,7 @@ static int raw_open_common(BlockDriverState *bs, QDict *options,
             goto fail;
         }
     }
+#endif
 
     s->drop_cache = qemu_opt_get_bool(opts, "drop-cache", true);
     s->check_cache_dropped = qemu_opt_get_bool(opts, "x-check-cache-dropped",
@@ -1522,6 +1526,7 @@ static void raw_refresh_limits(BlockDriverState *bs, Error **errp)
     raw_refresh_zoned_limits(bs, &st, errp);
 }
 
+#if defined(HAVE_HOST_BLOCK_DEVICE)
 static int check_for_dasd(int fd)
 {
 #ifdef BIODASDINFO2
@@ -1597,8 +1602,9 @@ static int hdev_probe_geometry(BlockDriverState *bs, HDGeometry *geo)
     return -ENOTSUP;
 }
 #endif
+#endif
 
-#if defined(__linux__)
+#if defined(__linux__) && defined(HAVE_HOST_BLOCK_DEVICE)
 static int handle_aiocb_ioctl(void *opaque)
 {
     RawPosixAIOData *aiocb = opaque;
@@ -1627,7 +1633,7 @@ static int handle_aiocb_flush(void *opaque)
 
     ret = qemu_fdatasync(aiocb->aio_fildes);
     if (ret == -1) {
-        trace_file_flush_fdatasync_failed(errno);
+        //trace_file_flush_fdatasync_failed(errno);
 
         /* There is no clear definition of the semantics of a failing fsync(),
          * so we may have to assume the worst. The sad truth is that this
@@ -2168,9 +2174,9 @@ static int handle_aiocb_copy_range(void *opaque)
         ssize_t ret = copy_file_range(aiocb->aio_fildes, &in_off,
                                       aiocb->copy_range.aio_fd2, &out_off,
                                       bytes, 0);
-        trace_file_copy_file_range(aiocb->bs, aiocb->aio_fildes, in_off,
-                                   aiocb->copy_range.aio_fd2, out_off, bytes,
-                                   0, ret);
+        //trace_file_copy_file_range(aiocb->bs, aiocb->aio_fildes, in_off,
+        //                           aiocb->copy_range.aio_fd2, out_off, bytes,
+        //                           0, ret);
         if (ret == 0) {
             /* No progress (e.g. when beyond EOF), let the caller fall back to
              * buffer I/O. */
@@ -2546,8 +2552,8 @@ out:
             if (!BDRV_ZT_IS_CONV(*wp)) {
                 if (type & QEMU_AIO_ZONE_APPEND) {
                     *offset_ptr = *wp;
-                    trace_zbd_zone_append_complete(bs, *offset_ptr
-                        >> BDRV_SECTOR_BITS);
+                    //trace_zbd_zone_append_complete(bs, *offset_ptr
+                    //    >> BDRV_SECTOR_BITS);
                 }
                 /* Advance the wp if needed */
                 if (offset + bytes > *wp) {
@@ -3404,7 +3410,7 @@ static int coroutine_fn raw_co_zone_report(BlockDriverState *bs, int64_t offset,
         },
     };
 
-    trace_zbd_zone_report(bs, *nr_zones, offset >> BDRV_SECTOR_BITS);
+    //trace_zbd_zone_report(bs, *nr_zones, offset >> BDRV_SECTOR_BITS);
     return raw_thread_pool_submit(handle_aiocb_zone_report, &acb);
 }
 #endif
@@ -3480,8 +3486,8 @@ static int coroutine_fn raw_co_zone_mgmt(BlockDriverState *bs, BlockZoneOp op,
         },
     };
 
-    trace_zbd_zone_mgmt(bs, op_name, offset >> BDRV_SECTOR_BITS,
-                        len >> BDRV_SECTOR_BITS);
+    //trace_zbd_zone_mgmt(bs, op_name, offset >> BDRV_SECTOR_BITS,
+    //                    len >> BDRV_SECTOR_BITS);
     ret = raw_thread_pool_submit(handle_aiocb_zone_mgmt, &acb);
     if (ret != 0) {
         update_zones_wp(bs, s->fd, offset, nrz);
@@ -3539,7 +3545,7 @@ static int coroutine_fn raw_co_zone_append(BlockDriverState *bs,
         len += iov_len;
     }
 
-    trace_zbd_zone_append(bs, *offset >> BDRV_SECTOR_BITS);
+    //trace_zbd_zone_append(bs, *offset >> BDRV_SECTOR_BITS);
     return raw_co_prw(bs, offset, len, qiov, QEMU_AIO_ZONE_APPEND);
 }
 #endif
@@ -3962,7 +3968,7 @@ static char *FindEjectableOpticalMedia(io_iterator_t *mediaIterator)
 
         /* If a match was found, leave the loop */
         if (*mediaIterator != 0) {
-            trace_file_FindEjectableOpticalMedia(matching_array[index]);
+            //trace_file_FindEjectableOpticalMedia(matching_array[index]);
             mediaType = g_strdup(matching_array[index]);
             break;
         }
@@ -4022,7 +4028,7 @@ static bool setup_cdrom(char *bsd_path, Error **errp)
     if (partition_found == false) {
         error_setg(errp, "Failed to find a working partition on disc");
     } else {
-        trace_file_setup_cdrom(test_partition);
+        //trace_file_setup_cdrom(test_partition);
         pstrcpy(bsd_path, MAXPATHLEN, test_partition);
     }
     return partition_found;
@@ -4084,7 +4090,7 @@ static bool hdev_is_sg(BlockDriverState *bs)
 
     ret = ioctl(s->fd, SG_GET_SCSI_ID, &scsiid);
     if (ret >= 0) {
-        trace_file_hdev_is_sg(scsiid.scsi_type, sg_version);
+        //trace_file_hdev_is_sg(scsiid.scsi_type, sg_version);
         return true;
     }
 
@@ -4194,6 +4200,7 @@ hdev_co_ioctl(BlockDriverState *bs, unsigned long int req, void *buf)
         return ret;
     }
 
+#if 0
     if (req == SG_IO && s->pr_mgr) {
         struct sg_io_hdr *io_hdr = buf;
         if (io_hdr->cmdp[0] == PERSISTENT_RESERVE_OUT ||
@@ -4202,6 +4209,7 @@ hdev_co_ioctl(BlockDriverState *bs, unsigned long int req, void *buf)
                                       s->fd, io_hdr);
         }
     }
+#endif
 
     acb = (RawPosixAIOData) {
         .bs         = bs,

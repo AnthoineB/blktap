@@ -15,7 +15,7 @@
 #ifndef QEMU_ATOMIC_H
 #define QEMU_ATOMIC_H
 
-#include "compiler.h"
+#include "qemu/compiler.h"
 
 /* Compiler barrier */
 #define barrier()   ({ asm volatile("" ::: "memory"); (void)0; })

@@ -9,7 +9,7 @@
 #include "qemu/osdep.h"
 #include "qemu/thread.h"
 #include "qemu/atomic.h"
-#include "trace.h"
+//#include "trace.h"
 
 #ifdef CONFIG_LINUX
 #include "qemu/futex.h"
@@ -60,10 +60,10 @@ static bool qemu_lockcnt_cmpxchg_or_wait(QemuLockCnt *lockcnt, int *val,
     if ((*val & QEMU_LOCKCNT_STATE_MASK) == QEMU_LOCKCNT_STATE_FREE) {
         int expected = *val;
 
-        trace_lockcnt_fast_path_attempt(lockcnt, expected, new_if_free);
+        //trace_lockcnt_fast_path_attempt(lockcnt, expected, new_if_free);
         *val = qatomic_cmpxchg(&lockcnt->count, expected, new_if_free);
         if (*val == expected) {
-            trace_lockcnt_fast_path_success(lockcnt, expected, new_if_free);
+            //trace_lockcnt_fast_path_success(lockcnt, expected, new_if_free);
             *val = new_if_free;
             return true;
         }
@@ -80,7 +80,7 @@ static bool qemu_lockcnt_cmpxchg_or_wait(QemuLockCnt *lockcnt, int *val,
             int expected = *val;
             int new = expected - QEMU_LOCKCNT_STATE_LOCKED + QEMU_LOCKCNT_STATE_WAITING;
 
-            trace_lockcnt_futex_wait_prepare(lockcnt, expected, new);
+            //trace_lockcnt_futex_wait_prepare(lockcnt, expected, new);
             *val = qatomic_cmpxchg(&lockcnt->count, expected, new);
             if (*val == expected) {
                 *val = new;
@@ -90,10 +90,10 @@ static bool qemu_lockcnt_cmpxchg_or_wait(QemuLockCnt *lockcnt, int *val,
 
         if ((*val & QEMU_LOCKCNT_STATE_MASK) == QEMU_LOCKCNT_STATE_WAITING) {
             *waited = true;
-            trace_lockcnt_futex_wait(lockcnt, *val);
+            //trace_lockcnt_futex_wait(lockcnt, *val);
             qemu_futex_wait(&lockcnt->count, *val);
             *val = qatomic_read(&lockcnt->count);
-            trace_lockcnt_futex_wait_resume(lockcnt, *val);
+            //trace_lockcnt_futex_wait_resume(lockcnt, *val);
             continue;
         }
 
@@ -104,7 +104,7 @@ static bool qemu_lockcnt_cmpxchg_or_wait(QemuLockCnt *lockcnt, int *val,
 
 static void lockcnt_wake(QemuLockCnt *lockcnt)
 {
-    trace_lockcnt_futex_wake(lockcnt);
+    //trace_lockcnt_futex_wake(lockcnt);
     qemu_futex_wake(&lockcnt->count, 1);
 }
 
@@ -261,11 +261,11 @@ void qemu_lockcnt_inc_and_unlock(QemuLockCnt *lockcnt)
     do {
         expected = val;
         new = (val + QEMU_LOCKCNT_COUNT_STEP) & ~QEMU_LOCKCNT_STATE_MASK;
-        trace_lockcnt_unlock_attempt(lockcnt, val, new);
+        //trace_lockcnt_unlock_attempt(lockcnt, val, new);
         val = qatomic_cmpxchg(&lockcnt->count, val, new);
     } while (val != expected);
 
-    trace_lockcnt_unlock_success(lockcnt, val, new);
+    //trace_lockcnt_unlock_success(lockcnt, val, new);
     if (val & QEMU_LOCKCNT_STATE_WAITING) {
         lockcnt_wake(lockcnt);
     }
@@ -279,11 +279,11 @@ void qemu_lockcnt_unlock(QemuLockCnt *lockcnt)
     do {
         expected = val;
         new = val & ~QEMU_LOCKCNT_STATE_MASK;
-        trace_lockcnt_unlock_attempt(lockcnt, val, new);
+        //trace_lockcnt_unlock_attempt(lockcnt, val, new);
         val = qatomic_cmpxchg(&lockcnt->count, val, new);
     } while (val != expected);
 
-    trace_lockcnt_unlock_success(lockcnt, val, new);
+    //trace_lockcnt_unlock_success(lockcnt, val, new);
     if (val & QEMU_LOCKCNT_STATE_WAITING) {
         lockcnt_wake(lockcnt);
     }

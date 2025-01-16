@@ -12,8 +12,8 @@
 #ifndef HBITMAP_H
 #define HBITMAP_H
 
-#include "bitops.h"
-#include "host-utils.h"
+#include "qemu/bitops.h"
+#include "qemu/host-utils.h"
 
 typedef struct HBitmap HBitmap;
 typedef struct HBitmapIter HBitmapIter;

@@ -23,21 +23,23 @@
  */
 
 #include "qemu/osdep.h"
-#include "trace.h"
+//#include "trace.h"
 #include "sysemu/block-backend.h"
 #include "block/aio-wait.h"
 #include "block/blockjob.h"
-#include "block/blockjob_int.h"
+//#include "block/blockjob_int.h"
 #include "block/block_int.h"
 #include "block/coroutines.h"
 #include "block/dirty-bitmap.h"
-#include "block/write-threshold.h"
+//#include "block/write-threshold.h"
 #include "qemu/cutils.h"
 #include "qemu/memalign.h"
 #include "qapi/error.h"
 #include "qemu/error-report.h"
 #include "qemu/main-loop.h"
-#include "sysemu/replay.h"
+//#include "sysemu/replay.h"
+
+#define replay_events_enabled() 0
 
 /* Maximum bounce buffer for copy-on-read and write zeroes, in bytes */
 #define MAX_BOUNCE_BUFFER (32768 << BDRV_SECTOR_BITS)
@@ -1209,8 +1211,8 @@ bdrv_co_do_copy_on_readv(BdrvChild *child, int64_t offset, int64_t bytes,
     bdrv_round_to_subclusters(bs, offset, bytes, &align_offset, &align_bytes);
     skip_bytes = offset - align_offset;
 
-    trace_bdrv_co_do_copy_on_readv(bs, offset, bytes,
-                                   align_offset, align_bytes);
+    //trace_bdrv_co_do_copy_on_readv(bs, offset, bytes,
+    //                               align_offset, align_bytes);
 
     while (align_bytes) {
         int64_t pnum;
@@ -1263,7 +1265,7 @@ bdrv_co_do_copy_on_readv(BdrvChild *child, int64_t offset, int64_t bytes,
                 goto err;
             }
 
-            bdrv_co_debug_event(bs, BLKDBG_COR_WRITE);
+            //bdrv_co_debug_event(bs, BLKDBG_COR_WRITE);
             if (drv->bdrv_co_pwrite_zeroes &&
                 buffer_is_zero(bounce_buffer, pnum)) {
                 /* FIXME: Should we (perhaps conditionally) be setting
@@ -1524,10 +1526,10 @@ bdrv_padding_rmw_read(BdrvChild *child, BdrvTrackedRequest *req,
         qemu_iovec_init_buf(&local_qiov, pad->buf, bytes);
 
         if (pad->head) {
-            bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_HEAD);
+            //bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_HEAD);
         }
         if (pad->merge_reads && pad->tail) {
-            bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_TAIL);
+            //bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_TAIL);
         }
         ret = bdrv_aligned_preadv(child, req, req->overlap_offset, bytes,
                                   align, &local_qiov, 0, 0);
@@ -1535,10 +1537,10 @@ bdrv_padding_rmw_read(BdrvChild *child, BdrvTrackedRequest *req,
             return ret;
         }
         if (pad->head) {
-            bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_AFTER_HEAD);
+            //bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_AFTER_HEAD);
         }
         if (pad->merge_reads && pad->tail) {
-            bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_AFTER_TAIL);
+            //bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_AFTER_TAIL);
         }
 
         if (pad->merge_reads) {
@@ -1549,7 +1551,7 @@ bdrv_padding_rmw_read(BdrvChild *child, BdrvTrackedRequest *req,
     if (pad->tail) {
         qemu_iovec_init_buf(&local_qiov, pad->tail_buf, align);
 
-        bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_TAIL);
+        //bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_TAIL);
         ret = bdrv_aligned_preadv(
                 child, req,
                 req->overlap_offset + req->overlap_bytes - align,
@@ -1557,7 +1559,7 @@ bdrv_padding_rmw_read(BdrvChild *child, BdrvTrackedRequest *req,
         if (ret < 0) {
             return ret;
         }
-        bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_AFTER_TAIL);
+        //bdrv_co_debug_event(bs, BLKDBG_PWRITEV_RMW_AFTER_TAIL);
     }
 
 zero_mem:
@@ -1779,7 +1781,7 @@ int coroutine_fn bdrv_co_preadv_part(BdrvChild *child,
     int ret;
     IO_CODE();
 
-    trace_bdrv_co_preadv_part(bs, offset, bytes, flags);
+    //trace_bdrv_co_preadv_part(bs, offset, bytes, flags);
 
     if (!bdrv_co_is_inserted(bs)) {
         return -ENOMEDIUM;
@@ -2001,7 +2003,7 @@ bdrv_co_write_req_prepare(BdrvChild *child, int64_t offset, int64_t bytes,
         } else {
             assert(child->perm & BLK_PERM_WRITE);
         }
-        bdrv_write_threshold_check_write(bs, offset, bytes);
+        //bdrv_write_threshold_check_write(bs, offset, bytes);
         return 0;
     case BDRV_TRACKED_TRUNCATE:
         assert(child->perm & BLK_PERM_RESIZE);
@@ -2101,16 +2103,16 @@ bdrv_aligned_pwritev(BdrvChild *child, BdrvTrackedRequest *req,
     if (ret < 0) {
         /* Do nothing, write notifier decided to fail this request */
     } else if (flags & BDRV_REQ_ZERO_WRITE) {
-        bdrv_co_debug_event(bs, BLKDBG_PWRITEV_ZERO);
+        //bdrv_co_debug_event(bs, BLKDBG_PWRITEV_ZERO);
         ret = bdrv_co_do_pwrite_zeroes(bs, offset, bytes, flags);
     } else if (flags & BDRV_REQ_WRITE_COMPRESSED) {
         ret = bdrv_driver_pwritev_compressed(bs, offset, bytes,
                                              qiov, qiov_offset);
     } else if (bytes <= max_transfer) {
-        bdrv_co_debug_event(bs, BLKDBG_PWRITEV);
+        //bdrv_co_debug_event(bs, BLKDBG_PWRITEV);
         ret = bdrv_driver_pwritev(bs, offset, bytes, qiov, qiov_offset, flags);
     } else {
-        bdrv_co_debug_event(bs, BLKDBG_PWRITEV);
+        //bdrv_co_debug_event(bs, BLKDBG_PWRITEV);
         while (bytes_remaining) {
             int num = MIN(bytes_remaining, max_transfer);
             int local_flags = flags;
@@ -2133,7 +2135,7 @@ bdrv_aligned_pwritev(BdrvChild *child, BdrvTrackedRequest *req,
             bytes_remaining -= num;
         }
     }
-    bdrv_co_debug_event(bs, BLKDBG_PWRITEV_DONE);
+    //bdrv_co_debug_event(bs, BLKDBG_PWRITEV_DONE);
 
     if (ret >= 0) {
         ret = 0;
@@ -2233,7 +2235,7 @@ int coroutine_fn bdrv_co_pwritev_part(BdrvChild *child,
     bool padded = false;
     IO_CODE();
 
-    trace_bdrv_co_pwritev_part(child->bs, offset, bytes, flags);
+    //trace_bdrv_co_pwritev_part(child->bs, offset, bytes, flags);
 
     if (!bdrv_co_is_inserted(bs)) {
         return -ENOMEDIUM;
@@ -2317,13 +2319,14 @@ int coroutine_fn bdrv_co_pwrite_zeroes(BdrvChild *child, int64_t offset,
                                        int64_t bytes, BdrvRequestFlags flags)
 {
     IO_CODE();
-    trace_bdrv_co_pwrite_zeroes(child->bs, offset, bytes, flags);
+    //trace_bdrv_co_pwrite_zeroes(child->bs, offset, bytes, flags);
     assert_bdrv_graph_readable();
 
     return bdrv_co_pwritev(child, offset, bytes, NULL,
                            BDRV_REQ_ZERO_WRITE | flags);
 }
 
+#if 0
 /*
  * Flush ALL BDSes regardless of if they are reachable via a BlkBackend or not.
  */
@@ -2354,6 +2357,7 @@ int bdrv_flush_all(void)
 
     return result;
 }
+#endif
 
 /*
  * Returns the allocation status of the specified sectors.
@@ -2892,6 +2896,7 @@ bdrv_co_writev_vmstate(BlockDriverState *bs, QEMUIOVector *qiov, int64_t pos)
     return ret;
 }
 
+#if 0
 int bdrv_save_vmstate(BlockDriverState *bs, const uint8_t *buf,
                       int64_t pos, int size)
 {
@@ -2911,6 +2916,7 @@ int bdrv_load_vmstate(BlockDriverState *bs, uint8_t *buf,
 
     return ret < 0 ? ret : size;
 }
+#endif
 
 /**************************************************************/
 /* async I/Os */
@@ -3221,6 +3227,7 @@ out:
     return co.ret;
 }
 
+#if 0
 int coroutine_fn bdrv_co_zone_report(BlockDriverState *bs, int64_t offset,
                         unsigned int *nr_zones,
                         BlockZoneDescriptor *zones)
@@ -3288,6 +3295,7 @@ out:
     bdrv_dec_in_flight(bs);
     return co.ret;
 }
+#endif
 
 void *qemu_blockalign(BlockDriverState *bs, size_t size)
 {
@@ -3478,8 +3486,8 @@ int coroutine_fn bdrv_co_copy_range_from(BdrvChild *src, int64_t src_offset,
 {
     IO_CODE();
     assert_bdrv_graph_readable();
-    trace_bdrv_co_copy_range_from(src, src_offset, dst, dst_offset, bytes,
-                                  read_flags, write_flags);
+    //trace_bdrv_co_copy_range_from(src, src_offset, dst, dst_offset, bytes,
+    //                              read_flags, write_flags);
     return bdrv_co_copy_range_internal(src, src_offset, dst, dst_offset,
                                        bytes, read_flags, write_flags, true);
 }
@@ -3496,8 +3504,8 @@ int coroutine_fn bdrv_co_copy_range_to(BdrvChild *src, int64_t src_offset,
 {
     IO_CODE();
     assert_bdrv_graph_readable();
-    trace_bdrv_co_copy_range_to(src, src_offset, dst, dst_offset, bytes,
-                                read_flags, write_flags);
+    //trace_bdrv_co_copy_range_to(src, src_offset, dst, dst_offset, bytes,
+    //                            read_flags, write_flags);
     return bdrv_co_copy_range_internal(src, src_offset, dst, dst_offset,
                                        bytes, read_flags, write_flags, false);
 }
@@ -3679,6 +3687,7 @@ void bdrv_cancel_in_flight(BlockDriverState *bs)
     }
 }
 
+#if 0
 int coroutine_fn
 bdrv_co_preadv_snapshot(BdrvChild *child, int64_t offset, int64_t bytes,
                         QEMUIOVector *qiov, size_t qiov_offset)
@@ -3753,3 +3762,4 @@ bdrv_co_pdiscard_snapshot(BlockDriverState *bs, int64_t offset, int64_t bytes)
 
     return ret;
 }
+#endif

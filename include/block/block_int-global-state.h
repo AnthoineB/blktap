@@ -37,6 +37,7 @@
  * the GS API.
  */
 
+#if 0
 /**
  * stream_start:
  * @job_id: The id of the newly-created job, or %NULL to use the
@@ -72,6 +73,7 @@ void stream_start(const char *job_id, BlockDriverState *bs,
                   BlockdevOnError on_error,
                   const char *filter_node_name,
                   Error **errp);
+#endif
 
 /**
  * commit_start:
@@ -124,6 +126,7 @@ BlockJob *commit_active_start(const char *job_id, BlockDriverState *bs,
                               const char *filter_node_name,
                               BlockCompletionFunc *cb, void *opaque,
                               bool auto_complete, Error **errp);
+#if 0
 /*
  * mirror_start:
  * @job_id: The id of the newly-created job, or %NULL to use the
@@ -201,6 +204,7 @@ BlockJob *backup_job_create(const char *job_id, BlockDriverState *bs,
                             int creation_flags,
                             BlockCompletionFunc *cb, void *opaque,
                             JobTxn *txn, Error **errp);
+#endif
 
 BdrvChild * GRAPH_WRLOCK
 bdrv_root_attach_child(BlockDriverState *child_bs, const char *child_name,
@@ -247,18 +251,24 @@ void bdrv_default_perms(BlockDriverState *bs, BdrvChild *c,
                         uint64_t perm, uint64_t shared,
                         uint64_t *nperm, uint64_t *nshared);
 
+#if 0
 void blk_dev_change_media_cb(BlockBackend *blk, bool load, Error **errp);
+#endif
 bool blk_dev_has_removable_media(BlockBackend *blk);
+#if 0
 void blk_dev_eject_request(BlockBackend *blk, bool force);
+#endif
 bool blk_dev_is_medium_locked(BlockBackend *blk);
 
 void bdrv_restore_dirty_bitmap(BdrvDirtyBitmap *bitmap, HBitmap *backup);
 
+#if 0
 void bdrv_set_monitor_owned(BlockDriverState *bs);
 
 void blockdev_close_all_bdrv_states(void);
 
 BlockDriverState *bds_tree_init(QDict *bs_opts, Error **errp);
+#endif
 
 /**
  * Simple implementation of bdrv_co_create_opts for protocol drivers
@@ -270,6 +280,7 @@ int coroutine_fn bdrv_co_create_opts_simple(BlockDriver *drv,
                                             QemuOpts *opts,
                                             Error **errp);
 
+#if 0
 BdrvDirtyBitmap *block_dirty_bitmap_lookup(const char *node,
                                            const char *name,
                                            BlockDriverState **pbs,
@@ -281,6 +292,7 @@ BdrvDirtyBitmap *block_dirty_bitmap_remove(const char *node, const char *name,
                                            bool release,
                                            BlockDriverState **bitmap_bs,
                                            Error **errp);
+#endif
 
 
 BlockDriverState * GRAPH_RDLOCK

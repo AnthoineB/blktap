@@ -37,14 +37,14 @@
 #include "block/blockjob.h"
 #include "block/dirty-bitmap.h"
 #include "block/qdict.h"
-#include "block/throttle-groups.h"
-#include "monitor/monitor.h"
+//#include "block/throttle-groups.h"
+//#include "monitor/monitor.h"
 #include "qemu/error-report.h"
 #include "qemu/option.h"
 #include "qemu/qemu-print.h"
 #include "qemu/config-file.h"
 #include "qapi/qapi-commands-block.h"
-#include "qapi/qapi-commands-transaction.h"
+//#include "qapi/qapi-commands-transaction.h"
 #include "qapi/qapi-visit-block-core.h"
 #include "qapi/qmp/qdict.h"
 #include "qapi/qmp/qnum.h"
@@ -53,17 +53,18 @@
 #include "qapi/qmp/qerror.h"
 #include "qapi/qmp/qlist.h"
 #include "qapi/qobject-output-visitor.h"
-#include "sysemu/sysemu.h"
-#include "sysemu/iothread.h"
+//#include "sysemu/sysemu.h"
+//#include "sysemu/iothread.h"
 #include "block/block_int.h"
-#include "block/trace.h"
-#include "sysemu/runstate.h"
-#include "sysemu/replay.h"
+//#include "block/trace.h"
+//#include "sysemu/runstate.h"
+//#include "sysemu/replay.h"
 #include "qemu/cutils.h"
 #include "qemu/help_option.h"
 #include "qemu/main-loop.h"
-#include "qemu/throttle-options.h"
+//#include "qemu/throttle-options.h"
 
+#if 0
 /* Protected by BQL */
 QTAILQ_HEAD(, BlockDriverState) monitor_bdrv_states =
     QTAILQ_HEAD_INITIALIZER(monitor_bdrv_states);
@@ -1035,6 +1036,7 @@ fail:
     qobject_unref(bs_opts);
     return dinfo;
 }
+#endif
 
 static BlockDriverState *qmp_get_root_bs(const char *name, Error **errp)
 {
@@ -1060,6 +1062,7 @@ static BlockDriverState *qmp_get_root_bs(const char *name, Error **errp)
     return bs;
 }
 
+#if 0
 static void blockdev_do_action(TransactionAction *action, Error **errp)
 {
     TransactionActionList list;
@@ -2422,6 +2425,7 @@ void qmp_block_stream(const char *job_id, const char *device,
 out_rdlock:
     bdrv_graph_rdunlock_main_loop();
 }
+#endif
 
 void qmp_block_commit(const char *job_id, const char *device,
                       const char *base_node,
@@ -2614,6 +2618,7 @@ void qmp_block_commit(const char *job_id, const char *device,
     }
 }
 
+#if 0
 /* Common QMP interface for drive-backup and blockdev-backup */
 static BlockJob *do_backup_common(BackupCommon *backup,
                                   BlockDriverState *bs,
@@ -3510,6 +3515,7 @@ void qmp_x_blockdev_change(const char *parent, const char *child,
 out:
     bdrv_graph_wrunlock();
 }
+#endif
 
 BlockJobInfoList *qmp_query_block_jobs(Error **errp)
 {
@@ -3536,6 +3542,7 @@ BlockJobInfoList *qmp_query_block_jobs(Error **errp)
     return head;
 }
 
+#if 0
 void qmp_x_blockdev_set_iothread(const char *node_name, StrOrNull *iothread,
                                  bool has_force, bool force, Error **errp)
 {
@@ -3647,3 +3654,4 @@ QemuOptsList qemu_drive_opts = {
         { /* end of list */ }
     },
 };
+#endif

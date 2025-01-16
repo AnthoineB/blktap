@@ -14,9 +14,9 @@
 #define QAPI_COMMANDS_BLOCK_CORE_H
 
 #include "qapi-commands-common.h"
-#include "qapi-commands-crypto.h"
-#include "qapi-commands-job.h"
-#include "qapi-commands-sockets.h"
+//#include "qapi-commands-crypto.h"
+//#include "qapi-commands-job.h"
+//#include "qapi-commands-sockets.h"
 #include "qapi-types-block-core.h"
 
 BlockInfoList *qmp_query_block(Error **errp);

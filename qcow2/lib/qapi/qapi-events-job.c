@@ -12,8 +12,8 @@
 
 #include "qemu/osdep.h"
 #include "qapi-emit-events.h"
-#include "qapi-events-job.h"
-#include "qapi-visit-job.h"
+#include "qapi/qapi-events-job.h"
+#include "qapi/qapi-visit-job.h"
 #include "qapi/compat-policy.h"
 #include "qapi/error.h"
 #include "qapi/qmp/qdict.h"
@@ -43,7 +43,7 @@ void qapi_event_send_job_status_change(const char *id, JobStatus status)
     } else {
         qobject_unref(obj);
     }
-    qapi_event_emit(QAPI_EVENT_JOB_STATUS_CHANGE, qmp);
+    //qapi_event_emit(QAPI_EVENT_JOB_STATUS_CHANGE, qmp);
 
     visit_free(v);
     qobject_unref(qmp);

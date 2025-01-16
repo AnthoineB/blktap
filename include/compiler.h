@@ -32,8 +32,10 @@
 #define _BLKTAP_COMPILER_H
 
 #ifdef __GNUC__
+#ifndef likely
 #define likely(_cond)           __builtin_expect(!!(_cond), 1)
 #define unlikely(_cond)         __builtin_expect(!!(_cond), 0)
+#endif
 #endif
 
 #ifndef likely

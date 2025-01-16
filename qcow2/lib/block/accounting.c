@@ -27,7 +27,8 @@
 #include "block/accounting.h"
 #include "block/block_int.h"
 #include "qemu/timer.h"
-#include "sysemu/qtest.h"
+//#include "sysemu/qtest.h"
+#define qtest_enabled() 0
 
 static QEMUClockType clock_type = QEMU_CLOCK_REALTIME;
 static const int qtest_latency_ns = NANOSECONDS_PER_SECOND / 1000;

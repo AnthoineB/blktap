@@ -125,6 +125,7 @@ typedef struct BlockZoneDescriptor {
     BlockZoneState state;
 } BlockZoneDescriptor;
 
+#if 0
 /*
  * Track write pointers of a zone in bytes.
  */
@@ -132,6 +133,7 @@ typedef struct BlockZoneWps {
     CoMutex colock;
     uint64_t wp[];
 } BlockZoneWps;
+#endif
 
 typedef struct BlockDriverInfo {
     /* in bytes, 0 if irrelevant */
@@ -546,7 +548,7 @@ typedef struct HDGeometry {
  */
 
 char *bdrv_perm_names(uint64_t perm);
-uint64_t bdrv_qapi_perm_to_blk_perm(BlockPermission qapi_perm);
+//uint64_t bdrv_qapi_perm_to_blk_perm(BlockPermission qapi_perm);
 
 void bdrv_init_with_whitelist(void);
 bool bdrv_uses_whitelist(void);

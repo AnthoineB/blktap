@@ -637,7 +637,7 @@ QemuOpts *qemu_opts_create(QemuOptsList *list, const char *id,
     opts = g_malloc0(sizeof(*opts));
     opts->id = g_strdup(id);
     opts->list = list;
-    loc_save(&opts->loc);
+    //loc_save(&opts->loc);
     QTAILQ_INIT(&opts->head);
     QTAILQ_INSERT_TAIL(&list->head, opts, next);
     return opts;
@@ -654,7 +654,7 @@ void qemu_opts_reset(QemuOptsList *list)
 
 void qemu_opts_loc_restore(QemuOpts *opts)
 {
-    loc_restore(&opts->loc);
+    //loc_restore(&opts->loc);
 }
 
 const char *qemu_opts_id(QemuOpts *opts)
@@ -1125,20 +1125,20 @@ bool qemu_opts_validate(QemuOpts *opts, const QemuOptDesc *desc, Error **errp)
 int qemu_opts_foreach(QemuOptsList *list, qemu_opts_loopfunc func,
                       void *opaque, Error **errp)
 {
-    Location loc;
+    //Location loc;
     QemuOpts *opts, *next;
     int rc = 0;
 
-    loc_push_none(&loc);
+    //loc_push_none(&loc);
     QTAILQ_FOREACH_SAFE(opts, &list->head, next, next) {
-        loc_restore(&opts->loc);
+        //loc_restore(&opts->loc);
         rc = func(opaque, opts, errp);
         if (rc) {
             break;
         }
         assert(!errp || !*errp);
     }
-    loc_pop(&loc);
+    //loc_pop(&loc);
     return rc;
 }
 

@@ -14,10 +14,10 @@
 #define QAPI_TYPES_BLOCK_CORE_H
 
 #include "qapi/qapi-builtin-types.h"
-#include "qapi-types-common.h"
-#include "qapi-types-crypto.h"
+#include "qapi/qapi-types-common.h"
+//#include "qapi-types-crypto.h"
 #include "qapi-types-job.h"
-#include "qapi-types-sockets.h"
+//#include "qapi-types-sockets.h"
 
 typedef struct SnapshotInfo SnapshotInfo;
 
@@ -41,9 +41,11 @@ typedef struct ImageInfoSpecificFile ImageInfoSpecificFile;
 
 typedef enum ImageInfoSpecificKind {
     IMAGE_INFO_SPECIFIC_KIND_QCOW2,
+#if 0
     IMAGE_INFO_SPECIFIC_KIND_VMDK,
     IMAGE_INFO_SPECIFIC_KIND_LUKS,
     IMAGE_INFO_SPECIFIC_KIND_RBD,
+#endif
     IMAGE_INFO_SPECIFIC_KIND_FILE,
     IMAGE_INFO_SPECIFIC_KIND__MAX,
 } ImageInfoSpecificKind;
@@ -1007,6 +1009,7 @@ struct SnapshotInfo {
 void qapi_free_SnapshotInfo(SnapshotInfo *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(SnapshotInfo, qapi_free_SnapshotInfo)
 
+#if 0
 struct ImageInfoSpecificQCow2EncryptionBase {
     BlockdevQcow2EncryptionFormat format;
 };
@@ -1030,6 +1033,7 @@ static inline ImageInfoSpecificQCow2EncryptionBase *qapi_ImageInfoSpecificQCow2E
 
 void qapi_free_ImageInfoSpecificQCow2Encryption(ImageInfoSpecificQCow2Encryption *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(ImageInfoSpecificQCow2Encryption, qapi_free_ImageInfoSpecificQCow2Encryption)
+#endif
 
 struct Qcow2BitmapInfoList {
     Qcow2BitmapInfoList *next;
@@ -1114,6 +1118,7 @@ struct ImageInfoSpecificQCow2Wrapper {
 void qapi_free_ImageInfoSpecificQCow2Wrapper(ImageInfoSpecificQCow2Wrapper *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(ImageInfoSpecificQCow2Wrapper, qapi_free_ImageInfoSpecificQCow2Wrapper)
 
+#if 0
 struct ImageInfoSpecificVmdkWrapper {
     ImageInfoSpecificVmdk *data;
 };
@@ -1134,6 +1139,7 @@ struct ImageInfoSpecificRbdWrapper {
 
 void qapi_free_ImageInfoSpecificRbdWrapper(ImageInfoSpecificRbdWrapper *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(ImageInfoSpecificRbdWrapper, qapi_free_ImageInfoSpecificRbdWrapper)
+#endif
 
 struct ImageInfoSpecificFileWrapper {
     ImageInfoSpecificFile *data;
@@ -1150,9 +1156,11 @@ struct ImageInfoSpecific {
     ImageInfoSpecificKind type;
     union { /* union tag is @type */
         ImageInfoSpecificQCow2Wrapper qcow2;
+#if 0
         ImageInfoSpecificVmdkWrapper vmdk;
         ImageInfoSpecificLUKSWrapper luks;
         ImageInfoSpecificRbdWrapper rbd;
+#endif
         ImageInfoSpecificFileWrapper file;
     } u;
 };
@@ -2186,6 +2194,7 @@ struct BlockJobChangeOptionsMirror {
 void qapi_free_BlockJobChangeOptionsMirror(BlockJobChangeOptionsMirror *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockJobChangeOptionsMirror, qapi_free_BlockJobChangeOptionsMirror)
 
+#if 0
 struct q_obj_BlockJobChangeOptions_base {
     char *id;
     JobType type;
@@ -2201,6 +2210,7 @@ struct BlockJobChangeOptions {
 
 void qapi_free_BlockJobChangeOptions(BlockJobChangeOptions *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockJobChangeOptions, qapi_free_BlockJobChangeOptions)
+#endif
 
 struct BlockdevCacheOptions {
     bool has_direct;
@@ -2341,6 +2351,7 @@ struct Qcow2OverlapChecks {
 void qapi_free_Qcow2OverlapChecks(Qcow2OverlapChecks *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(Qcow2OverlapChecks, qapi_free_Qcow2OverlapChecks)
 
+#if 0
 struct q_obj_BlockdevQcowEncryption_base {
     BlockdevQcowEncryptionFormat format;
 };
@@ -2385,6 +2396,7 @@ struct BlockdevQcow2Encryption {
 
 void qapi_free_BlockdevQcow2Encryption(BlockdevQcow2Encryption *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevQcow2Encryption, qapi_free_BlockdevQcow2Encryption)
+#endif
 
 struct BlockdevOptionsPreallocate {
     /* Members inherited from BlockdevOptionsGenericFormat: */
@@ -2442,6 +2454,7 @@ static inline BlockdevOptionsGenericCOWFormat *qapi_BlockdevOptionsQcow2_base(co
 void qapi_free_BlockdevOptionsQcow2(BlockdevOptionsQcow2 *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevOptionsQcow2, qapi_free_BlockdevOptionsQcow2)
 
+#if 0
 struct SshHostKeyHash {
     SshHostKeyCheckHashType type;
     char *hash;
@@ -2575,6 +2588,7 @@ struct BlockdevOptionsBlkreplay {
 
 void qapi_free_BlockdevOptionsBlkreplay(BlockdevOptionsBlkreplay *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevOptionsBlkreplay, qapi_free_BlockdevOptionsBlkreplay)
+#endif
 
 struct BlockdevRefList {
     BlockdevRefList *next;
@@ -2598,6 +2612,7 @@ struct BlockdevOptionsQuorum {
 void qapi_free_BlockdevOptionsQuorum(BlockdevOptionsQuorum *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevOptionsQuorum, qapi_free_BlockdevOptionsQuorum)
 
+#if 0
 struct BlockdevOptionsGluster {
     char *volume;
     char *path;
@@ -2609,6 +2624,7 @@ struct BlockdevOptionsGluster {
 
 void qapi_free_BlockdevOptionsGluster(BlockdevOptionsGluster *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevOptionsGluster, qapi_free_BlockdevOptionsGluster)
+#endif
 
 #if defined(CONFIG_BLKIO)
 struct BlockdevOptionsIoUring {
@@ -2683,6 +2699,7 @@ struct BlockdevOptionsIscsi {
 void qapi_free_BlockdevOptionsIscsi(BlockdevOptionsIscsi *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevOptionsIscsi, qapi_free_BlockdevOptionsIscsi)
 
+#if 0
 struct RbdEncryptionOptionsLUKSBase {
     char *key_secret;
 };
@@ -2848,6 +2865,7 @@ struct BlockdevOptionsReplication {
     char *top_id;
 };
 #endif /* defined(CONFIG_REPLICATION) */
+#endif
 
 #if defined(CONFIG_REPLICATION)
 static inline BlockdevOptionsGenericFormat *qapi_BlockdevOptionsReplication_base(const BlockdevOptionsReplication *obj)
@@ -2998,6 +3016,7 @@ static inline BlockdevOptionsCurlBase *qapi_BlockdevOptionsCurlFtps_base(const B
 void qapi_free_BlockdevOptionsCurlFtps(BlockdevOptionsCurlFtps *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevOptionsCurlFtps, qapi_free_BlockdevOptionsCurlFtps)
 
+#if 0
 struct BlockdevOptionsNbd {
     SocketAddress *server;
     char *export;
@@ -3012,6 +3031,7 @@ struct BlockdevOptionsNbd {
 
 void qapi_free_BlockdevOptionsNbd(BlockdevOptionsNbd *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevOptionsNbd, qapi_free_BlockdevOptionsNbd)
+#endif
 
 struct BlockdevOptionsRaw {
     /* Members inherited from BlockdevOptionsGenericFormat: */
@@ -3105,26 +3125,31 @@ struct BlockdevOptions {
     bool has_detect_zeroes;
     BlockdevDetectZeroesOptions detect_zeroes;
     union { /* union tag is @driver */
-        BlockdevOptionsBlkdebug blkdebug;
-        BlockdevOptionsBlklogwrites blklogwrites;
-        BlockdevOptionsBlkverify blkverify;
-        BlockdevOptionsBlkreplay blkreplay;
-        BlockdevOptionsGenericFormat bochs;
-        BlockdevOptionsGenericFormat cloop;
-        BlockdevOptionsGenericFormat compress;
-        BlockdevOptionsCbw copy_before_write;
-        BlockdevOptionsCor copy_on_read;
-        BlockdevOptionsGenericFormat dmg;
+#if 0
+        //BlockdevOptionsBlkdebug blkdebug;
+        //BlockdevOptionsBlklogwrites blklogwrites;
+        //BlockdevOptionsBlkverify blkverify;
+        //BlockdevOptionsBlkreplay blkreplay;
+        //BlockdevOptionsGenericFormat bochs;
+        //BlockdevOptionsGenericFormat cloop;
+        //BlockdevOptionsGenericFormat compress;
+        //BlockdevOptionsCbw copy_before_write;
+        //BlockdevOptionsCor copy_on_read;
+        //BlockdevOptionsGenericFormat dmg;
+#endif
         BlockdevOptionsFile file;
-        BlockdevOptionsCurlFtp ftp;
-        BlockdevOptionsCurlFtps ftps;
-        BlockdevOptionsGluster gluster;
+#if 0
+        //BlockdevOptionsCurlFtp ftp;
+        //BlockdevOptionsCurlFtps ftps;
+        //BlockdevOptionsGluster gluster;
+#endif
 #if defined(HAVE_HOST_BLOCK_DEVICE)
         BlockdevOptionsFile host_cdrom;
 #endif /* defined(HAVE_HOST_BLOCK_DEVICE) */
 #if defined(HAVE_HOST_BLOCK_DEVICE)
         BlockdevOptionsFile host_device;
 #endif /* defined(HAVE_HOST_BLOCK_DEVICE) */
+#if 0
         BlockdevOptionsCurlHttp http;
         BlockdevOptionsCurlHttps https;
 #if defined(CONFIG_BLKIO)
@@ -3141,8 +3166,10 @@ struct BlockdevOptions {
         BlockdevOptionsNvmeIoUring nvme_io_uring;
 #endif /* defined(CONFIG_BLKIO) */
         BlockdevOptionsGenericFormat parallels;
+#endif
         BlockdevOptionsPreallocate preallocate;
         BlockdevOptionsQcow2 qcow2;
+#if 0
         BlockdevOptionsQcow qcow;
         BlockdevOptionsGenericCOWFormat qed;
         BlockdevOptionsQuorum quorum;
@@ -3168,6 +3195,7 @@ struct BlockdevOptions {
         BlockdevOptionsGenericCOWFormat vmdk;
         BlockdevOptionsGenericFormat vpc;
         BlockdevOptionsVVFAT vvfat;
+#endif
     } u;
 };
 
@@ -3227,6 +3255,7 @@ struct BlockdevCreateOptionsFile {
 void qapi_free_BlockdevCreateOptionsFile(BlockdevCreateOptionsFile *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevCreateOptionsFile, qapi_free_BlockdevCreateOptionsFile)
 
+#if 0
 struct BlockdevCreateOptionsGluster {
     BlockdevOptionsGluster *location;
     uint64_t size;
@@ -3295,6 +3324,7 @@ struct BlockdevCreateOptionsQcow {
 
 void qapi_free_BlockdevCreateOptionsQcow(BlockdevCreateOptionsQcow *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevCreateOptionsQcow, qapi_free_BlockdevCreateOptionsQcow)
+#endif
 
 struct BlockdevCreateOptionsQcow2 {
     BlockdevRef *file;
@@ -3309,7 +3339,7 @@ struct BlockdevCreateOptionsQcow2 {
     char *backing_file;
     bool has_backing_fmt;
     BlockdevDriver backing_fmt;
-    QCryptoBlockCreateOptions *encrypt;
+    //QCryptoBlockCreateOptions *encrypt;
     bool has_cluster_size;
     uint64_t cluster_size;
     bool has_preallocation;
@@ -3424,12 +3454,15 @@ struct BlockdevCreateOptions {
     BlockdevDriver driver;
     union { /* union tag is @driver */
         BlockdevCreateOptionsFile file;
+#if 0
         BlockdevCreateOptionsGluster gluster;
         BlockdevCreateOptionsLUKS luks;
         BlockdevCreateOptionsNfs nfs;
         BlockdevCreateOptionsParallels parallels;
         BlockdevCreateOptionsQcow qcow;
+#endif
         BlockdevCreateOptionsQcow2 qcow2;
+#if 0
         BlockdevCreateOptionsQed qed;
         BlockdevCreateOptionsRbd rbd;
         BlockdevCreateOptionsSsh ssh;
@@ -3437,6 +3470,7 @@ struct BlockdevCreateOptions {
         BlockdevCreateOptionsVhdx vhdx;
         BlockdevCreateOptionsVmdk vmdk;
         BlockdevCreateOptionsVpc vpc;
+#endif
     } u;
 };
 
@@ -3448,6 +3482,7 @@ struct q_obj_blockdev_create_arg {
     BlockdevCreateOptions *options;
 };
 
+#if 0
 struct BlockdevAmendOptionsLUKS {
     /* Members inherited from QCryptoBlockAmendOptionsLUKS: */
     QCryptoBlockLUKSKeyslotState state;
@@ -3468,9 +3503,10 @@ static inline QCryptoBlockAmendOptionsLUKS *qapi_BlockdevAmendOptionsLUKS_base(c
 
 void qapi_free_BlockdevAmendOptionsLUKS(BlockdevAmendOptionsLUKS *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevAmendOptionsLUKS, qapi_free_BlockdevAmendOptionsLUKS)
+#endif
 
 struct BlockdevAmendOptionsQcow2 {
-    QCryptoBlockAmendOptions *encrypt;
+    //QCryptoBlockAmendOptions *encrypt;
 };
 
 void qapi_free_BlockdevAmendOptionsQcow2(BlockdevAmendOptionsQcow2 *obj);
@@ -3483,7 +3519,7 @@ struct q_obj_BlockdevAmendOptions_base {
 struct BlockdevAmendOptions {
     BlockdevDriver driver;
     union { /* union tag is @driver */
-        BlockdevAmendOptionsLUKS luks;
+        //BlockdevAmendOptionsLUKS luks;
         BlockdevAmendOptionsQcow2 qcow2;
     } u;
 };
@@ -3573,12 +3609,14 @@ struct q_obj_x_blockdev_change_arg {
     char *node;
 };
 
+#if 0
 struct q_obj_x_blockdev_set_iothread_arg {
     char *node_name;
     StrOrNull *iothread;
     bool has_force;
     bool force;
 };
+#endif
 
 struct q_obj_QUORUM_FAILURE_arg {
     char *reference;

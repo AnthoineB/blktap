@@ -28,7 +28,7 @@
 #include "qapi/qmp/qnum.h"
 #include "qapi/qmp/qstring.h"
 #include "qemu/cutils.h"
-#include "qemu/keyval.h"
+//#include "qemu/keyval.h"
 
 typedef struct StackObject {
     const char *name;            /* Name of @obj in its parent, if any */
@@ -746,6 +746,7 @@ Visitor *qobject_input_visitor_new_keyval(QObject *obj)
     return &v->visitor;
 }
 
+#if 0
 Visitor *qobject_input_visitor_new_str(const char *str,
                                        const char *implied_key,
                                        Error **errp)
@@ -774,3 +775,4 @@ Visitor *qobject_input_visitor_new_str(const char *str,
 
     return v;
 }
+#endif

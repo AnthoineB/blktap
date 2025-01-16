@@ -14,7 +14,7 @@
 
 #include "qemu/osdep.h"
 #include "qemu/cutils.h"
-#include "trace.h"
+//#include "trace.h"
 #include "block/block_int.h"
 #include "block/blockjob_int.h"
 #include "qapi/error.h"
@@ -170,7 +170,7 @@ static int coroutine_fn commit_run(Job *job, Error **errp)
         ret = blk_co_is_allocated_above(s->top, s->base_overlay, true,
                                         offset, COMMIT_BUFFER_SIZE, &n);
         copy = (ret > 0);
-        trace_commit_one_iteration(s, offset, n, ret);
+        //trace_commit_one_iteration(s, offset, n, ret);
         if (copy) {
             assert(n < SIZE_MAX);
 
@@ -414,7 +414,7 @@ void commit_start(const char *job_id, BlockDriverState *bs,
     s->backing_mask_protocol = backing_mask_protocol;
     s->on_error = on_error;
 
-    trace_commit_start(bs, base, top, s);
+    //trace_commit_start(bs, base, top, s);
     job_start(&s->common.job);
     return;
 

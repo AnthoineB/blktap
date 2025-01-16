@@ -23,11 +23,15 @@
 #include "qemu/thread.h"
 #include "qemu/timer.h"
 #include "block/graph-lock.h"
-#include "hw/qdev-core.h"
+//#include "hw/qdev-core.h"
 
+typedef struct {
+        bool engaged_in_io;
+} MemReentrancyGuard;
 
 typedef struct BlockAIOCB BlockAIOCB;
 typedef void BlockCompletionFunc(void *opaque, int ret);
+typedef struct AioContext AioContext;
 
 typedef struct AIOCBInfo {
     void (*cancel_async)(BlockAIOCB *acb);
@@ -294,6 +298,7 @@ void aio_bh_schedule_oneshot_full(AioContext *ctx, QEMUBHFunc *cb, void *opaque,
  * A convenience wrapper for aio_bh_schedule_oneshot_full() that uses cb as the
  * name string.
  */
+#define replay_bh_schedule_oneshot_event(ctx, bh, acb) aio_bh_schedule_oneshot(ctx, bh, acb)
 #define aio_bh_schedule_oneshot(ctx, cb, opaque) \
     aio_bh_schedule_oneshot_full((ctx), (cb), (opaque), (stringify(cb)))
 
@@ -691,6 +696,7 @@ void aio_context_destroy(AioContext *ctx);
 /* Used internally, do not call outside AioContext code */
 void aio_context_use_g_source(AioContext *ctx);
 
+#if 0
 /**
  * aio_context_set_poll_params:
  * @ctx: the aio context
@@ -720,4 +726,5 @@ void aio_context_set_aio_params(AioContext *ctx, int64_t max_batch);
  */
 void aio_context_set_thread_pool_params(AioContext *ctx, int64_t min,
                                         int64_t max, Error **errp);
+#endif
 #endif

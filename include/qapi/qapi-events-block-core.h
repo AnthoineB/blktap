@@ -14,9 +14,9 @@
 #define QAPI_EVENTS_BLOCK_CORE_H
 
 #include "qapi-events-common.h"
-#include "qapi-events-crypto.h"
+//#include "qapi-events-crypto.h"
 #include "qapi-events-job.h"
-#include "qapi-events-sockets.h"
+//#include "qapi-events-sockets.h"
 #include "qapi/util.h"
 #include "qapi-types-block-core.h"
 

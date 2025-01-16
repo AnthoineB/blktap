@@ -61,10 +61,11 @@
 #include "qemu/qemu-print.h"
 #include "qemu/thread.h"
 #include "qemu/timer.h"
-#include "qemu/qht.h"
+//#include "qemu/qht.h"
 #include "qemu/rcu.h"
-#include "qemu/xxhash.h"
+//#include "qemu/xxhash.h"
 
+#if 0
 enum QSPType {
     QSP_MUTEX,
     QSP_BQL_MUTEX,
@@ -124,15 +125,19 @@ static const char * const qsp_typenames[] = {
     [QSP_CONDVAR]   = "condvar",
 };
 
+#endif
 QemuMutexLockFunc bql_mutex_lock_func = qemu_mutex_lock_impl;
 QemuMutexLockFunc qemu_mutex_lock_func = qemu_mutex_lock_impl;
+#if 0
 QemuMutexTrylockFunc qemu_mutex_trylock_func = qemu_mutex_trylock_impl;
 QemuRecMutexLockFunc qemu_rec_mutex_lock_func = qemu_rec_mutex_lock_impl;
 QemuRecMutexTrylockFunc qemu_rec_mutex_trylock_func =
     qemu_rec_mutex_trylock_impl;
+#endif
 QemuCondWaitFunc qemu_cond_wait_func = qemu_cond_wait_impl;
 QemuCondTimedWaitFunc qemu_cond_timedwait_func = qemu_cond_timedwait_impl;
 
+#if 0
 /*
  * It pays off to _not_ hash callsite->file; hashing a string is slow, and
  * without it we still get a pretty unique hash.
@@ -811,3 +816,4 @@ void qsp_reset(void)
         call_rcu(old, qsp_snapshot_destroy, rcu);
     }
 }
+#endif

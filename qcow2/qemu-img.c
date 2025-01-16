@@ -25,9 +25,9 @@
 #include "qemu/osdep.h"
 #include <getopt.h>
 
-#include "qemu/help-texts.h"
+//#include "qemu/help-texts.h"
 #include "qemu/qemu-progress.h"
-#include "qemu-version.h"
+//#include "qemu-version.h"
 #include "qapi/error.h"
 #include "qapi/qapi-commands-block-core.h"
 #include "qapi/qapi-visit-block-core.h"
@@ -38,25 +38,24 @@
 #include "qemu/config-file.h"
 #include "qemu/option.h"
 #include "qemu/error-report.h"
-#include "qemu/log.h"
+//#include "qemu/log.h"
 #include "qemu/main-loop.h"
 #include "qemu/module.h"
-#include "qemu/sockets.h"
+//#include "qemu/sockets.h"
 #include "qemu/units.h"
 #include "qemu/memalign.h"
-#include "qom/object_interfaces.h"
+//#include "qom/object_interfaces.h"
 #include "sysemu/block-backend.h"
 #include "block/block_int.h"
 #include "block/blockjob.h"
 #include "block/dirty-bitmap.h"
 #include "block/qapi.h"
-#include "crypto/init.h"
-#include "trace/control.h"
-#include "qemu/throttle.h"
-#include "block/throttle-groups.h"
+//#include "crypto/init.h"
+//#include "trace/control.h"
+//#include "qemu/throttle.h"
+//#include "block/throttle-groups.h"
 
-#define QEMU_IMG_VERSION "qemu-img version " QEMU_FULL_VERSION \
-                          "\n" QEMU_COPYRIGHT "\n"
+#define QEMU_IMG_VERSION "qemu-img version 9.1.1"
 
 typedef struct img_cmd_t {
     const char *name;
@@ -230,7 +229,7 @@ void help(void)
 
     printf("%s\nSupported formats:", help_msg);
     bdrv_iterate_format(format_print, NULL, false);
-    printf("\n\n" QEMU_HELP_BOTTOM "\n");
+    //printf("\n\n" QEMU_HELP_BOTTOM "\n");
     exit(EXIT_SUCCESS);
 }
 
@@ -563,7 +562,7 @@ static int img_create(int argc, char **argv)
             flags |= BDRV_O_NO_BACKING;
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         }
     }
@@ -790,7 +789,7 @@ static int img_check(int argc, char **argv)
             force_share = true;
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -930,6 +929,8 @@ static void run_block_job(BlockJob *job, Error **errp)
             progress = (float)progress_current / progress_total * 100.f;
         }
         qemu_progress_print(progress, 0);
+        printf("(%ld/%ld)\r", progress_current, progress_total);
+        fflush(stdout);
         job_lock();
     } while (!job_is_ready_locked(&job->job) &&
              !job_is_completed_locked(&job->job));
@@ -1014,7 +1015,7 @@ static int img_commit(int argc, char **argv)
             }
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -1124,6 +1125,7 @@ unref_backing:
 
 done:
     qemu_progress_end();
+    printf("\n");
 
     /*
      * Manually inactivate the image first because this way we can know whether
@@ -1423,6 +1425,7 @@ static int img_compare(int argc, char **argv)
             break;
         case OPTION_OBJECT:
             {
+#if 0
                 Error *local_err = NULL;
 
                 if (!user_creatable_add_from_str(optarg, &local_err)) {
@@ -1434,6 +1437,7 @@ static int img_compare(int argc, char **argv)
                         exit(EXIT_SUCCESS);
                     }
                 }
+#endif
                 break;
             }
         case OPTION_IMAGE_OPTS:
@@ -2222,6 +2226,7 @@ static int convert_copy_bitmaps(BlockDriverState *src, BlockDriverState *dst,
 
 static void set_rate_limit(BlockBackend *blk, int64_t rate_limit)
 {
+#if 0
     ThrottleConfig cfg;
 
     throttle_config_init(&cfg);
@@ -2229,6 +2234,7 @@ static void set_rate_limit(BlockBackend *blk, int64_t rate_limit)
 
     blk_io_limits_enable(blk, CONVERT_THROTTLE_GROUP);
     blk_set_io_limits(blk, &cfg);
+#endif
 }
 
 static int img_convert(int argc, char **argv)
@@ -2384,7 +2390,7 @@ static int img_convert(int argc, char **argv)
             }
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -3051,7 +3057,7 @@ static int img_info(int argc, char **argv)
             chain = true;
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -3291,7 +3297,7 @@ static int img_map(int argc, char **argv)
             }
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -3451,7 +3457,7 @@ static int img_snapshot(int argc, char **argv)
             force_share = true;
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -3608,7 +3614,7 @@ static int img_rebase(int argc, char **argv)
             quiet = true;
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -4093,7 +4099,7 @@ static int img_resize(int argc, char **argv)
             quiet = true;
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -4297,7 +4303,7 @@ static int img_amend(int argc, char **argv)
             quiet = true;
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -4870,7 +4876,7 @@ static int img_bitmap(int argc, char **argv)
             merge = true;
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -5145,7 +5151,7 @@ static int img_dd(int argc, char **argv)
             force_share = true;
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -5405,7 +5411,7 @@ static int img_measure(int argc, char **argv)
             force_share = true;
             break;
         case OPTION_OBJECT:
-            user_creatable_process_cmdline(optarg);
+            //user_creatable_process_cmdline(optarg);
             break;
         case OPTION_IMAGE_OPTS:
             image_opts = true;
@@ -5555,14 +5561,16 @@ int main(int argc, char **argv)
     signal(SIGPIPE, SIG_IGN);
 #endif
 
-    socket_init();
+    //socket_init();
     error_init(argv[0]);
     module_call_init(MODULE_INIT_TRACE);
     qemu_init_exec_dir(argv[0]);
 
     qemu_init_main_loop(&error_fatal);
+    qemu_init_cpu_loop();
+    bql_lock();
 
-    qcrypto_init(&error_fatal);
+    //qcrypto_init(&error_fatal);
 
     module_call_init(MODULE_INIT_QOM);
     bdrv_init();
@@ -5571,7 +5579,7 @@ int main(int argc, char **argv)
     }
 
     qemu_add_opts(&qemu_source_opts);
-    qemu_add_opts(&qemu_trace_opts);
+    //qemu_add_opts(&qemu_trace_opts);
 
     while ((c = getopt_long(argc, argv, "+:hVT:", long_options, NULL)) != -1) {
         switch (c) {
@@ -5588,7 +5596,7 @@ int main(int argc, char **argv)
             printf(QEMU_IMG_VERSION);
             return 0;
         case 'T':
-            trace_opt_parse(optarg);
+            //trace_opt_parse(optarg);
             break;
         }
     }
@@ -5603,11 +5611,11 @@ int main(int argc, char **argv)
     argv += optind;
     qemu_reset_optind();
 
-    if (!trace_init_backends()) {
-        exit(1);
-    }
-    trace_init_file();
-    qemu_set_log(LOG_TRACE, &error_fatal);
+    //if (!trace_init_backends()) {
+    //    exit(1);
+    //}
+    //trace_init_file();
+    //qemu_set_log(LOG_TRACE, &error_fatal);
 
     /* find the command */
     for (cmd = img_cmds; cmd->name != NULL; cmd++) {

@@ -26,11 +26,12 @@
 #define QEMU_MAIN_LOOP_H
 
 #include "block/aio.h"
-#include "qom/object.h"
-#include "sysemu/event-loop-base.h"
+//#include "qom/object.h"
+//#include "sysemu/event-loop-base.h"
 
 #define SIG_IPI SIGUSR1
 
+#if 0
 #define TYPE_MAIN_LOOP  "main-loop"
 OBJECT_DECLARE_TYPE(MainLoop, MainLoopClass, MAIN_LOOP)
 
@@ -38,6 +39,9 @@ struct MainLoop {
     EventLoopBase parent_obj;
 };
 typedef struct MainLoop MainLoop;
+#endif
+
+void qemu_init_cpu_loop(void);
 
 /**
  * qemu_init_main_loop: Set up the process so that it can run the main loop.
@@ -110,6 +114,7 @@ AioContext *qemu_get_aio_context(void);
  */
 void qemu_notify_event(void);
 
+#if 0
 #ifdef _WIN32
 /* return TRUE if no sleep should be done afterwards */
 typedef int PollingFunc(void *opaque);
@@ -195,6 +200,7 @@ typedef void IOReadHandler(void *opaque, const uint8_t *buf, int size);
  * the event loop.
  */
 typedef int IOCanReadHandler(void *opaque);
+#endif
 
 /**
  * qemu_set_fd_handler: Register a file descriptor with the main loop
@@ -342,6 +348,7 @@ void bql_lock_impl(const char *file, int line);
  */
 void bql_unlock(void);
 
+#if 0
 /**
  * BQL_LOCK_GUARD
  *
@@ -369,6 +376,7 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(BQLLockAuto, bql_auto_unlock)
 #define BQL_LOCK_GUARD() \
     g_autoptr(BQLLockAuto) _bql_lock_auto __attribute__((unused)) \
         = bql_auto_lock(__FILE__, __LINE__)
+#endif
 
 /*
  * qemu_cond_wait_bql: Wait on condition for the Big QEMU Lock (BQL)

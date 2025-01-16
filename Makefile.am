@@ -5,6 +5,7 @@
 
 SUBDIRS  = lvm
 SUBDIRS += vhd
+SUBDIRS += qcow2
 SUBDIRS += cpumond
 SUBDIRS += control
 SUBDIRS += drivers

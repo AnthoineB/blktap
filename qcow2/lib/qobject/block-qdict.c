@@ -586,6 +586,7 @@ static QObject *qdict_crumple_for_keyval_qiv(QDict *src, Error **errp)
     return dst;
 }
 
+#if 0
 /**
  * qdict_array_entries(): Returns the number of direct array entries if the
  * sub-QDict of src specified by the prefix in subqdict (or src itself for
@@ -647,6 +648,7 @@ int qdict_array_entries(QDict *src, const char *subqdict)
 
     return i;
 }
+#endif
 
 /**
  * qdict_join(): Absorb the src QDict into the dest QDict, that is, move all

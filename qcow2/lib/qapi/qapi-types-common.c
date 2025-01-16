@@ -12,8 +12,8 @@
 
 #include "qemu/osdep.h"
 #include "qapi/dealloc-visitor.h"
-#include "qapi-types-common.h"
-#include "qapi-visit-common.h"
+#include "qapi/qapi-types-common.h"
+#include "qapi/qapi-visit-common.h"
 
 const QEnumLookup IoOperationType_lookup = {
     .array = (const char *const[]) {

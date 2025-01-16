@@ -18,7 +18,7 @@
 #include "qapi/qmp/qerror.h"
 #include "qapi/visitor.h"
 #include "qapi/visitor-impl.h"
-#include "trace.h"
+//#include "trace.h"
 
 /* Zero-initialization must result in default policy */
 QEMU_BUILD_BUG_ON(COMPAT_POLICY_INPUT_ACCEPT || COMPAT_POLICY_OUTPUT_ACCEPT);
@@ -27,7 +27,7 @@ QEMU_BUILD_BUG_ON(COMPAT_POLICY_INPUT_ACCEPT || COMPAT_POLICY_OUTPUT_ACCEPT);
 void visit_complete(Visitor *v, void *opaque)
 {
     assert(v->type != VISITOR_OUTPUT || v->complete);
-    trace_visit_complete(v, opaque);
+    //trace_visit_complete(v, opaque);
     if (v->complete) {
         v->complete(v, opaque);
     }
@@ -35,7 +35,7 @@ void visit_complete(Visitor *v, void *opaque)
 
 void visit_free(Visitor *v)
 {
-    trace_visit_free(v);
+    //trace_visit_free(v);
     if (v) {
         v->free(v);
     }
@@ -46,7 +46,7 @@ bool visit_start_struct(Visitor *v, const char *name, void **obj,
 {
     bool ok;
 
-    trace_visit_start_struct(v, name, obj, size);
+    //trace_visit_start_struct(v, name, obj, size);
     if (obj) {
         assert(size);
         assert(!(v->type & VISITOR_OUTPUT) || *obj);
@@ -60,13 +60,13 @@ bool visit_start_struct(Visitor *v, const char *name, void **obj,
 
 bool visit_check_struct(Visitor *v, Error **errp)
 {
-    trace_visit_check_struct(v);
+    //trace_visit_check_struct(v);
     return v->check_struct ? v->check_struct(v, errp) : true;
 }
 
 void visit_end_struct(Visitor *v, void **obj)
 {
-    trace_visit_end_struct(v, obj);
+    //trace_visit_end_struct(v, obj);
     v->end_struct(v, obj);
 }
 
@@ -76,7 +76,7 @@ bool visit_start_list(Visitor *v, const char *name, GenericList **list,
     bool ok;
 
     assert(!list || size >= sizeof(GenericList));
-    trace_visit_start_list(v, name, list, size);
+    //trace_visit_start_list(v, name, list, size);
     ok = v->start_list(v, name, list, size, errp);
     if (list && (v->type & VISITOR_INPUT)) {
         assert(ok || !*list);
@@ -87,19 +87,19 @@ bool visit_start_list(Visitor *v, const char *name, GenericList **list,
 GenericList *visit_next_list(Visitor *v, GenericList *tail, size_t size)
 {
     assert(tail && size >= sizeof(GenericList));
-    trace_visit_next_list(v, tail, size);
+    //trace_visit_next_list(v, tail, size);
     return v->next_list(v, tail, size);
 }
 
 bool visit_check_list(Visitor *v, Error **errp)
 {
-    trace_visit_check_list(v);
+    //trace_visit_check_list(v);
     return v->check_list ? v->check_list(v, errp) : true;
 }
 
 void visit_end_list(Visitor *v, void **obj)
 {
-    trace_visit_end_list(v, obj);
+    //trace_visit_end_list(v, obj);
     v->end_list(v, obj);
 }
 
@@ -111,7 +111,7 @@ bool visit_start_alternate(Visitor *v, const char *name,
 
     assert(obj && size >= sizeof(GenericAlternate));
     assert(!(v->type & VISITOR_OUTPUT) || *obj);
-    trace_visit_start_alternate(v, name, obj, size);
+    //trace_visit_start_alternate(v, name, obj, size);
     if (!v->start_alternate) {
         assert(!(v->type & VISITOR_INPUT));
         return true;
@@ -125,7 +125,7 @@ bool visit_start_alternate(Visitor *v, const char *name,
 
 void visit_end_alternate(Visitor *v, void **obj)
 {
-    trace_visit_end_alternate(v, obj);
+    //trace_visit_end_alternate(v, obj);
     if (v->end_alternate) {
         v->end_alternate(v, obj);
     }
@@ -133,7 +133,7 @@ void visit_end_alternate(Visitor *v, void **obj)
 
 bool visit_optional(Visitor *v, const char *name, bool *present)
 {
-    trace_visit_optional(v, name, present);
+    //trace_visit_optional(v, name, present);
     if (v->optional) {
         v->optional(v, name, present);
     }
@@ -143,7 +143,7 @@ bool visit_optional(Visitor *v, const char *name, bool *present)
 bool visit_policy_reject(Visitor *v, const char *name,
                          unsigned special_features, Error **errp)
 {
-    trace_visit_policy_reject(v, name);
+    //trace_visit_policy_reject(v, name);
     if (v->policy_reject) {
         return v->policy_reject(v, name, special_features, errp);
     }
@@ -153,7 +153,7 @@ bool visit_policy_reject(Visitor *v, const char *name,
 bool visit_policy_skip(Visitor *v, const char *name,
                        unsigned special_features)
 {
-    trace_visit_policy_skip(v, name);
+    //trace_visit_policy_skip(v, name);
     if (v->policy_skip) {
         return v->policy_skip(v, name, special_features);
     }
@@ -178,7 +178,7 @@ bool visit_is_dealloc(Visitor *v)
 bool visit_type_int(Visitor *v, const char *name, int64_t *obj, Error **errp)
 {
     assert(obj);
-    trace_visit_type_int(v, name, obj);
+    //trace_visit_type_int(v, name, obj);
     return v->type_int64(v, name, obj, errp);
 }
 
@@ -208,7 +208,7 @@ bool visit_type_uint8(Visitor *v, const char *name, uint8_t *obj,
     uint64_t value;
     bool ok;
 
-    trace_visit_type_uint8(v, name, obj);
+    //trace_visit_type_uint8(v, name, obj);
     value = *obj;
     ok = visit_type_uintN(v, &value, name, UINT8_MAX, "uint8_t", errp);
     *obj = value;
@@ -221,7 +221,7 @@ bool visit_type_uint16(Visitor *v, const char *name, uint16_t *obj,
     uint64_t value;
     bool ok;
 
-    trace_visit_type_uint16(v, name, obj);
+    //trace_visit_type_uint16(v, name, obj);
     value = *obj;
     ok = visit_type_uintN(v, &value, name, UINT16_MAX, "uint16_t", errp);
     *obj = value;
@@ -234,7 +234,7 @@ bool visit_type_uint32(Visitor *v, const char *name, uint32_t *obj,
     uint64_t value;
     bool ok;
 
-    trace_visit_type_uint32(v, name, obj);
+    //trace_visit_type_uint32(v, name, obj);
     value = *obj;
     ok = visit_type_uintN(v, &value, name, UINT32_MAX, "uint32_t", errp);
     *obj = value;
@@ -245,7 +245,7 @@ bool visit_type_uint64(Visitor *v, const char *name, uint64_t *obj,
                        Error **errp)
 {
     assert(obj);
-    trace_visit_type_uint64(v, name, obj);
+    //trace_visit_type_uint64(v, name, obj);
     return v->type_uint64(v, name, obj, errp);
 }
 
@@ -275,7 +275,7 @@ bool visit_type_int8(Visitor *v, const char *name, int8_t *obj, Error **errp)
     int64_t value;
     bool ok;
 
-    trace_visit_type_int8(v, name, obj);
+    //trace_visit_type_int8(v, name, obj);
     value = *obj;
     ok = visit_type_intN(v, &value, name, INT8_MIN, INT8_MAX, "int8_t", errp);
     *obj = value;
@@ -288,7 +288,7 @@ bool visit_type_int16(Visitor *v, const char *name, int16_t *obj,
     int64_t value;
     bool ok;
 
-    trace_visit_type_int16(v, name, obj);
+    //trace_visit_type_int16(v, name, obj);
     value = *obj;
     ok = visit_type_intN(v, &value, name, INT16_MIN, INT16_MAX, "int16_t",
                          errp);
@@ -302,7 +302,7 @@ bool visit_type_int32(Visitor *v, const char *name, int32_t *obj,
     int64_t value;
     bool ok;
 
-    trace_visit_type_int32(v, name, obj);
+    //trace_visit_type_int32(v, name, obj);
     value = *obj;
     ok = visit_type_intN(v, &value, name, INT32_MIN, INT32_MAX, "int32_t",
                         errp);
@@ -314,7 +314,7 @@ bool visit_type_int64(Visitor *v, const char *name, int64_t *obj,
                       Error **errp)
 {
     assert(obj);
-    trace_visit_type_int64(v, name, obj);
+    //trace_visit_type_int64(v, name, obj);
     return v->type_int64(v, name, obj, errp);
 }
 
@@ -322,7 +322,7 @@ bool visit_type_size(Visitor *v, const char *name, uint64_t *obj,
                      Error **errp)
 {
     assert(obj);
-    trace_visit_type_size(v, name, obj);
+    //trace_visit_type_size(v, name, obj);
     if (v->type_size) {
         return v->type_size(v, name, obj, errp);
     }
@@ -332,7 +332,7 @@ bool visit_type_size(Visitor *v, const char *name, uint64_t *obj,
 bool visit_type_bool(Visitor *v, const char *name, bool *obj, Error **errp)
 {
     assert(obj);
-    trace_visit_type_bool(v, name, obj);
+    //trace_visit_type_bool(v, name, obj);
     return v->type_bool(v, name, obj, errp);
 }
 
@@ -345,7 +345,7 @@ bool visit_type_str(Visitor *v, const char *name, char **obj, Error **errp)
      * can enable:
     assert(!(v->type & VISITOR_OUTPUT) || *obj);
      */
-    trace_visit_type_str(v, name, obj);
+    //trace_visit_type_str(v, name, obj);
     ok = v->type_str(v, name, obj, errp);
     if (v->type & VISITOR_INPUT) {
         assert(ok != !*obj);
@@ -357,7 +357,7 @@ bool visit_type_number(Visitor *v, const char *name, double *obj,
                        Error **errp)
 {
     assert(obj);
-    trace_visit_type_number(v, name, obj);
+    //trace_visit_type_number(v, name, obj);
     return v->type_number(v, name, obj, errp);
 }
 
@@ -367,7 +367,7 @@ bool visit_type_any(Visitor *v, const char *name, QObject **obj, Error **errp)
 
     assert(obj);
     assert(v->type != VISITOR_OUTPUT || *obj);
-    trace_visit_type_any(v, name, obj);
+    //trace_visit_type_any(v, name, obj);
     ok = v->type_any(v, name, obj, errp);
     if (v->type == VISITOR_INPUT) {
         assert(ok != !*obj);
@@ -378,7 +378,7 @@ bool visit_type_any(Visitor *v, const char *name, QObject **obj, Error **errp)
 bool visit_type_null(Visitor *v, const char *name, QNull **obj,
                      Error **errp)
 {
-    trace_visit_type_null(v, name, obj);
+    //trace_visit_type_null(v, name, obj);
     return v->type_null(v, name, obj, errp);
 }
 
@@ -425,7 +425,7 @@ bool visit_type_enum(Visitor *v, const char *name, int *obj,
                      const QEnumLookup *lookup, Error **errp)
 {
     assert(obj && lookup);
-    trace_visit_type_enum(v, name, obj);
+    //trace_visit_type_enum(v, name, obj);
     switch (v->type) {
     case VISITOR_INPUT:
         return input_type_enum(v, name, obj, lookup, errp);
