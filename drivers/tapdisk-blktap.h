@@ -70,6 +70,7 @@ struct td_blktap {
 	td_blktap_req_t        *reqs;
 	int                     n_reqs_free;
 	td_blktap_req_t       **reqs_free;
+	pthread_mutex_t         mutex;
 
 	struct list_head        entry;
 
