@@ -32,6 +32,7 @@
 #define _TAPDISK_VBD_H_
 
 #include <sys/time.h>
+#include <pthread.h>
 
 #include "tapdisk.h"
 #include "scheduler.h"
@@ -134,6 +135,7 @@ struct td_vbd_handle {
 	struct list_head            pending_requests;
 	struct list_head            failed_requests;
 	struct list_head            completed_requests;
+	pthread_mutex_t             mutex;
 
 	td_vbd_request_t            request_list[MAX_REQUESTS]; /* XXX */
 
