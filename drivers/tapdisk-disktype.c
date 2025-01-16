@@ -77,8 +77,8 @@ static const disk_info_t ram_disk = {
 };
 
 static const disk_info_t qcow_disk = {
-       "qcow",
-       "qcow disk (qcow)",
+       "qcow2",
+       "QEMU copy-on-write disk (qcow2)",
        0,
 };
 
@@ -164,9 +164,7 @@ extern struct tap_disk tapdisk_vhdsync;
 #endif
 extern struct tap_disk tapdisk_vhd;
 extern struct tap_disk tapdisk_ram;
-#if 0
 extern struct tap_disk tapdisk_qcow;
-#endif
 extern struct tap_disk tapdisk_block_cache;
 extern struct tap_disk tapdisk_vhd_index;
 extern struct tap_disk tapdisk_log;
@@ -185,9 +183,7 @@ const struct tap_disk *tapdisk_disk_drivers[] = {
 #endif
 	[DISK_TYPE_VHD]         = &tapdisk_vhd,
 	[DISK_TYPE_RAM]         = &tapdisk_ram,
-#if 0
 	[DISK_TYPE_QCOW]        = &tapdisk_qcow,
-#endif
 	[DISK_TYPE_BLOCK_CACHE] = &tapdisk_block_cache,
 	[DISK_TYPE_VINDEX]      = &tapdisk_vhd_index,
 	[DISK_TYPE_LOG]         = &tapdisk_log,
