@@ -12,8 +12,8 @@
 
 #include "qemu/osdep.h"
 #include "qapi/dealloc-visitor.h"
-#include "qapi-types-block-core.h"
-#include "qapi-visit-block-core.h"
+#include "qapi/qapi-types-block-core.h"
+#include "qapi/qapi-visit-block-core.h"
 
 void qapi_free_SnapshotInfo(SnapshotInfo *obj)
 {
@@ -28,6 +28,7 @@ void qapi_free_SnapshotInfo(SnapshotInfo *obj)
     visit_free(v);
 }
 
+#if 0
 void qapi_free_ImageInfoSpecificQCow2EncryptionBase(ImageInfoSpecificQCow2EncryptionBase *obj)
 {
     Visitor *v;
@@ -53,6 +54,7 @@ void qapi_free_ImageInfoSpecificQCow2Encryption(ImageInfoSpecificQCow2Encryption
     visit_type_ImageInfoSpecificQCow2Encryption(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_Qcow2BitmapInfoList(Qcow2BitmapInfoList *obj)
 {
@@ -80,6 +82,7 @@ void qapi_free_ImageInfoSpecificQCow2(ImageInfoSpecificQCow2 *obj)
     visit_free(v);
 }
 
+#if 0
 void qapi_free_VmdkExtentInfoList(VmdkExtentInfoList *obj)
 {
     Visitor *v;
@@ -131,6 +134,7 @@ void qapi_free_ImageInfoSpecificRbd(ImageInfoSpecificRbd *obj)
     visit_type_ImageInfoSpecificRbd(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_ImageInfoSpecificFile(ImageInfoSpecificFile *obj)
 {
@@ -148,14 +152,17 @@ void qapi_free_ImageInfoSpecificFile(ImageInfoSpecificFile *obj)
 const QEnumLookup ImageInfoSpecificKind_lookup = {
     .array = (const char *const[]) {
         [IMAGE_INFO_SPECIFIC_KIND_QCOW2] = "qcow2",
+#if 0
         [IMAGE_INFO_SPECIFIC_KIND_VMDK] = "vmdk",
         [IMAGE_INFO_SPECIFIC_KIND_LUKS] = "luks",
         [IMAGE_INFO_SPECIFIC_KIND_RBD] = "rbd",
+#endif
         [IMAGE_INFO_SPECIFIC_KIND_FILE] = "file",
     },
     .size = IMAGE_INFO_SPECIFIC_KIND__MAX
 };
 
+#if 0
 void qapi_free_ImageInfoSpecificQCow2Wrapper(ImageInfoSpecificQCow2Wrapper *obj)
 {
     Visitor *v;
@@ -220,6 +227,7 @@ void qapi_free_ImageInfoSpecificFileWrapper(ImageInfoSpecificFileWrapper *obj)
     visit_type_ImageInfoSpecificFileWrapper(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_ImageInfoSpecific(ImageInfoSpecific *obj)
 {
@@ -433,6 +441,7 @@ void qapi_free_Qcow2BitmapInfo(Qcow2BitmapInfo *obj)
     visit_free(v);
 }
 
+#if 0
 void qapi_free_BlockLatencyHistogramInfo(BlockLatencyHistogramInfo *obj)
 {
     Visitor *v;
@@ -445,6 +454,7 @@ void qapi_free_BlockLatencyHistogramInfo(BlockLatencyHistogramInfo *obj)
     visit_type_BlockLatencyHistogramInfo(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_BlockInfo(BlockInfo *obj)
 {
@@ -485,6 +495,7 @@ void qapi_free_BlockInfoList(BlockInfoList *obj)
     visit_free(v);
 }
 
+#if 0
 void qapi_free_BlockDeviceTimedStats(BlockDeviceTimedStats *obj)
 {
     Visitor *v;
@@ -640,6 +651,7 @@ void qapi_free_BlockJobInfoMirror(BlockJobInfoMirror *obj)
     visit_type_BlockJobInfoMirror(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_BlockJobInfo(BlockJobInfo *obj)
 {
@@ -667,6 +679,7 @@ void qapi_free_BlockJobInfoList(BlockJobInfoList *obj)
     visit_free(v);
 }
 
+#if 0
 const QEnumLookup NewImageMode_lookup = {
     .array = (const char *const[]) {
         [NEW_IMAGE_MODE_EXISTING] = "existing",
@@ -752,6 +765,7 @@ void qapi_free_BlockdevBackup(BlockdevBackup *obj)
     visit_type_BlockdevBackup(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_BlockDeviceInfoList(BlockDeviceInfoList *obj)
 {
@@ -766,6 +780,7 @@ void qapi_free_BlockDeviceInfoList(BlockDeviceInfoList *obj)
     visit_free(v);
 }
 
+#if 0
 const QEnumLookup XDbgBlockGraphNodeType_lookup = {
     .array = (const char *const[]) {
         [X_DBG_BLOCK_GRAPH_NODE_TYPE_BLOCK_BACKEND] = "block-backend",
@@ -875,6 +890,7 @@ void qapi_free_DriveMirror(DriveMirror *obj)
     visit_type_DriveMirror(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_BlockDirtyBitmap(BlockDirtyBitmap *obj)
 {
@@ -928,6 +944,7 @@ void qapi_free_BlockDirtyBitmapOrStrList(BlockDirtyBitmapOrStrList *obj)
     visit_free(v);
 }
 
+#if 0
 void qapi_free_BlockDirtyBitmapMerge(BlockDirtyBitmapMerge *obj)
 {
     Visitor *v;
@@ -1018,6 +1035,7 @@ void qapi_free_BlockJobChangeOptions(BlockJobChangeOptions *obj)
     visit_type_BlockJobChangeOptions(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 const QEnumLookup BlockdevDiscardOptions_lookup = {
     .array = (const char *const[]) {
@@ -1142,6 +1160,7 @@ void qapi_free_BlockdevOptionsFile(BlockdevOptionsFile *obj)
     visit_free(v);
 }
 
+#if 0
 void qapi_free_BlockdevOptionsNull(BlockdevOptionsNull *obj)
 {
     Visitor *v;
@@ -1206,6 +1225,7 @@ void qapi_free_BlockdevOptionsLUKS(BlockdevOptionsLUKS *obj)
     visit_type_BlockdevOptionsLUKS(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_BlockdevOptionsGenericCOWFormat(BlockdevOptionsGenericCOWFormat *obj)
 {
@@ -1256,6 +1276,7 @@ void qapi_free_Qcow2OverlapChecks(Qcow2OverlapChecks *obj)
     visit_free(v);
 }
 
+#if 0
 const QEnumLookup BlockdevQcowEncryptionFormat_lookup = {
     .array = (const char *const[]) {
         [BLOCKDEV_QCOW_ENCRYPTION_FORMAT_AES] = "aes",
@@ -1322,6 +1343,7 @@ void qapi_free_BlockdevOptionsPreallocate(BlockdevOptionsPreallocate *obj)
     visit_type_BlockdevOptionsPreallocate(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_BlockdevOptionsQcow2(BlockdevOptionsQcow2 *obj)
 {
@@ -1336,6 +1358,7 @@ void qapi_free_BlockdevOptionsQcow2(BlockdevOptionsQcow2 *obj)
     visit_free(v);
 }
 
+#if 0
 const QEnumLookup SshHostKeyCheckMode_lookup = {
     .array = (const char *const[]) {
         [SSH_HOST_KEY_CHECK_MODE_NONE] = "none",
@@ -2071,6 +2094,7 @@ void qapi_free_BlockdevOptionsCbw(BlockdevOptionsCbw *obj)
     visit_type_BlockdevOptionsCbw(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_BlockdevOptions(BlockdevOptions *obj)
 {
@@ -2111,6 +2135,7 @@ void qapi_free_BlockdevRefOrNull(BlockdevRefOrNull *obj)
     visit_free(v);
 }
 
+#if 0
 void qapi_free_BlockdevOptionsList(BlockdevOptionsList *obj)
 {
     Visitor *v;
@@ -2123,6 +2148,7 @@ void qapi_free_BlockdevOptionsList(BlockdevOptionsList *obj)
     visit_type_BlockdevOptionsList(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_BlockdevCreateOptionsFile(BlockdevCreateOptionsFile *obj)
 {
@@ -2137,6 +2163,7 @@ void qapi_free_BlockdevCreateOptionsFile(BlockdevCreateOptionsFile *obj)
     visit_free(v);
 }
 
+#if 0
 void qapi_free_BlockdevCreateOptionsGluster(BlockdevCreateOptionsGluster *obj)
 {
     Visitor *v;
@@ -2201,6 +2228,7 @@ void qapi_free_BlockdevCreateOptionsQcow(BlockdevCreateOptionsQcow *obj)
     visit_type_BlockdevCreateOptionsQcow(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 const QEnumLookup BlockdevQcow2Version_lookup = {
     .array = (const char *const[]) {
@@ -2233,6 +2261,7 @@ void qapi_free_BlockdevCreateOptionsQcow2(BlockdevCreateOptionsQcow2 *obj)
     visit_free(v);
 }
 
+#if 0
 void qapi_free_BlockdevCreateOptionsQed(BlockdevCreateOptionsQed *obj)
 {
     Visitor *v;
@@ -2360,6 +2389,7 @@ void qapi_free_BlockdevCreateOptionsVpc(BlockdevCreateOptionsVpc *obj)
     visit_type_BlockdevCreateOptionsVpc(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_BlockdevCreateOptions(BlockdevCreateOptions *obj)
 {
@@ -2374,6 +2404,7 @@ void qapi_free_BlockdevCreateOptions(BlockdevCreateOptions *obj)
     visit_free(v);
 }
 
+#if 0
 void qapi_free_BlockdevAmendOptionsLUKS(BlockdevAmendOptionsLUKS *obj)
 {
     Visitor *v;
@@ -2386,6 +2417,7 @@ void qapi_free_BlockdevAmendOptionsLUKS(BlockdevAmendOptionsLUKS *obj)
     visit_type_BlockdevAmendOptionsLUKS(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_BlockdevAmendOptionsQcow2(BlockdevAmendOptionsQcow2 *obj)
 {
@@ -2441,6 +2473,7 @@ const QEnumLookup QuorumOpType_lookup = {
     .size = QUORUM_OP_TYPE__MAX
 };
 
+#if 0
 void qapi_free_BlockdevSnapshotInternal(BlockdevSnapshotInternal *obj)
 {
     Visitor *v;
@@ -2453,6 +2486,7 @@ void qapi_free_BlockdevSnapshotInternal(BlockdevSnapshotInternal *obj)
     visit_type_BlockdevSnapshotInternal(v, NULL, &obj, NULL);
     visit_free(v);
 }
+#endif
 
 void qapi_free_BlockGraphInfoList(BlockGraphInfoList *obj)
 {

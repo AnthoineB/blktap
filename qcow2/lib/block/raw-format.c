@@ -319,6 +319,7 @@ raw_co_pdiscard(BlockDriverState *bs, int64_t offset, int64_t bytes)
     return bdrv_co_pdiscard(bs->file, offset, bytes);
 }
 
+#if 0
 static int coroutine_fn GRAPH_RDLOCK
 raw_co_zone_report(BlockDriverState *bs, int64_t offset,
                    unsigned int *nr_zones,
@@ -340,6 +341,7 @@ raw_co_zone_append(BlockDriverState *bs,int64_t *offset, QEMUIOVector *qiov,
 {
     return bdrv_co_zone_append(bs->file->bs, offset, qiov, flags);
 }
+#endif
 
 static int64_t coroutine_fn GRAPH_RDLOCK
 raw_co_getlength(BlockDriverState *bs)
@@ -650,9 +652,11 @@ BlockDriver bdrv_raw = {
     .bdrv_co_pwritev      = &raw_co_pwritev,
     .bdrv_co_pwrite_zeroes = &raw_co_pwrite_zeroes,
     .bdrv_co_pdiscard     = &raw_co_pdiscard,
+#if 0
     .bdrv_co_zone_report  = &raw_co_zone_report,
     .bdrv_co_zone_mgmt  = &raw_co_zone_mgmt,
     .bdrv_co_zone_append = &raw_co_zone_append,
+#endif
     .bdrv_co_block_status = &raw_co_block_status,
     .bdrv_co_copy_range_from = &raw_co_copy_range_from,
     .bdrv_co_copy_range_to  = &raw_co_copy_range_to,

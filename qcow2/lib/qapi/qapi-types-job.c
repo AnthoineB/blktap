@@ -12,8 +12,8 @@
 
 #include "qemu/osdep.h"
 #include "qapi/dealloc-visitor.h"
-#include "qapi-types-job.h"
-#include "qapi-visit-job.h"
+#include "qapi/qapi-types-job.h"
+#include "qapi/qapi-visit-job.h"
 
 const QEnumLookup JobType_lookup = {
     .array = (const char *const[]) {

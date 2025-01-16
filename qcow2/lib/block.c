@@ -24,12 +24,12 @@
  */
 
 #include "qemu/osdep.h"
-#include "block/trace.h"
+//#include "block/trace.h"
 #include "block/block_int.h"
 #include "block/blockjob.h"
 #include "block/dirty-bitmap.h"
-#include "block/fuse.h"
-#include "block/nbd.h"
+//#include "block/fuse.h"
+//#include "block/nbd.h"
 #include "block/qdict.h"
 #include "qemu/error-report.h"
 #include "block/module_block.h"
@@ -1917,8 +1917,8 @@ static int bdrv_open_common(BlockDriverState *bs, BlockBackend *file,
         goto fail_opts;
     }
 
-    trace_bdrv_open_common(bs, filename ?: "", bs->open_flags,
-                           drv->format_name);
+    //trace_bdrv_open_common(bs, filename ?: "", bs->open_flags,
+    //                       drv->format_name);
 
     ro = bdrv_is_read_only(bs);
 
@@ -5114,7 +5114,6 @@ static void GRAPH_UNLOCKED bdrv_reopen_abort(BDRVReopenState *reopen_state)
     }
 }
 
-
 static void bdrv_close(BlockDriverState *bs)
 {
     BdrvAioNotifier *ban, *ban_next;
@@ -5180,6 +5179,7 @@ static void bdrv_close(BlockDriverState *bs)
     }
 }
 
+#if 0
 void bdrv_close_all(void)
 {
     GLOBAL_STATE_CODE();
@@ -5194,6 +5194,7 @@ void bdrv_close_all(void)
 
     assert(QTAILQ_EMPTY(&all_bdrv_states));
 }
+#endif
 
 static bool GRAPH_RDLOCK should_update_child(BdrvChild *c, BlockDriverState *to)
 {
@@ -5423,6 +5424,7 @@ int bdrv_replace_node(BlockDriverState *from, BlockDriverState *to,
     return bdrv_replace_node_common(from, to, true, false, errp);
 }
 
+#if 0
 int bdrv_drop_filter(BlockDriverState *bs, Error **errp)
 {
     BlockDriverState *child_bs;
@@ -5442,6 +5444,7 @@ int bdrv_drop_filter(BlockDriverState *bs, Error **errp)
 
     return ret;
 }
+#endif
 
 /*
  * Add new bs contents at the top of an image chain while the chain is
@@ -5499,6 +5502,7 @@ out:
     return ret;
 }
 
+#if 0
 /* Not for empty child */
 int bdrv_replace_child_bs(BdrvChild *child, BlockDriverState *new_bs,
                           Error **errp)
@@ -5531,6 +5535,7 @@ int bdrv_replace_child_bs(BdrvChild *child, BlockDriverState *new_bs,
 
     return ret;
 }
+#endif
 
 static void bdrv_delete(BlockDriverState *bs)
 {
@@ -5551,7 +5556,7 @@ static void bdrv_delete(BlockDriverState *bs)
     g_free(bs);
 }
 
-
+#if 0
 /*
  * Replace @bs by newly created block node.
  *
@@ -5625,6 +5630,7 @@ fail:
     bdrv_unref(new_node_bs);
     return NULL;
 }
+#endif
 
 /*
  * Run consistency checks on an image
@@ -6113,6 +6119,7 @@ bool bdrv_is_sg(BlockDriverState *bs)
     return bs->sg;
 }
 
+#if 0
 /**
  * Return whether the given node supports compressed writes.
  */
@@ -6136,6 +6143,7 @@ bool bdrv_supports_compressed_writes(BlockDriverState *bs)
 
     return true;
 }
+#endif
 
 const char *bdrv_get_format_name(BlockDriverState *bs)
 {
@@ -6226,6 +6234,7 @@ BlockDriverState *bdrv_find_node(const char *node_name)
     return NULL;
 }
 
+#if 0
 /* Put this QMP function here so it can access the static graph_bdrv_states. */
 BlockDeviceInfoList *bdrv_named_nodes_list(bool flat,
                                            Error **errp)
@@ -6382,6 +6391,7 @@ XDbgBlockGraph *bdrv_get_xdbg_block_graph(Error **errp)
 
     return xdbg_graph_finalize(gr);
 }
+#endif
 
 BlockDriverState *bdrv_lookup_bs(const char *device,
                                  const char *node_name,
@@ -7095,7 +7105,7 @@ void coroutine_fn bdrv_co_lock_medium(BlockDriverState *bs, bool locked)
     BlockDriver *drv = bs->drv;
     IO_CODE();
     assert_bdrv_graph_readable();
-    trace_bdrv_lock_medium(bs, locked);
+    //trace_bdrv_lock_medium(bs, locked);
 
     if (drv && drv->bdrv_co_lock_medium) {
         drv->bdrv_co_lock_medium(bs, locked);
@@ -7425,6 +7435,7 @@ AioContext *bdrv_get_aio_context(BlockDriverState *bs)
     return bs ? bs->aio_context : qemu_get_aio_context();
 }
 
+#if 0
 AioContext *coroutine_fn bdrv_co_enter(BlockDriverState *bs)
 {
     Coroutine *self = qemu_coroutine_self();
@@ -7449,6 +7460,7 @@ void coroutine_fn bdrv_co_leave(BlockDriverState *bs, AioContext *old_ctx)
     aio_co_reschedule_self(old_ctx);
     bdrv_dec_in_flight(bs);
 }
+#endif
 
 static void bdrv_do_remove_aio_context_notifier(BdrvAioNotifier *ban)
 {

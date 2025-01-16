@@ -12,7 +12,7 @@
 
 #include "qemu/osdep.h"
 #include "qapi/error.h"
-#include "qapi-visit-block-core.h"
+#include "qapi/qapi-visit-block-core.h"
 
 bool visit_type_SnapshotInfo_members(Visitor *v, SnapshotInfo *obj, Error **errp)
 {
@@ -72,6 +72,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_ImageInfoSpecificQCow2EncryptionBase_members(Visitor *v, ImageInfoSpecificQCow2EncryptionBase *obj, Error **errp)
 {
     if (!visit_type_BlockdevQcow2EncryptionFormat(v, "format", &obj->format, errp)) {
@@ -149,6 +150,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_Qcow2BitmapInfoList(Visitor *v, const char *name,
                  Qcow2BitmapInfoList **obj, Error **errp)
@@ -181,7 +183,7 @@ out_obj:
 bool visit_type_ImageInfoSpecificQCow2_members(Visitor *v, ImageInfoSpecificQCow2 *obj, Error **errp)
 {
     bool has_data_file = !!obj->data_file;
-    bool has_encrypt = !!obj->encrypt;
+    //bool has_encrypt = !!obj->encrypt;
 
     if (!visit_type_str(v, "compat", &obj->compat, errp)) {
         return false;
@@ -214,11 +216,13 @@ bool visit_type_ImageInfoSpecificQCow2_members(Visitor *v, ImageInfoSpecificQCow
     if (!visit_type_int(v, "refcount-bits", &obj->refcount_bits, errp)) {
         return false;
     }
+#if 0
     if (visit_optional(v, "encrypt", &has_encrypt)) {
         if (!visit_type_ImageInfoSpecificQCow2Encryption(v, "encrypt", &obj->encrypt, errp)) {
             return false;
         }
     }
+#endif
     if (visit_optional(v, "bitmaps", &obj->has_bitmaps)) {
         if (!visit_type_Qcow2BitmapInfoList(v, "bitmaps", &obj->bitmaps, errp)) {
             return false;
@@ -257,6 +261,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_VmdkExtentInfoList(Visitor *v, const char *name,
                  VmdkExtentInfoList **obj, Error **errp)
 {
@@ -416,6 +421,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_ImageInfoSpecificFile_members(Visitor *v, ImageInfoSpecificFile *obj, Error **errp)
 {
@@ -471,6 +477,7 @@ bool visit_type_ImageInfoSpecificQCow2Wrapper_members(Visitor *v, ImageInfoSpeci
     return true;
 }
 
+#if 0
 bool visit_type_ImageInfoSpecificQCow2Wrapper(Visitor *v, const char *name,
                  ImageInfoSpecificQCow2Wrapper **obj, Error **errp)
 {
@@ -602,6 +609,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_ImageInfoSpecificFileWrapper_members(Visitor *v, ImageInfoSpecificFileWrapper *obj, Error **errp)
 {
@@ -611,6 +619,7 @@ bool visit_type_ImageInfoSpecificFileWrapper_members(Visitor *v, ImageInfoSpecif
     return true;
 }
 
+#if 0
 bool visit_type_ImageInfoSpecificFileWrapper(Visitor *v, const char *name,
                  ImageInfoSpecificFileWrapper **obj, Error **errp)
 {
@@ -637,6 +646,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_q_obj_ImageInfoSpecific_base_members(Visitor *v, q_obj_ImageInfoSpecific_base *obj, Error **errp)
 {
@@ -654,12 +664,14 @@ bool visit_type_ImageInfoSpecific_members(Visitor *v, ImageInfoSpecific *obj, Er
     switch (obj->type) {
     case IMAGE_INFO_SPECIFIC_KIND_QCOW2:
         return visit_type_ImageInfoSpecificQCow2Wrapper_members(v, &obj->u.qcow2, errp);
+#if 0
     case IMAGE_INFO_SPECIFIC_KIND_VMDK:
         return visit_type_ImageInfoSpecificVmdkWrapper_members(v, &obj->u.vmdk, errp);
     case IMAGE_INFO_SPECIFIC_KIND_LUKS:
         return visit_type_ImageInfoSpecificLUKSWrapper_members(v, &obj->u.luks, errp);
     case IMAGE_INFO_SPECIFIC_KIND_RBD:
         return visit_type_ImageInfoSpecificRbdWrapper_members(v, &obj->u.rbd, errp);
+#endif
     case IMAGE_INFO_SPECIFIC_KIND_FILE:
         return visit_type_ImageInfoSpecificFileWrapper_members(v, &obj->u.file, errp);
     default:
@@ -1497,6 +1509,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_BlockLatencyHistogramInfo_members(Visitor *v, BlockLatencyHistogramInfo *obj, Error **errp)
 {
     if (!visit_type_uint64List(v, "boundaries", &obj->boundaries, errp)) {
@@ -1534,6 +1547,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_BlockInfo_members(Visitor *v, BlockInfo *obj, Error **errp)
 {
@@ -1673,6 +1687,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_BlockDeviceTimedStats_members(Visitor *v, BlockDeviceTimedStats *obj, Error **errp)
 {
     if (!visit_type_int(v, "interval_length", &obj->interval_length, errp)) {
@@ -2323,6 +2338,7 @@ bool visit_type_MirrorCopyMode(Visitor *v, const char *name,
     *obj = value;
     return ok;
 }
+#endif
 
 bool visit_type_BlockJobInfoMirror_members(Visitor *v, BlockJobInfoMirror *obj, Error **errp)
 {
@@ -2332,6 +2348,7 @@ bool visit_type_BlockJobInfoMirror_members(Visitor *v, BlockJobInfoMirror *obj, 
     return true;
 }
 
+#if 0
 bool visit_type_BlockJobInfoMirror(Visitor *v, const char *name,
                  BlockJobInfoMirror **obj, Error **errp)
 {
@@ -2358,6 +2375,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_q_obj_BlockJobInfo_base_members(Visitor *v, q_obj_BlockJobInfo_base *obj, Error **errp)
 {
@@ -2492,6 +2510,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_q_obj_block_resize_arg_members(Visitor *v, q_obj_block_resize_arg *obj, Error **errp)
 {
     bool has_device = !!obj->device;
@@ -2977,6 +2996,7 @@ bool visit_type_q_obj_query_named_block_nodes_arg_members(Visitor *v, q_obj_quer
     }
     return true;
 }
+#endif
 
 bool visit_type_BlockDeviceInfoList(Visitor *v, const char *name,
                  BlockDeviceInfoList **obj, Error **errp)
@@ -3006,6 +3026,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_XDbgBlockGraphNodeType(Visitor *v, const char *name,
                  XDbgBlockGraphNodeType *obj, Error **errp)
 {
@@ -3349,6 +3370,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_BlockDirtyBitmap_members(Visitor *v, BlockDirtyBitmap *obj, Error **errp)
 {
@@ -3517,6 +3539,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_BlockDirtyBitmapMerge_members(Visitor *v, BlockDirtyBitmapMerge *obj, Error **errp)
 {
     if (!visit_type_str(v, "node", &obj->node, errp)) {
@@ -4397,6 +4420,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_BlockdevDiscardOptions(Visitor *v, const char *name,
                  BlockdevDiscardOptions *obj, Error **errp)
@@ -4550,6 +4574,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_BlockdevOptionsNull_members(Visitor *v, BlockdevOptionsNull *obj, Error **errp)
 {
     if (visit_optional(v, "size", &obj->has_size)) {
@@ -4691,6 +4716,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_BlockdevOptionsGenericFormat_members(Visitor *v, BlockdevOptionsGenericFormat *obj, Error **errp)
 {
@@ -4700,6 +4726,7 @@ bool visit_type_BlockdevOptionsGenericFormat_members(Visitor *v, BlockdevOptions
     return true;
 }
 
+#if 0
 bool visit_type_BlockdevOptionsGenericFormat(Visitor *v, const char *name,
                  BlockdevOptionsGenericFormat **obj, Error **errp)
 {
@@ -4774,6 +4801,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_BlockdevOptionsGenericCOWFormat_members(Visitor *v, BlockdevOptionsGenericCOWFormat *obj, Error **errp)
 {
@@ -4956,6 +4984,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_BlockdevQcowEncryptionFormat(Visitor *v, const char *name,
                  BlockdevQcowEncryptionFormat *obj, Error **errp)
 {
@@ -5160,11 +5189,12 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_BlockdevOptionsQcow2_members(Visitor *v, BlockdevOptionsQcow2 *obj, Error **errp)
 {
     bool has_overlap_check = !!obj->overlap_check;
-    bool has_encrypt = !!obj->encrypt;
+    //bool has_encrypt = !!obj->encrypt;
     bool has_data_file = !!obj->data_file;
 
     if (!visit_type_BlockdevOptionsGenericCOWFormat_members(v, (BlockdevOptionsGenericCOWFormat *)obj, errp)) {
@@ -5225,11 +5255,13 @@ bool visit_type_BlockdevOptionsQcow2_members(Visitor *v, BlockdevOptionsQcow2 *o
             return false;
         }
     }
+#if 0
     if (visit_optional(v, "encrypt", &has_encrypt)) {
         if (!visit_type_BlockdevQcow2Encryption(v, "encrypt", &obj->encrypt, errp)) {
             return false;
         }
     }
+#endif
     if (visit_optional(v, "data-file", &has_data_file)) {
         if (!visit_type_BlockdevRef(v, "data-file", &obj->data_file, errp)) {
             return false;
@@ -5265,6 +5297,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_SshHostKeyCheckMode(Visitor *v, const char *name,
                  SshHostKeyCheckMode *obj, Error **errp)
 {
@@ -5915,6 +5948,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_BlockdevOptionsGluster_members(Visitor *v, BlockdevOptionsGluster *obj, Error **errp)
 {
     bool has_logfile = !!obj->logfile;
@@ -5967,6 +6001,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 #if defined(CONFIG_BLKIO)
 bool visit_type_BlockdevOptionsIoUring_members(Visitor *v, BlockdevOptionsIoUring *obj, Error **errp)
@@ -6153,6 +6188,7 @@ out_obj:
 }
 #endif /* defined(CONFIG_BLKIO) */
 
+#if 0
 bool visit_type_IscsiTransport(Visitor *v, const char *name,
                  IscsiTransport *obj, Error **errp)
 {
@@ -6739,6 +6775,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 #if defined(CONFIG_REPLICATION)
 bool visit_type_ReplicationMode(Visitor *v, const char *name,
@@ -7159,6 +7196,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_BlockdevOptionsNbd_members(Visitor *v, BlockdevOptionsNbd *obj, Error **errp)
 {
     bool has_export = !!obj->export;
@@ -7233,6 +7271,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_BlockdevOptionsRaw_members(Visitor *v, BlockdevOptionsRaw *obj, Error **errp)
 {
@@ -7422,6 +7461,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_q_obj_BlockdevOptions_base_members(Visitor *v, q_obj_BlockdevOptions_base *obj, Error **errp)
 {
@@ -7475,6 +7515,7 @@ bool visit_type_BlockdevOptions_members(Visitor *v, BlockdevOptions *obj, Error 
         return false;
     }
     switch (obj->driver) {
+#if 0
     case BLOCKDEV_DRIVER_BLKDEBUG:
         return visit_type_BlockdevOptionsBlkdebug_members(v, &obj->u.blkdebug, errp);
     case BLOCKDEV_DRIVER_BLKLOGWRITES:
@@ -7495,8 +7536,10 @@ bool visit_type_BlockdevOptions_members(Visitor *v, BlockdevOptions *obj, Error 
         return visit_type_BlockdevOptionsCor_members(v, &obj->u.copy_on_read, errp);
     case BLOCKDEV_DRIVER_DMG:
         return visit_type_BlockdevOptionsGenericFormat_members(v, &obj->u.dmg, errp);
+#endif
     case BLOCKDEV_DRIVER_FILE:
         return visit_type_BlockdevOptionsFile_members(v, &obj->u.file, errp);
+#if 0
     case BLOCKDEV_DRIVER_FTP:
         return visit_type_BlockdevOptionsCurlFtp_members(v, &obj->u.ftp, errp);
     case BLOCKDEV_DRIVER_FTPS:
@@ -7541,8 +7584,10 @@ bool visit_type_BlockdevOptions_members(Visitor *v, BlockdevOptions *obj, Error 
         return visit_type_BlockdevOptionsGenericFormat_members(v, &obj->u.parallels, errp);
     case BLOCKDEV_DRIVER_PREALLOCATE:
         return visit_type_BlockdevOptionsPreallocate_members(v, &obj->u.preallocate, errp);
+#endif
     case BLOCKDEV_DRIVER_QCOW2:
         return visit_type_BlockdevOptionsQcow2_members(v, &obj->u.qcow2, errp);
+#if 0
     case BLOCKDEV_DRIVER_QCOW:
         return visit_type_BlockdevOptionsQcow_members(v, &obj->u.qcow, errp);
     case BLOCKDEV_DRIVER_QED:
@@ -7585,6 +7630,7 @@ bool visit_type_BlockdevOptions_members(Visitor *v, BlockdevOptions *obj, Error 
         return visit_type_BlockdevOptionsGenericFormat_members(v, &obj->u.vpc, errp);
     case BLOCKDEV_DRIVER_VVFAT:
         return visit_type_BlockdevOptionsVVFAT_members(v, &obj->u.vvfat, errp);
+#endif
     default:
         abort();
     }
@@ -7717,6 +7763,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_BlockdevOptionsList(Visitor *v, const char *name,
                  BlockdevOptionsList **obj, Error **errp)
 {
@@ -7760,6 +7807,7 @@ bool visit_type_q_obj_blockdev_del_arg_members(Visitor *v, q_obj_blockdev_del_ar
     }
     return true;
 }
+#endif
 
 bool visit_type_BlockdevCreateOptionsFile_members(Visitor *v, BlockdevCreateOptionsFile *obj, Error **errp)
 {
@@ -7814,6 +7862,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_BlockdevCreateOptionsGluster_members(Visitor *v, BlockdevCreateOptionsGluster *obj, Error **errp)
 {
     if (!visit_type_BlockdevOptionsGluster(v, "location", &obj->location, errp)) {
@@ -8044,6 +8093,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_BlockdevQcow2Version(Visitor *v, const char *name,
                  BlockdevQcow2Version *obj, Error **errp)
@@ -8067,7 +8117,7 @@ bool visit_type_BlockdevCreateOptionsQcow2_members(Visitor *v, BlockdevCreateOpt
 {
     bool has_data_file = !!obj->data_file;
     bool has_backing_file = !!obj->backing_file;
-    bool has_encrypt = !!obj->encrypt;
+    //bool has_encrypt = !!obj->encrypt;
 
     if (!visit_type_BlockdevRef(v, "file", &obj->file, errp)) {
         return false;
@@ -8105,11 +8155,13 @@ bool visit_type_BlockdevCreateOptionsQcow2_members(Visitor *v, BlockdevCreateOpt
             return false;
         }
     }
+#if 0
     if (visit_optional(v, "encrypt", &has_encrypt)) {
         if (!visit_type_QCryptoBlockCreateOptions(v, "encrypt", &obj->encrypt, errp)) {
             return false;
         }
     }
+#endif
     if (visit_optional(v, "cluster-size", &obj->has_cluster_size)) {
         if (!visit_type_size(v, "cluster-size", &obj->cluster_size, errp)) {
             return false;
@@ -8165,6 +8217,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_BlockdevCreateOptionsQed_members(Visitor *v, BlockdevCreateOptionsQed *obj, Error **errp)
 {
     bool has_backing_file = !!obj->backing_file;
@@ -8574,6 +8627,7 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_q_obj_BlockdevCreateOptions_base_members(Visitor *v, q_obj_BlockdevCreateOptions_base *obj, Error **errp)
 {
@@ -8591,6 +8645,7 @@ bool visit_type_BlockdevCreateOptions_members(Visitor *v, BlockdevCreateOptions 
     switch (obj->driver) {
     case BLOCKDEV_DRIVER_FILE:
         return visit_type_BlockdevCreateOptionsFile_members(v, &obj->u.file, errp);
+#if 0
     case BLOCKDEV_DRIVER_GLUSTER:
         return visit_type_BlockdevCreateOptionsGluster_members(v, &obj->u.gluster, errp);
     case BLOCKDEV_DRIVER_LUKS:
@@ -8601,8 +8656,10 @@ bool visit_type_BlockdevCreateOptions_members(Visitor *v, BlockdevCreateOptions 
         return visit_type_BlockdevCreateOptionsParallels_members(v, &obj->u.parallels, errp);
     case BLOCKDEV_DRIVER_QCOW:
         return visit_type_BlockdevCreateOptionsQcow_members(v, &obj->u.qcow, errp);
+#endif
     case BLOCKDEV_DRIVER_QCOW2:
         return visit_type_BlockdevCreateOptionsQcow2_members(v, &obj->u.qcow2, errp);
+#if 0
     case BLOCKDEV_DRIVER_QED:
         return visit_type_BlockdevCreateOptionsQed_members(v, &obj->u.qed, errp);
     case BLOCKDEV_DRIVER_RBD:
@@ -8699,6 +8756,7 @@ bool visit_type_BlockdevCreateOptions_members(Visitor *v, BlockdevCreateOptions 
 #endif /* defined(CONFIG_BLKIO) */
     case BLOCKDEV_DRIVER_VVFAT:
         break;
+#endif
     default:
         abort();
     }
@@ -8732,6 +8790,7 @@ out_obj:
     return ok;
 }
 
+#if 0
 bool visit_type_q_obj_blockdev_create_arg_members(Visitor *v, q_obj_blockdev_create_arg *obj, Error **errp)
 {
     if (!visit_type_str(v, "job-id", &obj->job_id, errp)) {
@@ -8777,9 +8836,11 @@ out_obj:
     }
     return ok;
 }
+#endif
 
 bool visit_type_BlockdevAmendOptionsQcow2_members(Visitor *v, BlockdevAmendOptionsQcow2 *obj, Error **errp)
 {
+#if 0
     bool has_encrypt = !!obj->encrypt;
 
     if (visit_optional(v, "encrypt", &has_encrypt)) {
@@ -8787,6 +8848,7 @@ bool visit_type_BlockdevAmendOptionsQcow2_members(Visitor *v, BlockdevAmendOptio
             return false;
         }
     }
+#endif
     return true;
 }
 
@@ -8831,10 +8893,13 @@ bool visit_type_BlockdevAmendOptions_members(Visitor *v, BlockdevAmendOptions *o
         return false;
     }
     switch (obj->driver) {
+#if 0
     case BLOCKDEV_DRIVER_LUKS:
         return visit_type_BlockdevAmendOptionsLUKS_members(v, &obj->u.luks, errp);
+#endif
     case BLOCKDEV_DRIVER_QCOW2:
         return visit_type_BlockdevAmendOptionsQcow2_members(v, &obj->u.qcow2, errp);
+#if 0
     case BLOCKDEV_DRIVER_BLKDEBUG:
         break;
     case BLOCKDEV_DRIVER_BLKLOGWRITES:
@@ -8855,8 +8920,10 @@ bool visit_type_BlockdevAmendOptions_members(Visitor *v, BlockdevAmendOptions *o
         break;
     case BLOCKDEV_DRIVER_DMG:
         break;
+#endif
     case BLOCKDEV_DRIVER_FILE:
         break;
+#if 0
     case BLOCKDEV_DRIVER_SNAPSHOT_ACCESS:
         break;
     case BLOCKDEV_DRIVER_FTP:
@@ -8941,6 +9008,7 @@ bool visit_type_BlockdevAmendOptions_members(Visitor *v, BlockdevAmendOptions *o
         break;
     case BLOCKDEV_DRIVER_VVFAT:
         break;
+#endif
     default:
         abort();
     }
@@ -9177,6 +9245,7 @@ bool visit_type_q_obj_BLOCK_WRITE_THRESHOLD_arg_members(Visitor *v, q_obj_BLOCK_
     return true;
 }
 
+#if 0
 bool visit_type_q_obj_block_set_write_threshold_arg_members(Visitor *v, q_obj_block_set_write_threshold_arg *obj, Error **errp)
 {
     if (!visit_type_str(v, "node-name", &obj->node_name, errp)) {
@@ -9224,6 +9293,7 @@ bool visit_type_q_obj_x_blockdev_set_iothread_arg_members(Visitor *v, q_obj_x_bl
     }
     return true;
 }
+#endif
 
 bool visit_type_QuorumOpType(Visitor *v, const char *name,
                  QuorumOpType *obj, Error **errp)
@@ -9272,6 +9342,7 @@ bool visit_type_q_obj_QUORUM_REPORT_BAD_arg_members(Visitor *v, q_obj_QUORUM_REP
     return true;
 }
 
+#if 0
 bool visit_type_BlockdevSnapshotInternal_members(Visitor *v, BlockdevSnapshotInternal *obj, Error **errp)
 {
     if (!visit_type_str(v, "device", &obj->device, errp)) {
@@ -9330,6 +9401,7 @@ bool visit_type_q_obj_blockdev_snapshot_delete_internal_sync_arg_members(Visitor
     }
     return true;
 }
+#endif
 
 bool visit_type_BlockGraphInfoList(Visitor *v, const char *name,
                  BlockGraphInfoList **obj, Error **errp)

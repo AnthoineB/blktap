@@ -23,29 +23,29 @@
  */
 
 #include "qemu/osdep.h"
-#include "monitor/monitor.h"
+//#include "monitor/monitor.h"
 #include "qemu/coroutine-tls.h"
 #include "qapi/error.h"
-#include "qapi/qapi-commands-machine.h"
-#include "qapi/qapi-commands-misc.h"
-#include "qapi/qapi-events-run-state.h"
+//#include "qapi/qapi-commands-machine.h"
+//#include "qapi/qapi-commands-misc.h"
+//#include "qapi/qapi-events-run-state.h"
 #include "qapi/qmp/qerror.h"
-#include "exec/gdbstub.h"
-#include "sysemu/hw_accel.h"
-#include "exec/cpu-common.h"
+//#include "exec/gdbstub.h"
+//#include "sysemu/hw_accel.h"
+//#include "exec/cpu-common.h"
 #include "qemu/thread.h"
 #include "qemu/main-loop.h"
-#include "qemu/plugin.h"
-#include "sysemu/cpus.h"
-#include "qemu/guest-random.h"
-#include "hw/nmi.h"
-#include "sysemu/replay.h"
-#include "sysemu/runstate.h"
+//#include "qemu/plugin.h"
+//#include "sysemu/cpus.h"
+//#include "qemu/guest-random.h"
+//#include "hw/nmi.h"
+//#include "sysemu/replay.h"
+//#include "sysemu/runstate.h"
 #include "sysemu/cpu-timers.h"
-#include "sysemu/whpx.h"
-#include "hw/boards.h"
-#include "hw/hw.h"
-#include "trace.h"
+//#include "sysemu/whpx.h"
+//#include "hw/boards.h"
+//#include "hw/hw.h"
+//#include "trace.h"
 
 #ifdef CONFIG_LINUX
 
@@ -68,6 +68,7 @@
 /* The Big QEMU Lock (BQL) */
 static QemuMutex bql;
 
+#if 0
 /*
  * The chosen accelerator is supposed to register this.
  */
@@ -414,17 +415,21 @@ static QemuThread io_thread;
 static QemuCond qemu_cpu_cond;
 /* system init */
 static QemuCond qemu_pause_cond;
+#endif
 
 void qemu_init_cpu_loop(void)
 {
+#if 0
     qemu_init_sigbus();
     qemu_cond_init(&qemu_cpu_cond);
     qemu_cond_init(&qemu_pause_cond);
+#endif
     qemu_mutex_init(&bql);
 
-    qemu_thread_get_self(&io_thread);
+    //qemu_thread_get_self(&io_thread);
 }
 
+#if 0
 void run_on_cpu(CPUState *cpu, run_on_cpu_func func, run_on_cpu_data data)
 {
     do_run_on_cpu(cpu, func, data, &bql);
@@ -511,6 +516,7 @@ bool qemu_in_vcpu_thread(void)
 {
     return current_cpu && qemu_cpu_is_self(current_cpu);
 }
+#endif
 
 QEMU_DEFINE_STATIC_CO_TLS(bool, bql_locked)
 
@@ -544,6 +550,7 @@ void bql_unlock(void)
     qemu_mutex_unlock(&bql);
 }
 
+#if 0
 void qemu_cond_wait_bql(QemuCond *cond)
 {
     qemu_cond_wait(cond, &bql);
@@ -875,4 +882,5 @@ void qmp_inject_nmi(Error **errp)
 {
     nmi_monitor_handle(monitor_get_cpu_index(monitor_cur()), errp);
 }
+#endif
 

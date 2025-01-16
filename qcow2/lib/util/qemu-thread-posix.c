@@ -15,7 +15,7 @@
 #include "qemu/atomic.h"
 #include "qemu/notify.h"
 #include "qemu-thread-common.h"
-#include "qemu/tsan.h"
+//#include "qemu/tsan.h"
 #include "qemu/bitmap.h"
 
 #ifdef CONFIG_PTHREAD_SET_NAME_NP
@@ -235,9 +235,9 @@ qemu_cond_timedwait_ts(QemuCond *cond, QemuMutex *mutex, struct timespec *ts,
     int err;
 
     assert(cond->initialized);
-    trace_qemu_mutex_unlock(mutex, file, line);
+    //trace_qemu_mutex_unlock(mutex, file, line);
     err = pthread_cond_timedwait(&cond->cond, &mutex->lock, ts);
-    trace_qemu_mutex_locked(mutex, file, line);
+    //trace_qemu_mutex_locked(mutex, file, line);
     if (err && err != ETIMEDOUT) {
         error_exit(err, __func__);
     }
@@ -518,7 +518,7 @@ static void *qemu_thread_start(void *args)
         pthread_set_name_np(pthread_self(), qemu_thread_args->name);
 # endif
     }
-    QEMU_TSAN_ANNOTATE_THREAD_NAME(qemu_thread_args->name);
+    //QEMU_TSAN_ANNOTATE_THREAD_NAME(qemu_thread_args->name);
     g_free(qemu_thread_args->name);
     g_free(qemu_thread_args);
 

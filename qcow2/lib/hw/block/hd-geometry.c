@@ -35,7 +35,7 @@
 #include "qapi/qapi-types-block.h"
 #include "qemu/bswap.h"
 #include "hw/block/block.h"
-#include "trace.h"
+//#include "trace.h"
 
 struct partition {
         uint8_t boot_ind;           /* 0x80 - active */
@@ -88,7 +88,7 @@ static int guess_disk_lchs(BlockBackend *blk,
             *pheads = heads;
             *psectors = sectors;
             *pcylinders = cylinders;
-            trace_hd_geometry_lchs_guess(blk, cylinders, heads, sectors);
+            //trace_hd_geometry_lchs_guess(blk, cylinders, heads, sectors);
             return 0;
         }
     }
@@ -157,7 +157,7 @@ void hd_geometry_guess(BlockBackend *blk,
             translation = *ptrans;
         }
     }
-    trace_hd_geometry_guess(blk, *pcyls, *pheads, *psecs, translation);
+    //trace_hd_geometry_guess(blk, *pcyls, *pheads, *psecs, translation);
 }
 
 int hd_bios_chs_auto_trans(uint32_t cyls, uint32_t heads, uint32_t secs)

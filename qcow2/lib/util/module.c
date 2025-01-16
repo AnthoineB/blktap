@@ -25,7 +25,7 @@
 #ifdef CONFIG_MODULE_UPGRADES
 #include "qemu-version.h"
 #endif
-#include "trace.h"
+//#include "trace.h"
 
 typedef struct ModuleEntry
 {
@@ -191,7 +191,7 @@ static bool module_load_dso(const char *fname, bool export_symbols,
         e->init();
         register_module_init(e->init, e->type);
     }
-    trace_module_load_module(fname);
+    //trace_module_load_module(fname);
     QTAILQ_FOREACH_SAFE(e, &dso_init_list, node, next) {
         QTAILQ_REMOVE(&dso_init_list, e, node);
         g_free(e);
@@ -327,7 +327,7 @@ int module_load_qom(const char *type, Error **errp)
         return -1;
     }
 
-    trace_module_lookup_object_type(type);
+    //trace_module_lookup_object_type(type);
     for (modinfo = module_info; modinfo->name != NULL; modinfo++) {
         if (!modinfo->objs) {
             continue;

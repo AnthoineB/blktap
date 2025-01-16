@@ -27,8 +27,8 @@
 #include "block/qapi.h"
 #include "block/block_int.h"
 #include "block/dirty-bitmap.h"
-#include "block/throttle-groups.h"
-#include "block/write-threshold.h"
+//#include "block/throttle-groups.h"
+//#include "block/write-threshold.h"
 #include "qapi/error.h"
 #include "qapi/qapi-commands-block-core.h"
 #include "qapi/qobject-output-visitor.h"
@@ -88,6 +88,7 @@ BlockDeviceInfo *bdrv_block_device_info(BlockBackend *blk,
 
     info->detect_zeroes = bs->detect_zeroes;
 
+#if 0
     if (blk && blk_get_public(blk)->throttle_group_member.throttle_state) {
         ThrottleConfig cfg;
         BlockBackendPublic *blkp = blk_get_public(blk);
@@ -144,6 +145,7 @@ BlockDeviceInfo *bdrv_block_device_info(BlockBackend *blk,
     }
 
     info->write_threshold = bdrv_write_threshold_get(bs);
+#endif
 
     p_image_info = &info->image;
     info->backing_file_depth = 0;

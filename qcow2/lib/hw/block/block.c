@@ -9,12 +9,13 @@
 
 #include "qemu/osdep.h"
 #include "block/block_int-common.h"
-#include "sysemu/blockdev.h"
+//#include "sysemu/blockdev.h"
 #include "sysemu/block-backend.h"
 #include "hw/block/block.h"
 #include "qapi/error.h"
 #include "qapi/qapi-types-block.h"
 
+#if 0
 /*
  * Read the non-zeroes parts of @blk into @buf
  * Reading all of the @blk is expensive if the zeroes parts of @blk
@@ -99,6 +100,7 @@ bool blk_check_size_and_read_all(BlockBackend *blk, DeviceState *dev,
     }
     return true;
 }
+#endif
 
 bool blkconf_blocksizes(BlockConf *conf, Error **errp)
 {
@@ -257,8 +259,8 @@ bool blkconf_geometry(BlockConf *conf, int *ptrans,
         hd_geometry_guess(conf->blk,
                           &conf->cyls, &conf->heads, &conf->secs,
                           ptrans);
-    } else if (ptrans && *ptrans == BIOS_ATA_TRANSLATION_AUTO) {
-        *ptrans = hd_bios_chs_auto_trans(conf->cyls, conf->heads, conf->secs);
+    //} else if (ptrans && *ptrans == BIOS_ATA_TRANSLATION_AUTO) {
+    //    *ptrans = hd_bios_chs_auto_trans(conf->cyls, conf->heads, conf->secs);
     }
     if (conf->cyls || conf->heads || conf->secs) {
         if (conf->cyls < 1 || conf->cyls > cyls_max) {

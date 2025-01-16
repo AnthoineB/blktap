@@ -267,6 +267,7 @@ void ulshift(uint64_t *plow, uint64_t *phigh, int32_t shift, bool *overflow)
     }
 }
 
+#if 0
 /*
  * Unsigned 256-by-128 division.
  * Returns the remainder via r.
@@ -446,3 +447,4 @@ Int128 divs256(Int128 *plow, Int128 *phigh, Int128 divisor)
         return rem;
     }
 }
+#endif

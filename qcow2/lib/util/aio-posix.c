@@ -19,9 +19,9 @@
 #include "qemu/main-loop.h"
 #include "qemu/rcu.h"
 #include "qemu/rcu_queue.h"
-#include "qemu/sockets.h"
+//#include "qemu/sockets.h"
 #include "qemu/cutils.h"
-#include "trace.h"
+//#include "trace.h"
 #include "aio-posix.h"
 
 /* Stop userspace polling on a handler if it isn't active for some time */
@@ -338,7 +338,7 @@ static bool aio_dispatch_handler(AioContext *ctx, AioHandler *node)
     if (!QLIST_IS_INSERTED(node, node_deleted) &&
         !QLIST_IS_INSERTED(node, node_poll) &&
         node->io_poll) {
-        trace_poll_add(ctx, node, node->pfd.fd, revents);
+        //trace_poll_add(ctx, node, node->pfd.fd, revents);
         if (ctx->poll_started && node->io_poll_begin) {
             node->io_poll_begin(node->opaque);
         }
@@ -486,7 +486,7 @@ static bool remove_idle_poll_handlers(AioContext *ctx,
         if (node->poll_idle_timeout == 0LL) {
             node->poll_idle_timeout = now + POLL_IDLE_INTERVAL_NS;
         } else if (now >= node->poll_idle_timeout) {
-            trace_poll_remove(ctx, node, node->pfd.fd);
+            //trace_poll_remove(ctx, node, node->pfd.fd);
             node->poll_idle_timeout = 0LL;
             QLIST_SAFE_REMOVE(node, node_poll);
             if (ctx->poll_started && node->io_poll_end) {
@@ -527,7 +527,7 @@ static bool run_poll_handlers(AioContext *ctx, AioHandlerList *ready_list,
 
     assert(qemu_lockcnt_count(&ctx->list_lock) > 0);
 
-    trace_run_poll_handlers_begin(ctx, max_ns, *timeout);
+    //trace_run_poll_handlers_begin(ctx, max_ns, *timeout);
 
     /*
      * Optimization: ->io_poll() handlers often contain RCU read critical
@@ -561,7 +561,7 @@ static bool run_poll_handlers(AioContext *ctx, AioHandlerList *ready_list,
         *timeout -= MIN(*timeout, elapsed_time);
     }
 
-    trace_run_poll_handlers_end(ctx, progress, *timeout);
+    //trace_run_poll_handlers_end(ctx, progress, *timeout);
     return progress;
 }
 
@@ -686,7 +686,7 @@ bool aio_poll(AioContext *ctx, bool blocking)
             /* This is the sweet spot, no adjustment needed */
         } else if (block_ns > ctx->poll_max_ns) {
             /* We'd have to poll for too long, poll less */
-            int64_t old = ctx->poll_ns;
+            //int64_t old = ctx->poll_ns;
 
             if (ctx->poll_shrink) {
                 ctx->poll_ns /= ctx->poll_shrink;
@@ -694,11 +694,11 @@ bool aio_poll(AioContext *ctx, bool blocking)
                 ctx->poll_ns = 0;
             }
 
-            trace_poll_shrink(ctx, old, ctx->poll_ns);
+            //trace_poll_shrink(ctx, old, ctx->poll_ns);
         } else if (ctx->poll_ns < ctx->poll_max_ns &&
                    block_ns < ctx->poll_max_ns) {
             /* There is room to grow, poll longer */
-            int64_t old = ctx->poll_ns;
+            //int64_t old = ctx->poll_ns;
             int64_t grow = ctx->poll_grow;
 
             if (grow == 0) {
@@ -715,7 +715,7 @@ bool aio_poll(AioContext *ctx, bool blocking)
                 ctx->poll_ns = ctx->poll_max_ns;
             }
 
-            trace_poll_grow(ctx, old, ctx->poll_ns);
+            //trace_poll_grow(ctx, old, ctx->poll_ns);
         }
     }
 

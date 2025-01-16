@@ -12,7 +12,7 @@
 
 #include "qemu/osdep.h"
 #include "qapi/error.h"
-#include "qapi-visit-common.h"
+#include "qapi/qapi-visit-common.h"
 
 bool visit_type_IoOperationType(Visitor *v, const char *name,
                  IoOperationType *obj, Error **errp)

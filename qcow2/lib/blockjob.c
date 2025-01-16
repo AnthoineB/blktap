@@ -28,7 +28,7 @@
 #include "block/block.h"
 #include "block/blockjob_int.h"
 #include "block/block_int.h"
-#include "block/trace.h"
+//#include "block/trace.h"
 #include "sysemu/block-backend.h"
 #include "qapi/error.h"
 #include "qapi/qapi-events-block-core.h"
@@ -213,6 +213,7 @@ void block_job_remove_all_bdrv(BlockJob *job)
     bdrv_graph_wrunlock();
 }
 
+#if 0
 bool block_job_has_bdrv(BlockJob *job, BlockDriverState *bs)
 {
     GSList *el;
@@ -227,6 +228,7 @@ bool block_job_has_bdrv(BlockJob *job, BlockDriverState *bs)
 
     return false;
 }
+#endif
 
 int block_job_add_bdrv(BlockJob *job, const char *name, BlockDriverState *bs,
                        uint64_t perm, uint64_t shared_perm, Error **errp)
@@ -312,6 +314,7 @@ static bool block_job_set_speed(BlockJob *job, int64_t speed, Error **errp)
     return block_job_set_speed_locked(job, speed, errp);
 }
 
+#if 0
 void block_job_change_locked(BlockJob *job, BlockJobChangeOptions *opts,
                              Error **errp)
 {
@@ -331,6 +334,7 @@ void block_job_change_locked(BlockJob *job, BlockJobChangeOptions *opts,
         error_setg(errp, "Job type does not support change");
     }
 }
+#endif
 
 void block_job_ratelimit_processed_bytes(BlockJob *job, uint64_t n)
 {

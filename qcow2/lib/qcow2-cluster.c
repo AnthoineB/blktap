@@ -30,7 +30,7 @@
 #include "qcow2.h"
 #include "qemu/bswap.h"
 #include "qemu/memalign.h"
-#include "trace.h"
+//#include "trace.h"
 
 int coroutine_fn qcow2_shrink_l1_table(BlockDriverState *bs,
                                        uint64_t exact_size)
@@ -281,7 +281,7 @@ static int GRAPH_RDLOCK l2_allocate(BlockDriverState *bs, int l1_index)
 
     old_l2_offset = s->l1_table[l1_index];
 
-    trace_qcow2_l2_allocate(bs, l1_index);
+    //trace_qcow2_l2_allocate(bs, l1_index);
 
     /* allocate a new l2 entry */
 
@@ -312,7 +312,7 @@ static int GRAPH_RDLOCK l2_allocate(BlockDriverState *bs, int l1_index)
     slice_size2 = s->l2_slice_size * l2_entry_size(s);
     n_slices = s->cluster_size / slice_size2;
 
-    trace_qcow2_l2_allocate_get_empty(bs, l1_index);
+    //trace_qcow2_l2_allocate_get_empty(bs, l1_index);
     for (slice = 0; slice < n_slices; slice++) {
         ret = qcow2_cache_get_empty(bs, s->l2_table_cache,
                                     l2_offset + slice * slice_size2,
@@ -345,7 +345,7 @@ static int GRAPH_RDLOCK l2_allocate(BlockDriverState *bs, int l1_index)
         /* write the l2 slice to the file */
         BLKDBG_EVENT(bs->file, BLKDBG_L2_ALLOC_WRITE);
 
-        trace_qcow2_l2_allocate_write_l2(bs, l1_index);
+        //trace_qcow2_l2_allocate_write_l2(bs, l1_index);
         qcow2_cache_entry_mark_dirty(s->l2_table_cache, l2_slice);
         qcow2_cache_put(s->l2_table_cache, (void **) &l2_slice);
     }
@@ -356,18 +356,18 @@ static int GRAPH_RDLOCK l2_allocate(BlockDriverState *bs, int l1_index)
     }
 
     /* update the L1 entry */
-    trace_qcow2_l2_allocate_write_l1(bs, l1_index);
+    //trace_qcow2_l2_allocate_write_l1(bs, l1_index);
     s->l1_table[l1_index] = l2_offset | QCOW_OFLAG_COPIED;
     ret = qcow2_write_l1_entry(bs, l1_index);
     if (ret < 0) {
         goto fail;
     }
 
-    trace_qcow2_l2_allocate_done(bs, l1_index, 0);
+    //trace_qcow2_l2_allocate_done(bs, l1_index, 0);
     return 0;
 
 fail:
-    trace_qcow2_l2_allocate_done(bs, l1_index, ret);
+    //trace_qcow2_l2_allocate_done(bs, l1_index, ret);
     if (l2_slice != NULL) {
         qcow2_cache_put(s->l2_table_cache, (void **) &l2_slice);
     }
@@ -959,6 +959,7 @@ perform_cow(BlockDriverState *bs, QCowL2Meta *m)
         goto fail;
     }
 
+#if 0
     /* Encrypt the data if necessary before writing it */
     if (bs->encrypted) {
         ret = qcow2_co_encrypt(bs,
@@ -977,6 +978,7 @@ perform_cow(BlockDriverState *bs, QCowL2Meta *m)
             goto fail;
         }
     }
+#endif
 
     /* And now we can write everything. If we have the guest data we
      * can write everything in one single operation */
@@ -1033,7 +1035,7 @@ int coroutine_fn qcow2_alloc_cluster_link_l2(BlockDriverState *bs,
     uint64_t *old_cluster, *l2_slice;
     uint64_t cluster_offset = m->alloc_offset;
 
-    trace_qcow2_cluster_link_l2(qemu_coroutine_self(), m->nb_clusters);
+    //trace_qcow2_cluster_link_l2(qemu_coroutine_self(), m->nb_clusters);
     assert(m->nb_clusters > 0);
 
     old_cluster = g_try_new(uint64_t, m->nb_clusters);
@@ -1503,8 +1505,8 @@ handle_copied(BlockDriverState *bs, uint64_t guest_offset,
     unsigned int keep_clusters;
     int ret;
 
-    trace_qcow2_handle_copied(qemu_coroutine_self(), guest_offset, *host_offset,
-                              *bytes);
+    //trace_qcow2_handle_copied(qemu_coroutine_self(), guest_offset, *host_offset,
+    //                          *bytes);
 
     assert(*host_offset == INV_OFFSET || offset_into_cluster(s, guest_offset)
                                       == offset_into_cluster(s, *host_offset));
@@ -1607,8 +1609,8 @@ do_alloc_cluster_offset(BlockDriverState *bs, uint64_t guest_offset,
 {
     BDRVQcow2State *s = bs->opaque;
 
-    trace_qcow2_do_alloc_clusters_offset(qemu_coroutine_self(), guest_offset,
-                                         *host_offset, *nb_clusters);
+    //trace_qcow2_do_alloc_clusters_offset(qemu_coroutine_self(), guest_offset,
+    //                                     *host_offset, *nb_clusters);
 
     if (has_data_file(bs)) {
         assert(*host_offset == INV_OFFSET ||
@@ -1618,7 +1620,7 @@ do_alloc_cluster_offset(BlockDriverState *bs, uint64_t guest_offset,
     }
 
     /* Allocate new clusters */
-    trace_qcow2_cluster_alloc_phys(qemu_coroutine_self());
+    //trace_qcow2_cluster_alloc_phys(qemu_coroutine_self());
     if (*host_offset == INV_OFFSET) {
         int64_t cluster_offset =
             qcow2_alloc_clusters(bs, *nb_clusters * s->cluster_size);
@@ -1670,8 +1672,8 @@ handle_alloc(BlockDriverState *bs, uint64_t guest_offset,
 
     uint64_t alloc_cluster_offset;
 
-    trace_qcow2_handle_alloc(qemu_coroutine_self(), guest_offset, *host_offset,
-                             *bytes);
+    //trace_qcow2_handle_alloc(qemu_coroutine_self(), guest_offset, *host_offset,
+    //                         *bytes);
     assert(*bytes > 0);
 
     /*
@@ -1791,7 +1793,7 @@ int coroutine_fn qcow2_alloc_host_offset(BlockDriverState *bs, uint64_t offset,
     uint64_t cur_bytes;
     int ret;
 
-    trace_qcow2_alloc_clusters_offset(qemu_coroutine_self(), offset, *bytes);
+    //trace_qcow2_alloc_clusters_offset(qemu_coroutine_self(), offset, *bytes);
 
 again:
     start = offset;

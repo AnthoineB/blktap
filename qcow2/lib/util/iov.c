@@ -18,7 +18,7 @@
 
 #include "qemu/osdep.h"
 #include "qemu/iov.h"
-#include "qemu/sockets.h"
+//#include "qemu/sockets.h"
 #include "qemu/cutils.h"
 
 size_t iov_from_buf_full(const struct iovec *iov, unsigned int iov_cnt,
@@ -229,6 +229,7 @@ ssize_t iov_send_recv(int sockfd, const struct iovec *_iov, unsigned iov_cnt,
 }
 
 
+#if 0
 void iov_hexdump(const struct iovec *iov, const unsigned int iov_cnt,
                  FILE *fp, const char *prefix, size_t limit)
 {
@@ -245,6 +246,7 @@ void iov_hexdump(const struct iovec *iov, const unsigned int iov_cnt,
     qemu_hexdump(fp, prefix, buf, size);
     g_free(buf);
 }
+#endif
 
 unsigned iov_copy(struct iovec *dst_iov, unsigned int dst_iov_cnt,
                  const struct iovec *iov, unsigned int iov_cnt,
@@ -432,7 +434,7 @@ bool qemu_iovec_is_zero(QEMUIOVector *qiov, size_t offset, size_t bytes)
         uint8_t *base = (uint8_t *)iov->iov_base + current_offset;
         size_t len = MIN(iov->iov_len - current_offset, bytes);
 
-        if (!buffer_is_zero(base, len)) {
+        if (!buffer_is_zero((char*)base, len)) {
             return false;
         }
 

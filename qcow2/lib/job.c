@@ -29,7 +29,7 @@
 #include "qemu/id.h"
 #include "qemu/main-loop.h"
 #include "block/aio-wait.h"
-#include "trace/trace-root.h"
+//#include "trace/trace-root.h"
 #include "qapi/qapi-events-job.h"
 
 /*
@@ -209,9 +209,9 @@ static void job_state_transition_locked(Job *job, JobStatus s1)
 {
     JobStatus s0 = job->status;
     assert(s1 >= 0 && s1 < JOB_STATUS__MAX);
-    trace_job_state_transition(job, job->ret,
-                               JobSTT[s0][s1] ? "allowed" : "disallowed",
-                               JobStatus_str(s0), JobStatus_str(s1));
+    //trace_job_state_transition(job, job->ret,
+    //                           JobSTT[s0][s1] ? "allowed" : "disallowed",
+    //                           JobStatus_str(s0), JobStatus_str(s1));
     assert(JobSTT[s0][s1]);
     job->status = s1;
 
@@ -224,8 +224,8 @@ int job_apply_verb_locked(Job *job, JobVerb verb, Error **errp)
 {
     JobStatus s0 = job->status;
     assert(verb >= 0 && verb < JOB_VERB__MAX);
-    trace_job_apply_verb(job, JobStatus_str(s0), JobVerb_str(verb),
-                         JobVerbTable[verb][s0] ? "allowed" : "prohibited");
+    //trace_job_apply_verb(job, JobStatus_str(s0), JobVerb_str(verb),
+    //                     JobVerbTable[verb][s0] ? "allowed" : "prohibited");
     if (JobVerbTable[verb][s0]) {
         return 0;
     }
@@ -1060,7 +1060,7 @@ static void job_completed_locked(Job *job)
     assert(job && job->txn && !job_is_completed_locked(job));
 
     job_update_rc_locked(job);
-    trace_job_completed(job, job->ret);
+    //trace_job_completed(job, job->ret);
     if (job->ret) {
         job_completed_txn_abort_locked(job);
     } else {

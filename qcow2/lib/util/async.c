@@ -35,7 +35,7 @@
 #include "qemu/coroutine_int.h"
 #include "qemu/coroutine-tls.h"
 #include "sysemu/cpu-timers.h"
-#include "trace.h"
+//#include "trace.h"
 
 /***********************************************************/
 /* bottom halves (can be seen as timers which expire ASAP) */
@@ -162,9 +162,11 @@ void aio_bh_call(QEMUBH *bh)
     MemReentrancyGuard *reentrancy_guard = bh->reentrancy_guard;
     if (reentrancy_guard) {
         last_engaged_in_io = reentrancy_guard->engaged_in_io;
+#if 0
         if (reentrancy_guard->engaged_in_io) {
             trace_reentrant_aio(bh->ctx, bh->name);
         }
+#endif
         reentrancy_guard->engaged_in_io = true;
     }
 
@@ -563,7 +565,7 @@ static void co_schedule_bh_cb(void *opaque)
     while (!QSLIST_EMPTY(&straight)) {
         Coroutine *co = QSLIST_FIRST(&straight);
         QSLIST_REMOVE_HEAD(&straight, co_scheduled_next);
-        trace_aio_co_schedule_bh_cb(ctx, co);
+        //trace_aio_co_schedule_bh_cb(ctx, co);
 
         /* Protected by write barrier in qemu_aio_coroutine_enter */
         qatomic_set(&co->scheduled, NULL);
@@ -628,7 +630,7 @@ fail:
 
 void aio_co_schedule(AioContext *ctx, Coroutine *co)
 {
-    trace_aio_co_schedule(ctx, co);
+    //trace_aio_co_schedule(ctx, co);
     const char *scheduled = qatomic_cmpxchg(&co->scheduled, NULL,
                                            __func__);
 

@@ -27,8 +27,8 @@
 #include "qemu/timer.h"
 #include "qemu/lockable.h"
 #include "sysemu/cpu-timers.h"
-#include "sysemu/replay.h"
-#include "sysemu/cpus.h"
+//#include "sysemu/replay.h"
+//#include "sysemu/cpus.h"
 
 #ifdef CONFIG_POSIX
 #include <pthread.h>
@@ -522,14 +522,18 @@ bool timerlist_run_timers(QEMUTimerList *timer_list)
     case QEMU_CLOCK_VIRTUAL:
         break;
     case QEMU_CLOCK_HOST:
+#if 0
         if (!replay_checkpoint(CHECKPOINT_CLOCK_HOST)) {
             goto out;
         }
+#endif
         break;
     case QEMU_CLOCK_VIRTUAL_RT:
+#if 0
         if (!replay_checkpoint(CHECKPOINT_CLOCK_VIRTUAL_RT)) {
             goto out;
         }
+#endif
         break;
     }
 
@@ -552,6 +556,7 @@ bool timerlist_run_timers(QEMUTimerList *timer_list)
              */
             break;
         }
+#if 0
         /* Checkpoint for virtual clock is redundant in cases where
          * it's being triggered with only non-EXTERNAL timers, because
          * these timers don't change guest state directly.
@@ -563,6 +568,7 @@ bool timerlist_run_timers(QEMUTimerList *timer_list)
             qemu_mutex_unlock(&timer_list->active_timers_lock);
             goto out;
         }
+#endif
 
         /* remove timer from the list before calling the callback */
         timer_list->active_timers = ts->next;
@@ -604,6 +610,7 @@ void timerlistgroup_deinit(QEMUTimerListGroup *tlg)
     QEMUClockType type;
     for (type = 0; type < QEMU_CLOCK_MAX; type++) {
         timerlist_free(tlg->tl[type]);
+        tlg->tl[type] = NULL;
     }
 }
 
@@ -637,18 +644,28 @@ int64_t qemu_clock_get_ns(QEMUClockType type)
         return get_clock();
     default:
     case QEMU_CLOCK_VIRTUAL:
+#if 0
         return cpus_get_virtual_clock();
+#else
+        return get_clock();
+#endif
     case QEMU_CLOCK_HOST:
-        return REPLAY_CLOCK(REPLAY_CLOCK_HOST, get_clock_realtime());
+        return /*REPLAY_CLOCK(REPLAY_CLOCK_HOST,*/ get_clock_realtime()/*)*/;
     case QEMU_CLOCK_VIRTUAL_RT:
+#if 0
         return REPLAY_CLOCK(REPLAY_CLOCK_VIRTUAL_RT, cpu_get_clock());
+#else
+        assert(0);
+#endif
     }
 }
 
+#if 0
 static void qemu_virtual_clock_set_ns(int64_t time)
 {
     return cpus_set_virtual_clock(time);
 }
+#endif
 
 void init_clocks(QEMUTimerListNotifyCB *notify_cb)
 {
@@ -681,6 +698,7 @@ bool qemu_clock_run_all_timers(void)
     return progress;
 }
 
+#if 0
 int64_t qemu_clock_advance_virtual_time(int64_t dest)
 {
     int64_t clock = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
@@ -711,3 +729,4 @@ int64_t qemu_clock_advance_virtual_time(int64_t dest)
 
     return clock;
 }
+#endif

@@ -41,6 +41,7 @@ Visitor *qobject_output_visitor_new_qmp(QObject **result)
     return v;
 }
 
+#if 0
 static QDict *qmp_dispatch_check_obj(QDict *dict, bool allow_oob,
                                      Error **errp)
 {
@@ -294,3 +295,4 @@ out:
 
     return rsp;
 }
+#endif

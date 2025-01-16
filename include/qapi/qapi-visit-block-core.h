@@ -17,9 +17,9 @@
 #include "qapi-types-block-core.h"
 
 #include "qapi-visit-common.h"
-#include "qapi-visit-crypto.h"
-#include "qapi-visit-job.h"
-#include "qapi-visit-sockets.h"
+//#include "qapi-visit-crypto.h"
+#include "qapi/qapi-visit-job.h"
+//#include "qapi-visit-sockets.h"
 
 bool visit_type_SnapshotInfo_members(Visitor *v, SnapshotInfo *obj, Error **errp);
 

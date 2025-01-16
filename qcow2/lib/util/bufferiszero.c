@@ -24,7 +24,7 @@
 #include "qemu/osdep.h"
 #include "qemu/cutils.h"
 #include "qemu/bswap.h"
-#include "host/cpuinfo.h"
+//#include "host/cpuinfo.h"
 
 typedef bool (*biz_accel_fn)(const void *, size_t);
 
@@ -81,7 +81,12 @@ static bool buffer_is_zero_int_ge256(const void *buf, size_t len)
     return t == 0;
 }
 
-#include "host/bufferiszero.c.inc"
+//#include "host/bufferiszero.c.inc"
+static biz_accel_fn const accel_table[1] = {
+    buffer_is_zero_int_ge256
+};
+
+#define best_accel() 0
 
 static biz_accel_fn buffer_is_zero_accel;
 static unsigned accel_index;

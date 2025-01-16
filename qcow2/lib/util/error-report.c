@@ -10,8 +10,10 @@
  * See the COPYING file in the top-level directory.
  */
 
+#include <syslog.h>
+
 #include "qemu/osdep.h"
-#include "monitor/monitor.h"
+//#include "monitor/monitor.h"
 #include "qemu/error-report.h"
 
 /*
@@ -32,12 +34,11 @@ const char *error_guest_name;
 int error_printf(const char *fmt, ...)
 {
     va_list ap;
-    int ret;
 
     va_start(ap, fmt);
-    ret = error_vprintf(fmt, ap);
+    vsyslog(LOG_ERR, fmt, ap);
     va_end(ap);
-    return ret;
+    return 0;
 }
 
 static Location std_loc = {
@@ -144,7 +145,7 @@ static void print_loc(void)
     int i;
     const char *const *argp;
 
-    if (!monitor_cur() && g_get_prgname()) {
+    if (/*!monitor_cur() && */g_get_prgname()) {
         error_printf("%s:", g_get_prgname());
         sep = " ";
     }
@@ -188,14 +189,14 @@ static void vreport(report_type type, const char *fmt, va_list ap)
 {
     gchar *timestr;
 
-    if (message_with_timestamp && !monitor_cur()) {
+    if (message_with_timestamp/* && !monitor_cur()*/) {
         timestr = real_time_iso8601();
         error_printf("%s ", timestr);
         g_free(timestr);
     }
 
     /* Only prepend guest name if -msg guest-name and -name guest=... are set */
-    if (error_with_guestname && error_guest_name && !monitor_cur()) {
+    if (error_with_guestname && error_guest_name/* && !monitor_cur()*/) {
         error_printf("%s ", error_guest_name);
     }
 
@@ -212,8 +213,8 @@ static void vreport(report_type type, const char *fmt, va_list ap)
         break;
     }
 
-    error_vprintf(fmt, ap);
-    error_printf("\n");
+    vsyslog(LOG_ERR, fmt, ap);
+    //error_printf("\n");
 }
 
 /*

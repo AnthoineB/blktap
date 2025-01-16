@@ -24,14 +24,14 @@
 #include "qemu/osdep.h"
 #include "qapi/error.h"
 #include "qemu/cutils.h"
-#include "qemu/sockets.h"
+//#include "qemu/sockets.h"
 #include "qemu/error-report.h"
-#include "qemu/madvise.h"
-#include "qemu/mprotect.h"
-#include "qemu/hw-version.h"
-#include "monitor/monitor.h"
+//#include "qemu/madvise.h"
+//#include "qemu/mprotect.h"
+//#include "qemu/hw-version.h"
+//#include "monitor/monitor.h"
 
-static const char *hw_version = QEMU_HW_VERSION;
+//static const char *hw_version = QEMU_HW_VERSION;
 
 int socket_set_cork(int fd, int v)
 {
@@ -42,6 +42,7 @@ int socket_set_cork(int fd, int v)
 #endif
 }
 
+#if 0
 int socket_set_nodelay(int fd)
 {
     int v = 1;
@@ -118,6 +119,7 @@ int qemu_mprotect_none(void *addr, size_t size)
     return qemu_mprotect__osdep(addr, size, PROT_NONE);
 #endif
 }
+#endif
 
 #ifndef _WIN32
 
@@ -327,7 +329,7 @@ qemu_open_internal(const char *name, int flags, mode_t mode, Error **errp)
             return -1;
         }
 
-        return monitor_fdset_dup_fd_add(fdset_id, flags, errp);
+        return 0 /*monitor_fdset_dup_fd_add(fdset_id, flags, errp)*/;
     }
 #endif
 
@@ -400,7 +402,7 @@ int qemu_open_old(const char *name, int flags, ...)
 int qemu_close(int fd)
 {
     /* Close fd that was dup'd from an fdset */
-    monitor_fdset_dup_fd_remove(fd);
+    //monitor_fdset_dup_fd_remove(fd);
     return close(fd);
 }
 
@@ -451,6 +453,7 @@ ssize_t qemu_write_full(int fd, const void *buf, size_t count)
     return total;
 }
 
+#if 0
 /*
  * Opens a socket with FD_CLOEXEC set
  */
@@ -514,7 +517,9 @@ ssize_t qemu_send_full(int s, const void *buf, size_t count)
 
     return total;
 }
+#endif
 
+#if 0
 void qemu_set_hw_version(const char *version)
 {
     hw_version = version;
@@ -524,6 +529,7 @@ const char *qemu_hw_version(void)
 {
     return hw_version;
 }
+#endif
 
 #ifdef _WIN32
 static void socket_cleanup(void)

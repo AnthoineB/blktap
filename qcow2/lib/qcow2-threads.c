@@ -36,7 +36,7 @@
 #include "qcow2.h"
 #include "block/block-io.h"
 #include "block/thread-pool.h"
-#include "crypto.h"
+//#include "crypto.h"
 
 static int coroutine_fn
 qcow2_co_process(BlockDriverState *bs, ThreadPoolFunc *func, void *arg)
@@ -426,6 +426,7 @@ qcow2_co_decompress(BlockDriverState *bs, void *dest, size_t dest_size,
 }
 
 
+#if 0
 /*
  * Cryptography
  */
@@ -525,3 +526,4 @@ qcow2_co_decrypt(BlockDriverState *bs, uint64_t host_offset,
     return qcow2_co_encdec(bs, host_offset, guest_offset, buf, len,
                            qcrypto_block_decrypt);
 }
+#endif

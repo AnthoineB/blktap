@@ -27,7 +27,7 @@
 #include "qemu/job.h"
 #include "qapi/qapi-commands-job.h"
 #include "qapi/error.h"
-#include "trace/trace-root.h"
+//#include "trace/trace-root.h"
 
 /*
  * Get a job using its ID. Called with job_mutex held.
@@ -56,7 +56,7 @@ void qmp_job_cancel(const char *id, Error **errp)
         return;
     }
 
-    trace_qmp_job_cancel(job);
+    //trace_qmp_job_cancel(job);
     job_user_cancel_locked(job, true, errp);
 }
 
@@ -71,7 +71,7 @@ void qmp_job_pause(const char *id, Error **errp)
         return;
     }
 
-    trace_qmp_job_pause(job);
+    //trace_qmp_job_pause(job);
     job_user_pause_locked(job, errp);
 }
 
@@ -86,7 +86,7 @@ void qmp_job_resume(const char *id, Error **errp)
         return;
     }
 
-    trace_qmp_job_resume(job);
+    //trace_qmp_job_resume(job);
     job_user_resume_locked(job, errp);
 }
 
@@ -101,7 +101,7 @@ void qmp_job_complete(const char *id, Error **errp)
         return;
     }
 
-    trace_qmp_job_complete(job);
+    //trace_qmp_job_complete(job);
     job_complete_locked(job, errp);
 }
 
@@ -116,7 +116,7 @@ void qmp_job_finalize(const char *id, Error **errp)
         return;
     }
 
-    trace_qmp_job_finalize(job);
+    //trace_qmp_job_finalize(job);
     job_ref_locked(job);
     job_finalize_locked(job, errp);
 
@@ -134,7 +134,7 @@ void qmp_job_dismiss(const char *id, Error **errp)
         return;
     }
 
-    trace_qmp_job_dismiss(job);
+    //trace_qmp_job_dismiss(job);
     job_dismiss_locked(&job, errp);
 }
 

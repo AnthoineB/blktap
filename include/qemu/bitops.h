@@ -12,9 +12,8 @@
 #ifndef BITOPS_H
 #define BITOPS_H
 
-
-#include "host-utils.h"
-#include "atomic.h"
+#include "qemu/host-utils.h"
+#include "qemu/atomic.h"
 
 #define BITS_PER_BYTE           CHAR_BIT
 #define BITS_PER_LONG           (sizeof (unsigned long) * BITS_PER_BYTE)
@@ -41,6 +40,7 @@ static inline void set_bit(long nr, unsigned long *addr)
     *p  |= mask;
 }
 
+#if 0
 /**
  * set_bit_atomic - Set a bit in memory atomically
  * @nr: the bit to set
@@ -53,6 +53,7 @@ static inline void set_bit_atomic(long nr, unsigned long *addr)
 
     qatomic_or(p, mask);
 }
+#endif
 
 /**
  * clear_bit - Clears a bit in memory
@@ -67,6 +68,7 @@ static inline void clear_bit(long nr, unsigned long *addr)
     *p &= ~mask;
 }
 
+#if 0
 /**
  * clear_bit_atomic - Clears a bit in memory atomically
  * @nr: Bit to clear
@@ -79,6 +81,7 @@ static inline void clear_bit_atomic(long nr, unsigned long *addr)
 
     return qatomic_and(p, ~mask);
 }
+#endif
 
 /**
  * change_bit - Toggle a bit in memory

@@ -1009,6 +1009,7 @@ int qemu_pstrcmp0(const char **str1, const char **str2)
     return g_strcmp0(*str1, *str2);
 }
 
+#if 0
 static inline bool starts_with_prefix(const char *dir)
 {
     size_t prefix_len = strlen(CONFIG_PREFIX);
@@ -1040,6 +1041,7 @@ static inline const char *next_component(const char *dir, int *p_len)
     *p_len = len;
     return dir;
 }
+#endif
 
 static const char *exec_dir;
 
@@ -1139,11 +1141,12 @@ void qemu_init_exec_dir(const char *argv0)
     if (p) {
         exec_dir = g_path_get_dirname(p);
     } else {
-        exec_dir = CONFIG_BINDIR;
+        exec_dir = "/usr/bin" /*CONFIG_BINDIR*/;
     }
 #endif
 }
 
+#if 0
 const char *qemu_get_exec_dir(void)
 {
     return exec_dir;
@@ -1216,3 +1219,4 @@ char *get_relocated_path(const char *dir)
 out:
     return g_string_free(result, false);
 }
+#endif

@@ -234,6 +234,7 @@ static inline int range_get_last_bit(Range *range)
  */
 int range_compare(Range *a, Range *b);
 
+#if 0
 GList *range_list_insert(GList *list, Range *data);
 
 /*
@@ -243,5 +244,6 @@ GList *range_list_insert(GList *list, Range *data);
 void range_inverse_array(GList *in_ranges,
                          GList **out_ranges,
                          uint64_t low, uint64_t high);
+#endif
 
 #endif

@@ -32,7 +32,7 @@ Error *error_warn;
 static void error_handle(Error **errp, Error *err)
 {
     if (errp == &error_abort) {
-        fprintf(stderr, "Unexpected error in %s() at %s:%d:\n",
+        error_report("Unexpected error in %s() at %s:%d:\n",
                 err->func, err->src, err->line);
         error_report("%s", error_get_pretty(err));
         if (err->hint) {
@@ -231,6 +231,8 @@ const char *error_get_pretty(const Error *err)
 
 void error_report_err(Error *err)
 {
+    error_report("libqcow2: error in %s() at %s:%d:\n",
+            err->func, err->src, err->line);
     error_report("%s", error_get_pretty(err));
     if (err->hint) {
         error_printf("%s", err->hint->str);
@@ -240,6 +242,8 @@ void error_report_err(Error *err)
 
 void warn_report_err(Error *err)
 {
+    warn_report("libqcow2: error in %s() at %s:%d:\n",
+            err->func, err->src, err->line);
     warn_report("%s", error_get_pretty(err));
     if (err->hint) {
         error_printf("%s", err->hint->str);

@@ -35,7 +35,7 @@
 #ifdef COMPILING_PER_TARGET
 #include CONFIG_TARGET
 #else
-#include "exec/poison.h"
+//#include "exec/poison.h"
 #endif
 
 /*

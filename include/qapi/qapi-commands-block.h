@@ -13,7 +13,7 @@
 #ifndef QAPI_COMMANDS_BLOCK_H
 #define QAPI_COMMANDS_BLOCK_H
 
-#include "qapi-commands-block-core.h"
+#include "qapi/qapi-commands-block-core.h"
 #include "qapi-types-block.h"
 
 PRManagerInfoList *qmp_query_pr_managers(Error **errp);

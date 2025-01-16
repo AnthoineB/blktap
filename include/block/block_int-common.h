@@ -1253,7 +1253,7 @@ struct BlockDriverState {
     BdrvBlockStatusCache *block_status_cache;
 
     /* array of write pointers' location of each zone in the zoned device. */
-    BlockZoneWps *wps;
+    //BlockZoneWps *wps;
 };
 
 struct BlockBackendRootState {

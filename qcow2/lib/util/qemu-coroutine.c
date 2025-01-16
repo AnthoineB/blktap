@@ -13,7 +13,7 @@
  */
 
 #include "qemu/osdep.h"
-#include "trace.h"
+//#include "trace.h"
 #include "qemu/thread.h"
 #include "qemu/atomic.h"
 #include "qemu/coroutine_int.h"
@@ -265,7 +265,7 @@ void qemu_aio_coroutine_enter(AioContext *ctx, Coroutine *co)
 
         QSIMPLEQ_REMOVE_HEAD(&pending, co_queue_next);
 
-        trace_qemu_aio_coroutine_enter(ctx, from, to, to->entry_arg);
+        //trace_qemu_aio_coroutine_enter(ctx, from, to, to->entry_arg);
 
         /* if the Coroutine has already been scheduled, entering it again will
          * cause us to enter it twice, potentially even after the coroutine has
@@ -302,7 +302,7 @@ void qemu_aio_coroutine_enter(AioContext *ctx, Coroutine *co)
             break;
         case COROUTINE_TERMINATE:
             assert(!to->locks_held);
-            trace_qemu_coroutine_terminate(to);
+            //trace_qemu_coroutine_terminate(to);
             coroutine_delete(to);
             break;
         default:
@@ -328,7 +328,7 @@ void coroutine_fn qemu_coroutine_yield(void)
     Coroutine *self = qemu_coroutine_self();
     Coroutine *to = self->caller;
 
-    trace_qemu_coroutine_yield(self, to);
+    //trace_qemu_coroutine_yield(self, to);
 
     if (!to) {
         fprintf(stderr, "Co-routine is yielding to no one\n");

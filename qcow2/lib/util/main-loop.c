@@ -27,13 +27,13 @@
 #include "qemu/cutils.h"
 #include "qemu/timer.h"
 #include "sysemu/cpu-timers.h"
-#include "sysemu/replay.h"
+//#include "sysemu/replay.h"
 #include "qemu/main-loop.h"
 #include "block/aio.h"
 #include "block/thread-pool.h"
 #include "qemu/error-report.h"
 #include "qemu/queue.h"
-#include "qom/object.h"
+//#include "qom/object.h"
 
 #ifndef _WIN32
 #include <sys/wait.h>
@@ -95,10 +95,10 @@ static int qemu_signal_init(Error **errp)
      * not catch it reliably.
      */
     sigemptyset(&set);
-    sigaddset(&set, SIG_IPI);
+    //sigaddset(&set, SIG_IPI);
     sigaddset(&set, SIGIO);
     sigaddset(&set, SIGALRM);
-    sigaddset(&set, SIGBUS);
+    //sigaddset(&set, SIGBUS);
     /* SIGINT cannot be handled via signalfd, so that ^C can be used
      * to interrupt QEMU when it is being run under gdb.  SIGHUP and
      * SIGTERM are also handled asynchronously, even though it is not
@@ -106,7 +106,7 @@ static int qemu_signal_init(Error **errp)
      */
     pthread_sigmask(SIG_BLOCK, &set, NULL);
 
-    sigdelset(&set, SIG_IPI);
+    //sigdelset(&set, SIG_IPI);
     sigfd = qemu_signalfd(&set);
     if (sigfd == -1) {
         error_setg_errno(errp, errno, "failed to create signalfd");
@@ -153,6 +153,14 @@ void qemu_notify_event(void)
 
 static GArray *gpollfds;
 
+
+void qemu_timer_notify_cb(void *opaque, QEMUClockType type)
+{
+    if (!icount_enabled() || type != QEMU_CLOCK_VIRTUAL) {
+        qemu_notify_event();
+    }
+}
+
 int qemu_init_main_loop(Error **errp)
 {
     int ret;
@@ -183,6 +191,7 @@ int qemu_init_main_loop(Error **errp)
     return 0;
 }
 
+#if 0
 static void main_loop_update_params(EventLoopBase *base, Error **errp)
 {
     ERRP_GUARD();
@@ -242,6 +251,7 @@ static void main_loop_register_types(void)
 }
 
 type_init(main_loop_register_types)
+#endif
 
 static int max_priority;
 
@@ -300,11 +310,11 @@ static int os_host_main_loop_wait(int64_t timeout)
     glib_pollfds_fill(&timeout);
 
     bql_unlock();
-    replay_mutex_unlock();
+    //replay_mutex_unlock();
 
     ret = qemu_poll_ns((GPollFD *)gpollfds->data, gpollfds->len, timeout);
 
-    replay_mutex_lock();
+    //replay_mutex_lock();
     bql_lock();
 
     glib_pollfds_poll();
