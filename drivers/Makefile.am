@@ -6,6 +6,7 @@ AM_CFLAGS += $(if $(GCOV),-fprofile-dir=/tmp/coverage/blktap/drivers -fprofile-a
 
 AM_CPPFLAGS  = -D_GNU_SOURCE
 AM_CPPFLAGS += -I$(top_srcdir)/include
+AM_CPPFLAGS += $(GLIB_CFLAGS)
 
 libexec_PROGRAMS = tapdisk
 
@@ -90,6 +91,7 @@ libtapdisk_la_SOURCES += block-lcache.c
 libtapdisk_la_SOURCES += block-llcache.c
 libtapdisk_la_SOURCES += block-nbd.c
 libtapdisk_la_SOURCES += block-log.c
+libtapdisk_la_SOURCES += block-qcow2.c
 
 # shared ring
 libtapdisk_la_SOURCES += td-blkif.c
@@ -102,12 +104,14 @@ libtapdisk_la_SOURCES += td-stats.c
 libtapdisk_la_SOURCES += td-stats.h
 
 libtapdisk_la_LIBADD  = ../vhd/lib/libvhd.la
+libtapdisk_la_LIBADD += ../qcow2/lib/libqcow2.la
 libtapdisk_la_LIBADD += -laio
 libtapdisk_la_LIBADD += -lxenevtchn
 libtapdisk_la_LIBADD += -lxengnttab
 libtapdisk_la_LIBADD += -lz
 libtapdisk_la_LIBADD += -lrt
 libtapdisk_la_LIBADD += -ldl
+libtapdisk_la_LIBADD += -lm
 
 # encryption support
 lib_LTLIBRARIES = libblockcrypto.la
