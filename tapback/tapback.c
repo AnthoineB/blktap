@@ -230,7 +230,7 @@ tapback_write_pid(const char *pidfile)
  */
 static inline backend_t *
 tapback_backend_create(const char *name, const char *pidfile,
-        const domid_t domid, const bool barrier)
+	const domid_t domid, const bool barrier, const bool discard)
 {
     int err;
     int len;
@@ -268,6 +268,8 @@ tapback_backend_create(const char *name, const char *pidfile,
 	backend->barrier = barrier;
 
     backend->path = NULL;
+
+    backend->discard = discard;
 
     INIT_LIST_HEAD(&backend->entry);
 
@@ -515,6 +517,7 @@ usage(FILE * const stream, const char * const prog)
             "\t[-p|--pidfile PIDfile]\n"
             "\t[-x|--domain domainID]\n"
             "\t[-b|--nobarrier]\n"
+            "\t[-s|--nodiscard]\n"
             "\t[-n|--name backend_name (default: vbd3)]\n", prog);
 }
 
@@ -588,6 +591,7 @@ int main(int argc, char **argv)
 	backend_t *backend = NULL;
     domid_t opt_domid = 0;
 	bool opt_barrier = true;
+	bool opt_discard = true;
 
 	if (access("/dev/xen/gntdev", F_OK ) == -1) {
 		WARN(NULL, "grant device does not exist\n");
@@ -615,10 +619,11 @@ int main(int argc, char **argv)
             {"pidfile", 0, NULL, 'p'},
             {"domain", 0, NULL, 'x'},
             {"nobarrier", 0, NULL, 'b'},
+            {"nodiscard", 0, NULL, 's'},
         };
         int c;
 
-        c = getopt_long(argc, argv, "hdvn:p:x:b", longopts, NULL);
+        c = getopt_long(argc, argv, "hdvn:p:x:bs", longopts, NULL);
         if (c < 0)
             break;
 
@@ -658,6 +663,9 @@ int main(int argc, char **argv)
 		case 'b':
 			opt_barrier = false;
 			break;
+        case 's':
+            opt_discard = false;
+            break;
         case '?':
             goto usage;
         }
@@ -692,7 +700,7 @@ int main(int argc, char **argv)
     }
 
 	backend = tapback_backend_create(opt_name, opt_pidfile, opt_domid,
-			opt_barrier);
+                        opt_barrier, opt_discard);
 	if (!backend) {
 		err = errno;
         WARN(NULL, "error creating back-end: %s\n", strerror(err));

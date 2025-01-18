@@ -62,6 +62,7 @@
 
 #include <time.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "list.h"
 #include "compiler.h"
@@ -94,6 +95,7 @@ enum TD_OPS{
 	TD_OP_READ = 0,
 	TD_OP_WRITE,
 	TD_OP_BLOCK_STATUS,
+	TD_OP_DISCARD,
 	TD_OPS_END
 };
 
@@ -154,6 +156,8 @@ struct td_disk_info {
 	td_sector_t                  size;
 	long                         sector_size;
 	uint32_t                     info;
+	bool                         discard;
+	long                         discard_granularity;
 };
 
 struct td_iovec {
@@ -164,6 +168,8 @@ struct td_iovec {
 struct td_vbd_request {
 	int                         op;
 	td_sector_t                 sec;
+	uint64_t                    nr_sectors;
+
 	struct td_iovec            *iov;
 	int                         iovcnt;
 
@@ -233,6 +239,7 @@ struct tap_disk {
 	void (*td_queue_read)        (td_driver_t *, td_request_t);
 	void (*td_queue_block_status)(td_driver_t *, td_request_t);
 	void (*td_queue_write)       (td_driver_t *, td_request_t);
+	void (*td_queue_discard)     (td_driver_t *, td_request_t);
 	void (*td_debug)             (td_driver_t *);
 	void (*td_stats)             (td_driver_t *, td_stats_t *);
 	int (*td_commit)             (td_driver_t *, const char *);
@@ -252,13 +259,16 @@ struct tap_disk {
 struct td_sector_count {
 	td_sector_t rd;
 	td_sector_t wr;
+	td_sector_t ds;
 };
 
 static inline void
-td_sector_count_add(td_sector_count_t *s, td_sector_t v, int write)
+td_sector_count_add(td_sector_count_t *s, td_sector_t v, int op)
 {
-	if (write)
+	if (op == TD_OP_WRITE)
 		s->wr += v;
+	else if (op == TD_OP_DISCARD)
+		s->ds += v;
 	else
 		s->rd += v;
 }

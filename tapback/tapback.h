@@ -209,6 +209,11 @@ typedef struct backend {
 	 * Tells whether we support write I/O barriers.
 	 */
 	bool barrier;
+
+	/**
+	 * Tells whether we support discard.
+	 */
+	bool discard;
 } backend_t;
 
 /**
@@ -289,6 +294,16 @@ typedef struct vbd {
      * VDISK_???, defined in include/xen/interface/io/blkif.h.
      */
     unsigned int info;
+
+    /**
+     * Whether the backing driver supports discard
+     */
+    bool discard;
+
+    /**
+     * Discard granularity, supplied by the tapdisk, communicated to blkfront.
+     */
+    unsigned int discard_granularity;
 
     int major;
 	int minor;

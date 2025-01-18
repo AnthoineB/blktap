@@ -101,6 +101,7 @@ enum qcow2_ops {
     QCOW2_OP_COMMIT,
     QCOW2_OP_QUERY,
     QCOW2_OP_CANCEL_COMMIT,
+    QCOW2_OP_DISCARD,
 };
 
 struct qcow2_state;
@@ -182,6 +183,8 @@ struct qcow2_state {
     uint64_t                  read_size;
     uint64_t                  writes;
     uint64_t                  write_size;
+    uint64_t                  discards;
+    uint64_t                  discard_size;
     uint64_t                  kick;
     uint64_t                  schedule;
 #if DEBUGGING != 0
@@ -191,6 +194,9 @@ struct qcow2_state {
     struct io_stat            write_slat;
     struct io_stat            write_clat;
     struct io_stat            write_lat;
+    struct io_stat            discard_slat;
+    struct io_stat            discard_clat;
+    struct io_stat            discard_lat;
 #endif
 };
 
@@ -201,6 +207,7 @@ struct qcow2_state {
 static void qcow2_complete(void *, int);
 static inline void do_aio_read(struct qcow2_state *s, struct qcow2_request *req);
 static inline void do_aio_write(struct qcow2_state *s, struct qcow2_request *req);
+static inline void do_aio_discard(struct qcow2_state *s, struct qcow2_request *req);
 static inline void do_commit(struct qcow2_state *s, struct qcow2_request *req);
 static inline void do_query_commit_job(struct qcow2_state *s, struct qcow2_request *req);
 static inline void do_cancel_commit_job(struct qcow2_state *s, struct qcow2_request *req);
@@ -218,6 +225,9 @@ qcow2_initialize(struct qcow2_state *s, Error **perr)
         s->write_slat.min_val = ULONG_MAX;
         s->write_clat.min_val = ULONG_MAX;
         s->write_lat.min_val = ULONG_MAX;
+        s->discard_slat.min_val = ULONG_MAX;
+        s->discard_clat.min_val = ULONG_MAX;
+        s->discard_lat.min_val = ULONG_MAX;
 #endif
 
         qemu_init_cpu_loop();
@@ -266,6 +276,9 @@ static void qcow2_handle_requests(struct qcow2_state *s)
                 break;
             case QCOW2_OP_CANCEL_COMMIT:
                 do_cancel_commit_job(s, req);
+                break;
+            case QCOW2_OP_DISCARD:
+                do_aio_discard(s, req);
                 break;
         }
         pthread_mutex_lock(&s->lock);
@@ -395,6 +408,8 @@ qcow2_open(void *opaque)
         goto fail;
     }
 
+    conf->backend_defaults = ON_OFF_AUTO_ON;
+    conf->discard_granularity = -1;
     if (!blkconf_apply_backend_options(conf, test_qcow2_flag(flags, TD_OPEN_RDONLY), true, &local_err)) {
         goto fail;
     }
@@ -407,10 +422,6 @@ qcow2_open(void *opaque)
         goto fail;
     }
 
-    if (conf->discard_granularity == -1) {
-        conf->discard_granularity = conf->physical_block_size;
-    }
-
     s->vreq_free_count = QCOW2_REQS;
     for (i = 0; i < QCOW2_REQS; i++) {
             s->vreq_free[i] = s->vreq_list + i;
@@ -421,6 +432,8 @@ qcow2_open(void *opaque)
     driver->info.size        = blk_getlength(conf->blk) >> s->blk_shift;
     driver->info.sector_size = conf->logical_block_size;
     driver->info.info        = 0;
+    driver->info.discard     = conf->discard_granularity != -1;
+    driver->info.discard_granularity = conf->discard_granularity;
 
     QSIMPLEQ_INIT(&s->inflight);
     s->ctx = qemu_get_aio_context();
@@ -430,8 +443,9 @@ qcow2_open(void *opaque)
 
     DBG(TLOG_INFO, "qcow2_open: ctx %p bh %p\n", s->ctx, s->bh);
 
-    DBG(TLOG_INFO, "qcow2_open: done (sz:%"PRIu64", sct:%lu, inf:%u)\n",
-        driver->info.size, driver->info.sector_size, driver->info.info);
+    DBG(TLOG_INFO, "qcow2_open: done (sz:%"PRIu64", sct:%lu, inf:%u, discard:%d)\n",
+        driver->info.size, driver->info.sector_size, driver->info.info,
+        driver->info.discard);
 
     pthread_mutex_lock(&s->lock);
     s->open_status = 0;
@@ -660,7 +674,16 @@ static inline void
 signal_completion(struct qcow2_request *r)
 {
 	struct qcow2_state *s = r->state;
-        td_vbd_t *vbd = r->treq.vreq->vbd;
+        td_vbd_t *vbd;
+
+        pthread_mutex_lock(&s->lock);
+        if (--r->aio_inflight) {
+            pthread_mutex_unlock(&s->lock);
+            return;
+        }
+        pthread_mutex_unlock(&s->lock);
+
+        vbd = r->treq.vreq->vbd;
 
         td_complete_request(r->treq, r->error);
         DBG(TLOG_DBG, "lsec: 0x%08"PRIx64", blk: 0x%04x, "
@@ -752,6 +775,9 @@ bool calc_lat(struct io_stat *is, uint64_t *min,
     print_latency((s), write, slat); \
     print_latency((s), write, clat); \
     print_latency((s), write, lat); \
+    print_latency((s), discard, slat); \
+    print_latency((s), discard, clat); \
+    print_latency((s), discard, lat); \
 }
 
 #endif
@@ -773,7 +799,7 @@ static void qcow2_complete(void *opaque, int ret)
     req->error = ret;
 
     if (req->error)
-        ERR(s, req->error, "%s: op: %u, lsec: 0x%08"PRIx64", secs: 0x%04x",
+        ERR(s, req->error, "%s: op: %u, lsec: 0x%08"PRIu64", secs: %u",
                 req->treq.image->name, req->op, req->treq.sec, req->treq.secs);
 
     DBG(TLOG_DBG, "%d: inflight %d\n", req->id, req->aio_inflight);
@@ -799,13 +825,24 @@ static void qcow2_complete(void *opaque, int ret)
             break;
 
         case QCOW2_OP_WRITE:
-            DBG(TLOG_DBG, "%s: op: %u, lsec: 0x%08"PRIx64", secs: 0x%04x",
+            DBG(TLOG_DBG, "%s: op: %u, lsec: 0x%08"PRIu64", secs: %u",
                 req->treq.image->name, req->op, req->treq.sec, req->treq.secs);
             signal_completion(req);
 #if DEBUGGING != 0
             update_latency(s->write_lat, latency);
             update_latency(s->write_slat, submit_latency);
             update_latency(s->write_clat, complete_latency);
+#endif
+            break;
+
+        case QCOW2_OP_DISCARD:
+            DBG(TLOG_DBG, "%s: op: %u, lsec: %"PRIu64", secs: %u",
+                req->treq.image->name, req->op, req->treq.sec, req->treq.secs);
+            signal_completion(req);
+#if DEBUGGING != 0
+            update_latency(s->discard_lat, latency);
+            update_latency(s->discard_slat, submit_latency);
+            update_latency(s->discard_clat, complete_latency);
 #endif
             break;
 
@@ -822,7 +859,9 @@ do_aio_read(struct qcow2_state *s, struct qcow2_request *req)
 
         qemu_iovec_add(&req->qiov, req->treq.buf, req->treq.secs << s->blk_shift);
 
+        pthread_mutex_lock(&s->lock);
         req->aio_inflight++;
+        pthread_mutex_unlock(&s->lock);
 #if DEBUGGING != 0
         gettimeofday(&req->submit_tv, NULL);
 #endif
@@ -841,7 +880,9 @@ do_aio_write(struct qcow2_state *s, struct qcow2_request *req)
 
         qemu_iovec_add(&req->qiov, req->treq.buf, req->treq.secs << s->blk_shift);
 
+        pthread_mutex_lock(&s->lock);
         req->aio_inflight++;
+        pthread_mutex_unlock(&s->lock);
 #if DEBUGGING != 0
         gettimeofday(&req->submit_tv, NULL);
 #endif
@@ -850,6 +891,42 @@ do_aio_write(struct qcow2_state *s, struct qcow2_request *req)
 	s->queued++;
 	s->writes++;
 	s->write_size += req->treq.secs;
+	TRACE(s);
+}
+
+static inline void
+do_aio_discard(struct qcow2_state *s, struct qcow2_request *req)
+{
+	BlockBackend *blk = s->conf.blk;
+	int64_t byte_offset;
+	int byte_chunk;
+	uint64_t byte_remaining;
+	uint64_t sec_start = req->treq.sec;
+	uint64_t sec_count = req->treq.secs;
+
+	/* Wrap around, or overflowing byte limit? */
+	if (sec_start + sec_count < sec_count ||
+			sec_start + sec_count > INT64_MAX / s->driver->info.sector_size) {
+		return;
+	}
+
+	byte_offset = sec_start * s->driver->info.sector_size;
+	byte_remaining = sec_count * s->driver->info.sector_size;
+
+	do {
+		byte_chunk = byte_remaining > BDRV_REQUEST_MAX_BYTES ?
+			BDRV_REQUEST_MAX_BYTES : byte_remaining;
+		pthread_mutex_lock(&s->lock);
+		req->aio_inflight++;
+		pthread_mutex_unlock(&s->lock);
+		req->aiocb = blk_aio_pdiscard(blk, byte_offset, byte_chunk, qcow2_complete, req);
+		byte_remaining -= byte_chunk;
+		byte_offset += byte_chunk;
+	} while (byte_remaining > 0);
+
+	s->queued++;
+	s->discards++;
+	s->discard_size += req->treq.secs;
 	TRACE(s);
 }
 
@@ -1163,6 +1240,25 @@ signal:
     pthread_mutex_unlock(&s->commit_lock);
 }
 
+static void
+qcow2_queue_discard(td_driver_t *driver, td_request_t treq)
+{
+	struct qcow2_state *s = (struct qcow2_state *)driver->data;
+	int err;
+
+	DBG(TLOG_DBG, "%s: lsec: 0x%08"PRIx64", secs: 0x%04x, (seg: %d)\n",
+			treq.image->name, treq.sec, treq.secs, treq.sidx);
+
+	err = schedule_request(s, &treq, QCOW2_OP_DISCARD);
+	if (err)
+		goto fail;
+
+	return;
+fail:
+	DBG(TLOG_DBG, "request failed\n");
+	td_complete_request(treq, err);
+}
+
 void
 qcow2_debug(td_driver_t *driver)
 {
@@ -1177,6 +1273,9 @@ qcow2_debug(td_driver_t *driver)
             s->reads, (s->reads ? ((float)s->read_size / s->reads) : 0.0),
             s->writes, (s->writes ? ((float)s->write_size / s->writes) : 0.0),
             s->schedule, s->kick);
+    DBG(TLOG_WARN, "Qcow2: %s: discards %lu, discard sz avg %f\n",
+            blk_name(s->conf.blk),
+            s->discards, (s->discards ? ((float)s->discard_size / s->discards) : 0.0));
 
     print_latencies(s);
 #endif
@@ -1191,6 +1290,7 @@ struct tap_disk tapdisk_qcow = {
 	.td_queue_read      = qcow2_queue_read,
 	.td_queue_block_status = qcow2_queue_block_status,
 	.td_queue_write     = qcow2_queue_write,
+	.td_queue_discard   = qcow2_queue_discard,
 	.td_get_parent_id   = qcow2_get_parent_id,
 	.td_validate_parent = qcow2_validate_parent,
 	.td_commit          = qcow2_commit,

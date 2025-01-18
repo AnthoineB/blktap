@@ -36,7 +36,8 @@
 #include "tap-ctl.h"
 
 int tap_ctl_info(pid_t pid, unsigned long long *sectors,
-		unsigned int *sector_size, unsigned int *info, const int minor)
+		 unsigned int *sector_size, unsigned int *info,
+		 bool *discard, unsigned int *discard_granularity, const int minor)
 {
     tapdisk_message_t message;
     int err;
@@ -44,6 +45,8 @@ int tap_ctl_info(pid_t pid, unsigned long long *sectors,
     ASSERT(sectors);
     ASSERT(sector_size);
     ASSERT(info);
+    ASSERT(discard);
+    ASSERT(discard_granularity);
 
     memset(&message, 0, sizeof(message));
     message.type = TAPDISK_MESSAGE_DISK_INFO;
@@ -60,6 +63,8 @@ int tap_ctl_info(pid_t pid, unsigned long long *sectors,
         *sectors = message.u.image.sectors;
         *sector_size = message.u.image.sector_size;
         *info = message.u.image.info;
+        *discard = message.u.image.discard;
+        *discard_granularity = message.u.image.discard_granularity;
         return 0;
     } else if (TAPDISK_MESSAGE_ERROR == message.type) {
        return -message.u.response.error;
