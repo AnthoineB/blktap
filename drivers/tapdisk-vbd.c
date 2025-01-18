@@ -73,7 +73,7 @@
 #define TD_VBD_EIO_SLEEP            1
 #define TD_VBD_WATCHDOG_TIMEOUT     10
 
-char* op_strings[TD_OPS_END] ={"read", "write", "block_status"};
+char* op_strings[TD_OPS_END] ={"read", "write", "block_status", "discard"};
 
 static void tapdisk_vbd_complete_vbd_request(td_vbd_t *, td_vbd_request_t *);
 static int  tapdisk_vbd_queue_ready(td_vbd_t *);
@@ -1377,11 +1377,10 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
 	vreq->secs_pending -= treq.secs;
 
 	if (err != -EBUSY) {
-		int write = treq.op == TD_OP_WRITE;
-		td_sector_count_add(&image->stats.hits, treq.secs, write);
+		td_sector_count_add(&image->stats.hits, treq.secs, treq.op);
 		if (err)
 			td_sector_count_add(&image->stats.fail,
-					    treq.secs, write);
+					    treq.secs, treq.op);
 
 		FIXME_maybe_count_enospc_redirect(vbd, treq);
 	}
@@ -1413,6 +1412,12 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
             vbd->vdi_stats.stats->write_reqs_completed++;
             vbd->vdi_stats.stats->write_sectors += treq.secs;
             vbd->vdi_stats.stats->write_total_ticks += interval;
+        }
+
+        if(treq.op == TD_OP_DISCARD) {
+            vbd->vdi_stats.stats->discard_reqs_completed++;
+            vbd->vdi_stats.stats->discard_sectors += treq.secs;
+            vbd->vdi_stats.stats->discard_total_ticks += interval;
         }
 
 	tapdisk_vbd_complete_vbd_request(vbd, vreq);
@@ -1477,12 +1482,14 @@ __tapdisk_vbd_reissue_td_request(td_vbd_t *vbd,
 	case TD_OP_WRITE:
 		td_queue_write(parent, treq);
 		break;
-
 	case TD_OP_READ:
 		td_queue_read(parent, treq);
 		break;
 	case TD_OP_BLOCK_STATUS:
 		td_queue_block_status(parent, &treq);
+		break;
+	case TD_OP_DISCARD:
+		td_queue_discard(parent, treq);
 		break;
 	}
 
@@ -1763,6 +1770,65 @@ fail:
 }
 
 static int
+tapdisk_vbd_issue_request_discard(td_vbd_t *vbd, td_vbd_request_t *vreq)
+{
+	td_image_t *image;
+	td_request_t treq;
+	td_sector_t sec;
+	int err;
+
+	sec    = vreq->sec;
+	image  = tapdisk_vbd_first_image(vbd);
+
+	pthread_mutex_lock(&vbd->mutex);
+	vreq->submitting = 1;
+
+	tapdisk_vbd_mark_progress(vbd);
+	vreq->last_try = vbd->ts;
+
+	tapdisk_vbd_move_request(vreq, &vbd->pending_requests);
+
+	err = tapdisk_vbd_check_queue(vbd);
+	pthread_mutex_unlock(&vbd->mutex);
+	if (err) {
+		vreq->error = err;
+		goto out;
+	}
+
+	err = tapdisk_image_check_request(image, vreq);
+	if (err) {
+		vreq->error = err;
+		goto out;
+	}
+
+	vreq->secs_pending = vreq->nr_sectors;
+	treq.sidx    = 0;
+	treq.buf     = NULL;
+	treq.sec     = sec;
+	treq.secs    = vreq->nr_sectors;
+	treq.image   = image;
+	treq.cb      = tapdisk_vbd_complete_td_request;
+	treq.cb_data = NULL;
+	treq.vreq    = vreq;
+	treq.op      = TD_OP_DISCARD;
+
+	vbd->vdi_stats.stats->discard_reqs_submitted++;
+
+	td_queue_discard(treq.image, treq);
+
+ out:
+	pthread_mutex_lock(&vbd->mutex);
+	vreq->submitting--;
+	if (!vreq->secs_pending) {
+		err = (err ? : vreq->error);
+		tapdisk_vbd_complete_vbd_request(vbd, vreq);
+	}
+	pthread_mutex_unlock(&vbd->mutex);
+
+	return err;
+}
+
+static int
 tapdisk_vbd_request_completed(td_vbd_t *vbd, td_vbd_request_t *vreq)
 {
 	return vreq->list_head == &vbd->completed_requests;
@@ -1803,7 +1869,10 @@ tapdisk_vbd_reissue_failed_requests(td_vbd_t *vbd)
 		    "sec 0x%08"PRIx64", iovcnt: %d\n", vreq->num_retries,
 		    vreq->name, vreq->sec, vreq->iovcnt);
 
-		err = tapdisk_vbd_issue_request(vbd, vreq);
+		if (vreq->op == TD_OP_DISCARD)
+			err = tapdisk_vbd_issue_request_discard(vbd, vreq);
+		else
+			err = tapdisk_vbd_issue_request(vbd, vreq);
 
 		pthread_mutex_lock(&vbd->mutex);
 		/*
@@ -1839,7 +1908,10 @@ tapdisk_vbd_issue_new_requests(td_vbd_t *vbd)
 	pthread_mutex_lock(&vbd->mutex);
 	tapdisk_vbd_for_each_request(vreq, tmp, &vbd->new_requests) {
 		pthread_mutex_unlock(&vbd->mutex);
-		err = tapdisk_vbd_issue_request(vbd, vreq);
+		if (vreq->op == TD_OP_DISCARD)
+			err = tapdisk_vbd_issue_request_discard(vbd, vreq);
+		else
+			err = tapdisk_vbd_issue_request(vbd, vreq);
 		pthread_mutex_lock(&vbd->mutex);
 		/*
 		 * if this request failed, but was not completed,
@@ -2064,6 +2136,7 @@ tapdisk_vbd_stats(td_vbd_t *vbd, td_stats_t *st)
 	tapdisk_stats_field(st, "secs", "[");
 	tapdisk_stats_val(st, "llu", vbd->secs.rd);
 	tapdisk_stats_val(st, "llu", vbd->secs.wr);
+	tapdisk_stats_val(st, "llu", vbd->secs.ds);
 	tapdisk_stats_leave(st, ']');
 
 	tapdisk_stats_field(st, "images", "[");

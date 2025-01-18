@@ -109,7 +109,8 @@ tapdisk_image_check_td_request(td_image_t *image, td_request_t treq)
 	info   = &image->info;
 	rdonly = td_flag_test(image->flags, TD_OPEN_RDONLY);
 
-	if (treq.op != TD_OP_READ && treq.op != TD_OP_WRITE && treq.op != TD_OP_BLOCK_STATUS)
+	if (treq.op != TD_OP_READ && treq.op != TD_OP_WRITE &&
+		treq.op != TD_OP_BLOCK_STATUS && treq.op != TD_OP_DISCARD)
 		goto fail;
 
 	if (treq.op == TD_OP_WRITE && rdonly) {
@@ -117,7 +118,8 @@ tapdisk_image_check_td_request(td_image_t *image, td_request_t treq)
 		goto fail;
 	}
 
-	if (treq.secs <= 0 || treq.sec + treq.secs > info->size)
+	if ((treq.secs <= 0 || treq.sec + treq.secs > info->size) &&
+		treq.op != TD_OP_DISCARD)
 		goto fail;
 
 	return 0;
@@ -155,6 +157,8 @@ tapdisk_image_check_request(td_image_t *image, td_vbd_request_t *vreq)
 		secs += vreq->iov[i].secs;
 
 	switch (vreq->op) {
+	case TD_OP_DISCARD:
+		/* falls through */
 	case TD_OP_WRITE:
 		if (rdonly) {
 			err = -EPERM;
@@ -611,11 +615,13 @@ tapdisk_image_stats(td_image_t *image, td_stats_t *st)
 	tapdisk_stats_field(st, "hits", "[");
 	tapdisk_stats_val(st, "llu", image->stats.hits.rd);
 	tapdisk_stats_val(st, "llu", image->stats.hits.wr);
+	tapdisk_stats_val(st, "llu", image->stats.hits.ds);
 	tapdisk_stats_leave(st, ']');
 
 	tapdisk_stats_field(st, "fail", "[");
 	tapdisk_stats_val(st, "llu", image->stats.fail.rd);
 	tapdisk_stats_val(st, "llu", image->stats.fail.wr);
+	tapdisk_stats_val(st, "llu", image->stats.fail.ds);
 	tapdisk_stats_leave(st, ']');
 
 	tapdisk_stats_field(st, "driver", "{");

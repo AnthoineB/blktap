@@ -195,11 +195,14 @@ int tap_ctl_disconnect_xenblkif(const pid_t pid, const domid_t domid,
  * @param sector_size output parameter that receives the size of the sector
  * @param info output parameter that receives the vdisk info flags VDISK_???,
  * defined in include/xen/interface/io/blkif.h
+ * @param discard output parameter that receives if discard is supported
+ * @param discard_granularity output parameter that receives the discard granularity
  * @param minor
  *
  */
-int tap_ctl_info(pid_t pid, unsigned long long *sectors, unsigned int
-		*sector_size, unsigned int *info, const int minor);
+int tap_ctl_info(pid_t pid, unsigned long long *sectors,
+		 unsigned int *sector_size, unsigned int *info,
+		 bool *discard, unsigned int *discard_granularity, const int minor);
 
 /**
  * Parses a type:/path/to/file string, storing the type and path to the output

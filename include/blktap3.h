@@ -50,10 +50,29 @@
  */
 struct blkback_stats {
 	/**
-	 * BLKIF_OP_DISCARD, not currently supported in blktap3, should always
-	 * be zero
+	 * Received BLKIF_OP_DISCARD requests.
 	 */
 	unsigned long long st_ds_req;
+
+	/**
+	 * Completed BLKIF_OP_DISCARD requests.
+	 */
+	long long st_ds_cnt;
+
+	/**
+	 * Discard sectors, after we've forwarded the request to actual storage.
+	 */
+	unsigned long long st_ds_sect;
+
+	/**
+	 * Sum of the request response time of all BLKIF_OP_DISCARD, in us.
+	 */
+	long long st_ds_sum_usecs;
+
+	/**
+	 * Absolute maximum BLKIF_OP_DISCARD response time, in us.
+	 */
+	long long st_ds_max_usecs;
 
 	/**
 	 * BLKIF_OP_FLUSH_DISKCACHE, not currently supported in blktap3,

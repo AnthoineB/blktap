@@ -283,10 +283,31 @@ connect_frontend(vbd_t *device) {
 
         abort_transaction = true;
 
-        /*
-         * FIXME blkback writes discard-granularity, discard-alignment,
-         * discard-secure, feature-discard but we don't.
-         */
+        if (device->backend->discard &&
+                device->mode == true &&
+                device->cdrom == false) {
+
+            if ((err = tapback_device_printf(device, xst, "discard-granularity",
+                            true, "%u", device->discard_granularity))) {
+                WARN(device, "failed to write discard-granularity: %s\n",
+                        strerror(-err));
+                break;
+            }
+
+            if ((err = tapback_device_printf(device, xst, "discard-alignment",
+                            true, "%u", 0))) {
+                WARN(device, "failed to write discard-alignment: %s\n",
+                        strerror(-err));
+                break;
+            }
+
+            if ((err = tapback_device_printf(device, xst, "feature-discard",
+                            true, "%u", 1))) {
+                WARN(device, "failed to write feature-discard: %s\n",
+                        strerror(-err));
+                break;
+            }
+        }
 
         /*
 		 * Write the number of sectors, sector size, info, and barrier support

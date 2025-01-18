@@ -43,7 +43,7 @@
 #include "debug.h"
 #include "td-req.h"
 
-#define VBD_STATS_VERSION 0x00000001
+#define VBD_STATS_VERSION 0x00000002
 
 /* make a static metrics struct, so it only exists in the context of this file */
 static td_metrics_t td_metrics;
