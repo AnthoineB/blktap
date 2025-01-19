@@ -289,7 +289,6 @@ tapdisk_stream_queue_request(td_stream_t *s, td_stream_req_t *req)
 	vreq->iovcnt        = 1;
 	vreq->sec           = s->sec_in;
 	vreq->op            = TD_OP_READ;
-	vreq->name          = NULL;
 	vreq->token         = s;
 	vreq->cb            = __tapdisk_stream_request_cb;
 

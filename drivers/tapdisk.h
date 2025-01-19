@@ -176,7 +176,6 @@ struct td_vbd_request {
 	td_vreq_callback_t          cb;
 	void                       *token;
 	void			   *data;
-	const char                 *name;
 
 	int                         error;
 	int                         prev_error;

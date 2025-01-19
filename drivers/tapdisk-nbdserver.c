@@ -1215,7 +1215,6 @@ static td_vbd_request_t *create_request_vreq(
 	vreq->iov = &req->iov;
 	vreq->iov->secs = len >> SECTOR_SHIFT;
 	vreq->token = client;
-	vreq->name = req->id;
 	vreq->vbd = server->vbd;
 
 	return vreq;

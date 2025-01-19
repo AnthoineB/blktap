@@ -1181,8 +1181,8 @@ __tapdisk_vbd_request_timeout(td_vbd_request_t *vreq,
 	timeout = tapdisk_vbd_request_ttl(vreq, now) < 0;
 	if (timeout)
 		ERR(vreq->error,
-		    "req %s timed out, retried %d times\n",
-		    vreq->name, vreq->num_retries);
+		    "request timed out, retried %d times\n",
+		    vreq->num_retries);
 
 	return timeout;
 }
@@ -1392,8 +1392,7 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
 			if (!vreq->error &&
 			    err != vreq->prev_error)
 				tlog_drv_error(image->driver, err,
-					       "req %s: %s %s 0x%04x secs @ 0x%08"PRIx64" - %s",
-					       vreq->name,
+					       "req: %s %s 0x%04x secs @ 0x%08"PRIx64" - %s",
 					       op_strings[treq.op],
 						   image->name,
 					       treq.secs, treq.sec, strerror(abs(err)));
@@ -1585,9 +1584,9 @@ tapdisk_vbd_complete_block_status_request(td_request_t treq, int res)
 		res = -ENOMEM;
 	}
 
-	DBG(TLOG_DBG, "%s: req %s seg %d sec 0x%08"PRIx64
+	DBG(TLOG_DBG, "%s: req seg %d sec 0x%08"PRIx64
 	    " secs 0x%04x buf %p op %d res %d\n", image->name,
-	    vreq->name, treq.sidx, treq.sec, treq.secs,
+	    treq.sidx, treq.sec, treq.secs,
 	    treq.buf, vreq->op, res);
 
 	return __tapdisk_vbd_complete_td_request(vbd, vreq, treq, res);
@@ -1630,7 +1629,7 @@ tapdisk_vbd_complete_td_request(td_request_t treq, int res)
 			((image == vbd->secondary) || 
 			 (image == vbd->retired))) {
 		ERROR("Got non-zero res %d for NBD secondary - disabling "
-		      "mirroring: %s", res, vreq->name);
+		      "mirroring.", res);
 		vbd->nbd_mirror_failed = 1;
 		res = 0; /* Pretend the writes have completed successfully */
 
@@ -1643,9 +1642,9 @@ tapdisk_vbd_complete_td_request(td_request_t treq, int res)
 		}
 	}
 
-	DBG(TLOG_DBG, "%s: req %s seg %d sec 0x%08"PRIx64
+	DBG(TLOG_DBG, "%s: req seg %d sec 0x%08"PRIx64
 	    " secs 0x%04x buf %p op %d res %d\n", image->name,
-	    vreq->name, treq.sidx, treq.sec, treq.secs,
+	    treq.sidx, treq.sec, treq.secs,
 	    treq.buf, vreq->op, res);
 
 	return __tapdisk_vbd_complete_td_request(vbd, vreq, treq, res);
@@ -1747,8 +1746,8 @@ tapdisk_vbd_issue_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 			break;
 		}
 
-		DBG(TLOG_DBG, "%s: req %s seg %d sec 0x%08"PRIx64" secs 0x%04x "
-		    "buf %p op %d\n", image->name, vreq->name, i, treq.sec, treq.secs,
+		DBG(TLOG_DBG, "%s: req seg %d sec 0x%08"PRIx64" secs 0x%04x "
+		    "buf %p op %d\n", image->name, i, treq.sec, treq.secs,
 		    treq.buf, vreq->op);
 		sec += iov->secs;
 	}
@@ -1867,9 +1866,9 @@ tapdisk_vbd_reissue_failed_requests(td_vbd_t *vbd)
 		vreq->error      = 0;
 
 		pthread_mutex_unlock(&vbd->mutex);
-		DBG(TLOG_DBG, "retry #%d of req %s, "
+		DBG(TLOG_DBG, "retry #%d of req, "
 		    "sec 0x%08"PRIx64", iovcnt: %d\n", vreq->num_retries,
-		    vreq->name, vreq->sec, vreq->iovcnt);
+		    vreq->sec, vreq->iovcnt);
 
 		if (vreq->op == TD_OP_DISCARD)
 			err = tapdisk_vbd_issue_request_discard(vbd, vreq);

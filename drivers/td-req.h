@@ -69,12 +69,6 @@ struct td_xenblkif_req {
      */
     void *vma;
 
-    /*
-     * TODO Why 16+1? This member is copied to the corresponding one in
-     * td_vbd_request_t, so check the limit of that, if there is one.
-     */
-    char name[16 + 1];
-
     struct timeval ts;
 
     /**

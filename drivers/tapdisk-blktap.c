@@ -362,11 +362,7 @@ tapdisk_blktap_parse_request(td_blktap_t *tap,
 		goto fail;
 
 	req->id = msg->id;
-	snprintf(req->name, sizeof(req->name),
-		 "tap-%d.%d", tap->minor, req->id);
-
 	vreq->op    = op;
-	vreq->name  = req->name;
 	vreq->token = tap;
 	vreq->cb    = __tapdisk_blktap_request_cb;
 
