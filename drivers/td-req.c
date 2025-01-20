@@ -591,7 +591,7 @@ out:
  * @param vreq the completed request
  * @param error status of the request
  * @param token token previously associated with this request
- * @param final TODO ?
+ * @param final controls whether the other end should be notified
  */
 static inline void
 __tapdisk_xenblkif_request_cb(struct td_vbd_request * const vreq,
