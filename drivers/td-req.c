@@ -190,9 +190,13 @@ static void
 tapdisk_xenblkif_free_request(struct td_xenblkif * const blkif,
         struct td_xenblkif_req * const tapreq)
 {
+    int put_bufcache;
+
     ASSERT(blkif);
     ASSERT(tapreq);
     ASSERT(blkif->n_reqs_free < blkif->ring_size);
+
+    put_bufcache = tapreq->msg.nr_segments != 0;
 
 #ifdef DEBUG
 	memset(&tapreq->msg, BLKIF_MSG_POISON, sizeof(tapreq->msg));
@@ -200,7 +204,7 @@ tapdisk_xenblkif_free_request(struct td_xenblkif * const blkif,
 
     blkif->reqs_free[blkif->ring_size - (++blkif->n_reqs_free)] = &tapreq->msg;
 
-	if (likely(tapreq->msg.nr_segments))
+	if (likely(put_bufcache))
 	    td_xenblkif_bufcache_put(blkif, tapreq->vma);
 }
 
@@ -829,11 +833,19 @@ tapdisk_xenblkif_queue_request(struct td_xenblkif * const blkif,
         blkif_request_t *msg, struct td_xenblkif_req *tapreq)
 {
     int err;
+    int queue_request;
 
     ASSERT(blkif);
     ASSERT(msg);
     ASSERT(tapreq);
 
+    queue_request = tapreq->msg.nr_segments != 0;
+
+    /*
+     * Do not use tapreq after tapdisk_xenblkif_make_vbd_request
+     * because this function can release tapreq->msg and reinsert it
+     * in the reqs_free array.
+     */
     err = tapdisk_xenblkif_make_vbd_request(blkif, tapreq);
     if (unlikely(err)) {
         /* TODO log error */
@@ -841,7 +853,7 @@ tapdisk_xenblkif_queue_request(struct td_xenblkif * const blkif,
         return err;
     }
 
-	if (likely(tapreq->msg.nr_segments)) {
+	if (likely(queue_request)) {
 		err = tapdisk_vbd_queue_request(blkif->vbd, &tapreq->vreq);
 		if (unlikely(err)) {
 			/* TODO log error */
