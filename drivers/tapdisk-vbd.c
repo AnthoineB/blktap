@@ -1527,13 +1527,11 @@ tapdisk_vbd_issue_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 
 	err = tapdisk_vbd_check_queue(vbd);
 	if (err) {
-		vreq->error = err;
 		goto fail;
 	}
 
 	err = tapdisk_image_check_request(image, vreq);
 	if (err) {
-		vreq->error = err;
 		goto fail;
 	}
 
