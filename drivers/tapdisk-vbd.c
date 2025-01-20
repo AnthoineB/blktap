@@ -1662,7 +1662,6 @@ tapdisk_vbd_issue_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 {
 	td_image_t *image;
 	td_request_t treq;
-	bzero(&treq, sizeof(treq));
 	td_sector_t sec;
 	int i, err;
 

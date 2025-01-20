@@ -803,7 +803,6 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
 
     vreq = &tapreq->vreq;
     ASSERT(vreq);
-    memset(vreq, 0, sizeof(*vreq));
 
 	tapreq->vma = NULL;
     switch (tapreq->msg.operation) {
