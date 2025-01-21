@@ -54,13 +54,13 @@ static const disk_info_t sync_disk = {
 static const disk_info_t vmdk_disk = {
        "vmdk",
        "vmware image (vmdk)",
-       1,
+       DISK_TYPE_SINGLE_CONTROLLER,
 };
 
 static const disk_info_t vhdsync_disk = {
        "vhdsync",
        "virtual server image (vhd) - synchronous",
-       1,
+       DISK_TYPE_SINGLE_CONTROLLER,
 };
 
 static const disk_info_t vhd_disk = {
@@ -73,7 +73,7 @@ static const disk_info_t vhd_disk = {
 static const disk_info_t ram_disk = {
        "ram",
        "ramdisk image (ram)",
-       1,
+       DISK_TYPE_SINGLE_CONTROLLER,
 };
 
 static const disk_info_t qcow_disk = {
@@ -85,13 +85,13 @@ static const disk_info_t qcow_disk = {
 static const disk_info_t block_cache_disk = {
        "bc",
        "block cache image (bc)",
-       1,
+       DISK_TYPE_SINGLE_CONTROLLER,
 };
 
 static const disk_info_t vhd_index_disk = {
        "vhdi",
        "vhd index image (vhdi)",
-       1,
+       DISK_TYPE_SINGLE_CONTROLLER,
 };
 
 static const disk_info_t log_disk = {
