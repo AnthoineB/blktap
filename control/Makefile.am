@@ -33,6 +33,7 @@ libblktapctl_la_SOURCES += tap-ctl-check.c
 libblktapctl_la_SOURCES += tap-ctl-stats.c
 libblktapctl_la_SOURCES += tap-ctl-xen.c
 libblktapctl_la_SOURCES += tap-ctl-info.c
+libblktapctl_la_SOURCES += tap-ctl-commit.c
 
 libblktapctl_la_LDFLAGS = -version-info 1:1:1
 

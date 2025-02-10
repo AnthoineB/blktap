@@ -226,6 +226,7 @@ struct tap_disk {
 	void (*td_queue_write)       (td_driver_t *, td_request_t);
 	void (*td_debug)             (td_driver_t *);
 	void (*td_stats)             (td_driver_t *, td_stats_t *);
+	int (*td_commit)             (td_driver_t *, const char *);
 
     /**
      * Callback to produce RRD output.

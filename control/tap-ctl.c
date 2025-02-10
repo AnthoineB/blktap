@@ -943,6 +943,52 @@ usage:
 	return EINVAL;
 }
 
+static void
+tap_cli_commit_usage(FILE *stream)
+{
+	fprintf(stream, "usage: commit <-p pid> <-m minor> -a /path/to/file\n");
+}
+
+int
+tap_cli_commit(int argc, char **argv)
+{
+	const char *args;
+	int c, pid, minor;
+
+	pid        = -1;
+	minor = -1;
+	args  = NULL;
+
+	optind = 0;
+	while ((c = getopt(argc, argv, "p:m:a:2:c:h")) != -1) {
+		switch (c) {
+		case 'p':
+			pid = atoi(optarg);
+			break;
+		case 'm':
+			minor = atoi(optarg);
+			break;
+		case 'a':
+			args = optarg;
+			break;
+		case '?':
+			goto usage;
+		case 'h':
+			tap_cli_commit_usage(stdout);
+			return 0;
+		}
+	}
+
+	if (pid == -1 || minor == -1 || args == NULL)
+		goto usage;
+
+	return tap_ctl_commit(pid, minor, args);
+
+usage:
+	tap_cli_commit_usage(stderr);
+	return EINVAL;
+}
+
 struct command commands[] = {
 	{ .name = "list",         .func = tap_cli_list          },
 	{ .name = "allocate",     .func = tap_cli_allocate      },
@@ -959,6 +1005,7 @@ struct command commands[] = {
 	{ .name = "stats",        .func = tap_cli_stats         },
 	{ .name = "major",        .func = tap_cli_major         },
 	{ .name = "check",        .func = tap_cli_check         },
+	{ .name = "commit",       .func = tap_cli_commit        },
 };
 
 #define print_commands()					\
