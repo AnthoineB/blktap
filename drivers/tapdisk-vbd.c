@@ -1077,6 +1077,22 @@ resume_failed:
 	return 0;
 }
 
+int
+tapdisk_vbd_commit(td_vbd_t *vbd, const char *name)
+{
+	int err;
+
+	if (log) {
+		INFO("commit %s\n", name);
+	}
+
+	err = td_commit(tapdisk_vbd_first_image(vbd), name);
+
+	INFO("commit started (%d)\n", err);
+
+	return err;
+}
+
 static int
 tapdisk_vbd_request_ttl(td_vbd_request_t *vreq,
 			const struct timeval *now)

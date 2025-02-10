@@ -144,6 +144,11 @@ int tap_ctl_stats_fwrite(pid_t pid, int minor, FILE *out);
 int tap_ctl_blk_major(void);
 
 /**
+ * Commit a VBD.
+ */
+int tap_ctl_commit(const int id, const int minor, const char *params);
+
+/**
  * Instructs a tapdisk to connect to the shared ring.
  *
  * @param pid the process ID of the tapdisk that should connect to the shared

@@ -1307,6 +1307,38 @@ out:
     return err;
 }
 
+static int
+tapdisk_control_commit(struct tapdisk_ctl_conn *conn,
+		       tapdisk_message_t *request, tapdisk_message_t * const response)
+{
+	int err;
+	td_vbd_t *vbd;
+	const char *desc = NULL;
+
+	ASSERT(conn);
+	ASSERT(request);
+	ASSERT(response);
+
+	INFO("commit %d\n", request->cookie);
+
+	vbd = tapdisk_server_get_vbd(request->cookie);
+	if (!vbd) {
+		/* TODO log error */
+		err = -ENODEV;
+		goto out;
+	}
+
+	if (request->u.params.path[0])
+		desc = request->u.params.path;
+
+	err = tapdisk_vbd_commit(vbd, desc);
+out:
+	response->cookie = request->cookie;
+	if (!err)
+		response->type = TAPDISK_MESSAGE_COMMIT_RSP;
+	return err;
+}
+
 
 struct tapdisk_control_info message_infos[] = {
 	[TAPDISK_MESSAGE_PID] = {
@@ -1364,6 +1396,10 @@ struct tapdisk_control_info message_infos[] = {
 	[TAPDISK_MESSAGE_EXIT] = {
 		.handler = NULL,
 		.flags = 0
+	},
+	[TAPDISK_MESSAGE_COMMIT] = {
+		.handler = tapdisk_control_commit,
+		.flags   = TAPDISK_MSG_VERBOSE,
 	}
 };
 
