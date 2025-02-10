@@ -28,35 +28,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _TAPDISK_INTERFACE_H_
-#define _TAPDISK_INTERFACE_H_
-
-#include "tapdisk.h"
-#include "io-backend.h"
-#include "tapdisk-image.h"
-#include "tapdisk-driver.h"
-
-int td_open(td_image_t *, struct td_vbd_encryption *);
-int __td_open(td_image_t *, struct td_vbd_encryption *, td_disk_info_t *);
-int td_load(td_image_t *);
-int td_close(td_image_t *);
-int td_get_parent_id(td_image_t *, td_disk_id_t *);
-int td_validate_parent(td_image_t *, td_image_t *);
-int td_commit(td_image_t *, const char *);
-
-void td_queue_write(td_image_t *, td_request_t);
-void td_queue_read(td_image_t *, td_request_t);
-void td_queue_block_status(td_image_t*, td_request_t*);
-void td_forward_request(td_request_t);
-void td_complete_request(td_request_t, int);
-
-void td_debug(td_image_t *);
-
-void td_queue_tiocb(td_driver_t *, struct tiocb *);
-void td_prep_read(td_driver_t *, struct tiocb *, int, char *, size_t,
-	long long, td_queue_callback_t, void *);
-void td_prep_write(td_driver_t *, struct tiocb *, int, char *, size_t,
-	long long, td_queue_callback_t, void *);
-void td_panic(void) __noreturn;
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
 #endif
+
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <getopt.h>
+
+#include "tap-ctl.h"
+#include "util.h"
+
+int
+tap_ctl_commit(const int id, const int minor, const char *params)
+{
+	int err;
+	tapdisk_message_t message;
+
+	memset(&message, 0, sizeof(message));
+	message.type = TAPDISK_MESSAGE_COMMIT;
+	message.cookie = minor;
+
+	if (params)
+		safe_strncpy(message.u.params.path, params,
+			     sizeof(message.u.params.path));
+
+        err = tap_ctl_connect_send_and_receive(id, &message, NULL);
+
+	if (err)
+		return err;
+
+	if (message.type == TAPDISK_MESSAGE_COMMIT_RSP
+			|| message.type == TAPDISK_MESSAGE_ERROR)
+		err = -message.u.response.error;
+	else {
+		EPRINTF("got unexpected result '%s' from %d\n",
+				tapdisk_message_name(message.type), id);
+		err = -EINVAL;
+	}
+
+	if (err)
+		EPRINTF("commit failed: %s\n", strerror(-err));
+
+	return err;
+}

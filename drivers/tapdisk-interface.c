@@ -270,6 +270,31 @@ fail:
 	td_complete_request(*treq, err);
 }
 
+int
+td_commit(td_image_t *image, const char *name)
+{
+	td_driver_t *driver;
+
+	if (!image) {
+		return -ENODEV;
+	}
+
+	driver = image->driver;
+	if (!driver) {
+		return -ENODEV;
+	}
+
+	if (!td_flag_test(driver->state, TD_DRIVER_OPEN)) {
+		return -EBADF;
+	}
+
+	if (!driver->ops->td_commit) {
+		return -EOPNOTSUPP;
+	}
+
+	return driver->ops->td_commit(driver, name);
+}
+
 void
 td_forward_request(td_request_t treq)
 {

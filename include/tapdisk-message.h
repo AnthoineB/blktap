@@ -233,6 +233,8 @@ enum tapdisk_message_id {
 	TAPDISK_MESSAGE_DISK_INFO,
 	TAPDISK_MESSAGE_DISK_INFO_RSP,
 	TAPDISK_MESSAGE_EXIT,
+	TAPDISK_MESSAGE_COMMIT,
+	TAPDISK_MESSAGE_COMMIT_RSP,
 	TAPDISK_MESSAGE_MAX /* This value must be the last. */
 };
 
@@ -326,6 +328,12 @@ tapdisk_message_name(enum tapdisk_message_id id)
 
 	case TAPDISK_MESSAGE_EXIT:
 		return "exit";
+
+	case TAPDISK_MESSAGE_COMMIT:
+		return "commit";
+
+	case TAPDISK_MESSAGE_COMMIT_RSP:
+		return "commit response";
 
 	default:
 		return "unknown";
