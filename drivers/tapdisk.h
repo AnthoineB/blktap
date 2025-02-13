@@ -134,6 +134,7 @@ typedef struct td_image_handle       td_image_t;
 typedef struct td_sector_count       td_sector_count_t;
 typedef struct td_vbd_request        td_vbd_request_t;
 typedef struct td_vbd_handle         td_vbd_t;
+typedef struct td_query              td_query_t;
 
 /* 
  * Prototype of the callback to activate as requests complete.
@@ -209,6 +210,12 @@ struct td_vbd_encryption
 	uint8_t                    *encryption_key;
 };
 
+struct td_query {
+        uint64_t                    current_progress;
+        uint64_t                    total_progress;
+        const char                  *status;
+};
+
 /* 
  * Structure describing the interface to a virtual disk implementation.
  * See note at the top of this file describing this interface.
@@ -227,6 +234,7 @@ struct tap_disk {
 	void (*td_debug)             (td_driver_t *);
 	void (*td_stats)             (td_driver_t *, td_stats_t *);
 	int (*td_commit)             (td_driver_t *, const char *);
+	int (*td_query_commit_job)   (td_driver_t *, td_query_t *);
 
     /**
      * Callback to produce RRD output.

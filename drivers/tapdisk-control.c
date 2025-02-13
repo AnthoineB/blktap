@@ -1339,6 +1339,43 @@ out:
 	return err;
 }
 
+static int
+tapdisk_control_query_commit_job(struct tapdisk_ctl_conn *conn,
+		       tapdisk_message_t *request, tapdisk_message_t * const response)
+{
+	int err;
+	td_vbd_t *vbd;
+	td_query_t query;
+
+	ASSERT(conn);
+	ASSERT(request);
+	ASSERT(response);
+
+	INFO("query commit job %d\n", request->cookie);
+
+	vbd = tapdisk_server_get_vbd(request->cookie);
+	if (!vbd) {
+		/* TODO log error */
+		err = -ENODEV;
+		goto out;
+	}
+
+	err = tapdisk_vbd_query_commit_job(vbd, &query);
+out:
+	response->cookie = request->cookie;
+
+	if (!err) {
+		response->type = TAPDISK_MESSAGE_QUERY_COMMIT_JOB_RSP;
+
+		if (query.status)
+			safe_strncpy(response->u.query.status, query.status,
+				sizeof(response->u.query.status));
+		response->u.query.current_progress = query.current_progress;
+		response->u.query.total_progress = query.total_progress;
+	}
+	return err;
+}
+
 
 struct tapdisk_control_info message_infos[] = {
 	[TAPDISK_MESSAGE_PID] = {
@@ -1399,6 +1436,10 @@ struct tapdisk_control_info message_infos[] = {
 	},
 	[TAPDISK_MESSAGE_COMMIT] = {
 		.handler = tapdisk_control_commit,
+		.flags   = TAPDISK_MSG_VERBOSE,
+	},
+	[TAPDISK_MESSAGE_QUERY_COMMIT_JOB] = {
+		.handler = tapdisk_control_query_commit_job,
 		.flags   = TAPDISK_MSG_VERBOSE,
 	}
 };
