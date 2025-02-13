@@ -1382,7 +1382,7 @@ tapdisk_control_receive_request(struct tapdisk_ctl_conn *conn)
 	if (err)
 		goto invalid;
 
-	if (conn->request.type > TAPDISK_MESSAGE_EXIT)
+	if (conn->request.type >= TAPDISK_MESSAGE_MAX)
 		goto invalid;
 
 	conn->info = &message_infos[conn->request.type];

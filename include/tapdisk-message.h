@@ -233,9 +233,8 @@ enum tapdisk_message_id {
 	TAPDISK_MESSAGE_DISK_INFO,
 	TAPDISK_MESSAGE_DISK_INFO_RSP,
 	TAPDISK_MESSAGE_EXIT,
+	TAPDISK_MESSAGE_MAX /* This value must be the last. */
 };
-
-#define TAPDISK_MESSAGE_MAX TAPDISK_MESSAGE_EXIT
 
 static inline char *
 tapdisk_message_name(enum tapdisk_message_id id)
