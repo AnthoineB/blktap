@@ -147,6 +147,7 @@ int tap_ctl_blk_major(void);
  * Commit a VBD.
  */
 int tap_ctl_commit(const int id, const int minor, const char *params);
+int tap_ctl_query_commit_job(const int id, const int minor);
 
 /**
  * Instructs a tapdisk to connect to the shared ring.

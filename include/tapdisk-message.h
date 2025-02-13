@@ -66,6 +66,7 @@ typedef struct tapdisk_message_response  tapdisk_message_response_t;
 typedef struct tapdisk_message_minors    tapdisk_message_minors_t;
 typedef struct tapdisk_message_list      tapdisk_message_list_t;
 typedef struct tapdisk_message_stat      tapdisk_message_stat_t;
+typedef struct tapdisk_message_query     tapdisk_message_query_t;
 
 struct tapdisk_message_params {
 	tapdisk_message_flag_t           flags;
@@ -109,6 +110,12 @@ struct tapdisk_message_stat {
 	uint16_t                         type;
 	uint16_t                         cookie;
 	size_t                           length;
+};
+
+struct tapdisk_message_query {
+	uint64_t                         current_progress;
+	uint64_t                         total_progress;
+	char                             status[TAPDISK_MESSAGE_STRING_LENGTH];
 };
 
 /**
@@ -198,7 +205,8 @@ struct tapdisk_message {
 		tapdisk_message_list_t     list;
 		tapdisk_message_stat_t     info;
 		tapdisk_message_blkif_t    blkif;
-        tapdisk_message_resume_t   resume;
+		tapdisk_message_resume_t   resume;
+		tapdisk_message_query_t    query;
 	} u;
 };
 
@@ -235,6 +243,8 @@ enum tapdisk_message_id {
 	TAPDISK_MESSAGE_EXIT,
 	TAPDISK_MESSAGE_COMMIT,
 	TAPDISK_MESSAGE_COMMIT_RSP,
+	TAPDISK_MESSAGE_QUERY_COMMIT_JOB,
+	TAPDISK_MESSAGE_QUERY_COMMIT_JOB_RSP,
 	TAPDISK_MESSAGE_MAX /* This value must be the last. */
 };
 
@@ -334,6 +344,12 @@ tapdisk_message_name(enum tapdisk_message_id id)
 
 	case TAPDISK_MESSAGE_COMMIT_RSP:
 		return "commit response";
+
+	case TAPDISK_MESSAGE_QUERY_COMMIT_JOB:
+		return "query commit job";
+
+	case TAPDISK_MESSAGE_QUERY_COMMIT_JOB_RSP:
+		return "query commit job response";
 
 	default:
 		return "unknown";

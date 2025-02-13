@@ -43,6 +43,7 @@ int td_close(td_image_t *);
 int td_get_parent_id(td_image_t *, td_disk_id_t *);
 int td_validate_parent(td_image_t *, td_image_t *);
 int td_commit(td_image_t *, const char *);
+int td_query_commit_job(td_image_t *, td_query_t *);
 
 void td_queue_write(td_image_t *, td_request_t);
 void td_queue_read(td_image_t *, td_request_t);
