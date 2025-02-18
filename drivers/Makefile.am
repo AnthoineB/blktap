@@ -92,6 +92,7 @@ libtapdisk_la_SOURCES += block-llcache.c
 libtapdisk_la_SOURCES += block-nbd.c
 libtapdisk_la_SOURCES += block-log.c
 libtapdisk_la_SOURCES += block-qcow2.c
+libtapdisk_la_SOURCES += block-dummy.c
 
 # shared ring
 libtapdisk_la_SOURCES += td-blkif.c
