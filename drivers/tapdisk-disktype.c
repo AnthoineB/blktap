@@ -100,12 +100,6 @@ static const disk_info_t log_disk = {
 	DISK_TYPE_FILTER,
 };
 
-static disk_info_t remus_disk = {
-       "remus disk replicator (remus)",
-       "remus",
-       0,
-};
-
 static const disk_info_t lcache_disk = {
        "lc",
        "local parent cache (lc)",
@@ -136,6 +130,12 @@ static const disk_info_t nbd_disk = {
 	0,
 };
 
+static const disk_info_t dummy_disk = {
+       "dummy",
+       "Dummy test driver",
+       0,
+};
+
 const disk_info_t *tapdisk_disk_types[] = {
 	[DISK_TYPE_AIO]	= &aio_disk,
 	[DISK_TYPE_SYNC]	= &sync_disk,
@@ -147,12 +147,12 @@ const disk_info_t *tapdisk_disk_types[] = {
 	[DISK_TYPE_BLOCK_CACHE] = &block_cache_disk,
 	[DISK_TYPE_VINDEX]	= &vhd_index_disk,
 	[DISK_TYPE_LOG]	= &log_disk,
-	[DISK_TYPE_REMUS]	= &remus_disk,
 	[DISK_TYPE_LCACHE]      = &lcache_disk,
 	[DISK_TYPE_VALVE]       = &valve_disk,
 	[DISK_TYPE_LLPCACHE]    = &llpcache_disk,
 	[DISK_TYPE_LLECACHE]    = &llecache_disk,
 	[DISK_TYPE_NBD]         = &nbd_disk,
+	[DISK_TYPE_DUMMY]       = &dummy_disk,
 	0,
 };
 
@@ -173,6 +173,7 @@ extern struct tap_disk tapdisk_llpcache;
 extern struct tap_disk tapdisk_llecache;
 extern struct tap_disk tapdisk_valve;
 extern struct tap_disk tapdisk_nbd;
+extern struct tap_disk tapdisk_dummy;
 
 const struct tap_disk *tapdisk_disk_drivers[] = {
 	[DISK_TYPE_AIO]         = &tapdisk_aio,
@@ -192,6 +193,7 @@ const struct tap_disk *tapdisk_disk_drivers[] = {
 	[DISK_TYPE_LLECACHE]    = &tapdisk_llecache,
 	[DISK_TYPE_VALVE]       = &tapdisk_valve,
 	[DISK_TYPE_NBD]         = &tapdisk_nbd,
+	[DISK_TYPE_DUMMY]       = &tapdisk_dummy,
 	0,
 };
 
