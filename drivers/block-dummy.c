@@ -97,6 +97,7 @@ struct dummy_request {
     enum dummy_ops          op;
     td_request_t            treq;
     struct dummy_state      *state;
+    struct tiocb            tiocb;
     //QLIST_ENTRY(dummy_request) list;
     //int                     aio_inflight;
 #if DEBUGGING != 0
@@ -107,6 +108,7 @@ struct dummy_request {
 
 struct dummy_state {
     td_driver_t               *driver;
+    int                       fd;
 #if 0
     const char                *name;
     struct td_vbd_encryption  *encryption;
@@ -140,7 +142,7 @@ static int
 dummy_open(td_driver_t *driver, const char *name,
            struct td_vbd_encryption *encryption, td_flag_t flags)
 {
-    int i;
+    int i, o_flags;
     struct dummy_state *s = (struct dummy_state *)driver->data;
 
     memset(s, 0, sizeof(struct dummy_state));
@@ -150,6 +152,10 @@ dummy_open(td_driver_t *driver, const char *name,
     s->vreq_free_count = DUMMY_REQS;
     for (i = 0; i < DUMMY_REQS; i++)
         s->vreq_free[i] = s->vreq_list + i;
+
+    o_flags = O_LARGEFILE |
+        ((flags == TD_OPEN_RDONLY) ? O_RDONLY : O_RDWR);
+    s->fd = open(name, o_flags);
 
     driver->info.size        = 20 * 1024 * 1024;
     driver->info.sector_size = 1 << SECTOR_SHIFT;
@@ -220,7 +226,7 @@ signal_completion(struct dummy_request *r)
         TRACE(s);
 }
 
-static void dummy_complete(void *opaque)
+static void dummy_complete(void *opaque, struct tiocb *tiocb, int err)
 {
     struct dummy_request *req = (struct dummy_request *)opaque;
     struct dummy_state *s = req->state;
@@ -234,7 +240,7 @@ static void dummy_complete(void *opaque)
         return;
     }
 
-    req->error = 0;
+    req->error = err;
 
     if (req->error)
         ERR(s, req->error, "%s: op: %u, lsec: %"PRIu64", secs: %u, "
@@ -284,14 +290,19 @@ schedule_request(struct dummy_state *s, td_request_t *treq, enum dummy_ops op)
 
 	s->queued++;
 	if (op == DUMMY_OP_READ) {
+                td_prep_read(s->driver, &req->tiocb, s->fd, req->treq.buf,
+                             req->treq.secs << SECTOR_SHIFT,
+                             0, dummy_complete, req);
 		s->reads++;
 		s->read_size += req->treq.secs;
 	} else {
+                td_prep_write(s->driver, &req->tiocb, s->fd, req->treq.buf,
+                             req->treq.secs << SECTOR_SHIFT,
+                             0, dummy_complete, req);
 		s->writes++;
 		s->write_size += req->treq.secs;
 	}
-
-	dummy_complete(req);
+	td_queue_tiocb(s->driver, &req->tiocb);
 
 	TRACE(s);
 
