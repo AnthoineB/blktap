@@ -947,8 +947,10 @@ schedule_request(struct qcow2_state *s, td_request_t *treq, enum qcow2_ops op)
         QSIMPLEQ_INSERT_TAIL(&s->inflight, req, list);
         pthread_mutex_unlock(&s->lock);
 
-        qemu_bh_schedule(s->bh);
-        s->schedule++;
+        if (treq->sidx == 0) {
+            qemu_bh_schedule(s->bh);
+            s->schedule++;
+        }
 
 	DBG(TLOG_DBG, "%s: lsec: 0x%08"PRIx64", "
             "nr_secs: 0x%08x, buf: %p, id %d\n",
