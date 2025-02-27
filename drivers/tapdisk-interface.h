@@ -51,7 +51,7 @@ void td_queue_read(td_image_t *, td_request_t);
 void td_queue_block_status(td_image_t*, td_request_t*);
 void td_queue_discard(td_image_t *, td_request_t);
 void td_forward_request(td_request_t);
-void td_complete_request(td_request_t, int);
+int td_complete_request(td_request_t, int);
 
 void td_debug(td_image_t *);
 

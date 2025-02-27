@@ -75,7 +75,7 @@
 
 char* op_strings[TD_OPS_END] ={"read", "write", "block_status", "discard"};
 
-static void tapdisk_vbd_complete_vbd_request(td_vbd_t *, td_vbd_request_t *);
+static int  tapdisk_vbd_complete_vbd_request(td_vbd_t *, td_vbd_request_t *);
 static int  tapdisk_vbd_queue_ready(td_vbd_t *);
 static void tapdisk_vbd_check_complete_requests(td_vbd_t *);
 static void tapdisk_vbd_check_requests_for_issue(td_vbd_t *);
@@ -1340,7 +1340,7 @@ tapdisk_vbd_request_should_retry(td_vbd_t *vbd, td_vbd_request_t *vreq)
 	return 0;
 }
 
-static void
+static int
 tapdisk_vbd_complete_vbd_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 {
 	if (!vreq->submitting && !vreq->secs_pending) {
@@ -1349,7 +1349,9 @@ tapdisk_vbd_complete_vbd_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 			tapdisk_vbd_move_request(vreq, &vbd->failed_requests);
 		else
 			tapdisk_vbd_move_request(vreq, &vbd->completed_requests);
+		return 1;
 	}
+	return 0;
 }
 
 static void
@@ -1362,12 +1364,12 @@ FIXME_maybe_count_enospc_redirect(td_vbd_t *vbd, td_request_t treq)
 		vbd->FIXME_enospc_redirect_count += treq.secs;
 }
 
-static void
+static int
 __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
 				  td_request_t treq, int res)
 {
 	td_image_t *image = treq.image;
-	int err;
+	int err, notify;
 
         long long interval;
 
@@ -1420,8 +1422,10 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
             vbd->vdi_stats.stats->discard_total_ticks += interval;
         }
 
-	tapdisk_vbd_complete_vbd_request(vbd, vreq);
+	notify = tapdisk_vbd_complete_vbd_request(vbd, vreq);
 	pthread_mutex_unlock(&vbd->mutex);
+
+	return notify;
 }
 
 static void
@@ -1561,7 +1565,7 @@ block_status_add_extent(tapdisk_extents_t *extents, td_request_t *vreq)
 	return ret;
 }
 
-void
+int
 tapdisk_vbd_complete_block_status_request(td_request_t treq, int res)
 {
 	td_vbd_t *vbd;
@@ -1586,10 +1590,10 @@ tapdisk_vbd_complete_block_status_request(td_request_t treq, int res)
 	    vreq->name, treq.sidx, treq.sec, treq.secs,
 	    treq.buf, vreq->op, res);
 
-	__tapdisk_vbd_complete_td_request(vbd, vreq, treq, res);
+	return __tapdisk_vbd_complete_td_request(vbd, vreq, treq, res);
 }
 
-void
+int
 tapdisk_vbd_complete_td_request(td_request_t treq, int res)
 {
 	td_vbd_t *vbd;
@@ -1644,7 +1648,7 @@ tapdisk_vbd_complete_td_request(td_request_t treq, int res)
 	    vreq->name, treq.sidx, treq.sec, treq.secs,
 	    treq.buf, vreq->op, res);
 
-	__tapdisk_vbd_complete_td_request(vbd, vreq, treq, res);
+	return __tapdisk_vbd_complete_td_request(vbd, vreq, treq, res);
 }
 
 static inline void

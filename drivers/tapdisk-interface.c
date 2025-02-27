@@ -385,10 +385,10 @@ td_forward_request(td_request_t treq)
 	tapdisk_vbd_forward_request(treq);
 }
 
-void
+int
 td_complete_request(td_request_t treq, int res)
 {
-	treq.cb(treq, res);
+	return treq.cb(treq, res);
 }
 
 void

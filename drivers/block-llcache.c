@@ -518,9 +518,10 @@ fail:
 	return err;
 }
 
-static void
+static int
 __llecache_write_cb(td_request_t treq, int error)
 {
+	int notify = 0;
 	td_llecache_req_t *req = treq.cb_data;
 	td_llecache_t *s = req->s;
 
@@ -530,7 +531,7 @@ __llecache_write_cb(td_request_t treq, int error)
 	req->error    = ll_write_error(req->error, error);
 
 	if (req->pending)
-		return;
+		return notify;
 
 	if (req->error == -ENOSPC) {
 		ll_log_switch(DISK_TYPE_LLECACHE, req->error,
@@ -540,9 +541,11 @@ __llecache_write_cb(td_request_t treq, int error)
 		td_queue_write(s->shared, req->treq);
 
 	} else
-		td_complete_request(req->treq, error);
+		notify = td_complete_request(req->treq, error);
 
 	llecache_free_request(s, req);
+
+	return notify;
 }
 
 static void

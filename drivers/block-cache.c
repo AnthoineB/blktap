@@ -634,10 +634,10 @@ block_cache_hit(block_cache_t *cache, td_request_t treq, char *iov[])
 	td_complete_request(treq, 0);
 }
 
-static void
+static int
 block_cache_populate_cache(td_request_t clone, int err)
 {
-	int i;
+	int i, notify;
 	radix_tree_t *tree;
 	block_cache_t *cache;
 	block_cache_request_t *breq;
@@ -649,7 +649,7 @@ block_cache_populate_cache(td_request_t clone, int err)
 	breq->err   = (breq->err ? breq->err : err);
 
 	if (breq->secs)
-		return;
+		return 0;
 
 	if (breq->err) {
 		free(breq->buf);
@@ -669,8 +669,9 @@ block_cache_populate_cache(td_request_t clone, int err)
 		free(breq->buf);
 
 out:
-	td_complete_request(breq->treq, breq->err);
+	notify = td_complete_request(breq->treq, breq->err);
 	block_cache_put_request(cache, breq);
+	return notify;
 }
 
 static void

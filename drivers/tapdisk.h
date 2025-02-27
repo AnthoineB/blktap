@@ -143,7 +143,7 @@ typedef struct td_query              td_query_t;
 /* 
  * Prototype of the callback to activate as requests complete.
  */
-typedef void (*td_callback_t)(td_request_t, int);
+typedef int (*td_callback_t)(td_request_t, int);
 typedef void (*td_vreq_callback_t)(td_vbd_request_t*, int, void*, int);
 
 struct td_disk_id {

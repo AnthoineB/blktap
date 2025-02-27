@@ -457,11 +457,12 @@ valve_expend_request(td_valve_t *valve, const td_request_t treq)
 	return 0;
 }
 
-static void
+static int
 __valve_complete_treq(td_request_t treq, int error)
 {
 	td_valve_request_t *req = treq.cb_data;
 	td_valve_t *valve = req->valve;
+	int notify;
 
 	BUG_ON(req->secs < treq.secs);
 	req->secs -= treq.secs;
@@ -472,11 +473,13 @@ __valve_complete_treq(td_request_t treq, int error)
 	/* Respond to original callback */
 	treq.cb = req->treq.cb;
 	treq.cb_data = req->treq.cb_data;
-	td_complete_request(treq, error);
+	notify = td_complete_request(treq, error);
 
 	if (!req->secs) {
 		valve_free_request(valve, req);
 	}
+
+	return notify;
 }
 
 static void

@@ -237,7 +237,7 @@ int tapdisk_vbd_commit(td_vbd_t *, const char *);
 int tapdisk_vbd_query_commit_job(td_vbd_t *, td_query_t *);
 int tapdisk_vbd_cancel_commit_job(td_vbd_t *, bool);
 
-void tapdisk_vbd_complete_td_request(td_request_t, int);
+int tapdisk_vbd_complete_td_request(td_request_t, int);
 int add_extent(tapdisk_extents_t *, td_request_t *);
 int tapdisk_vbd_issue_request(td_vbd_t *, td_vbd_request_t *);
 
@@ -253,7 +253,7 @@ void tapdisk_vbd_check_progress(td_vbd_t *);
 void tapdisk_vbd_debug(td_vbd_t *);
 int tapdisk_vbd_start_nbdservers(td_vbd_t *);
 void tapdisk_vbd_stats(td_vbd_t *, td_stats_t *);
-void tapdisk_vbd_complete_block_status_request(td_request_t, int);
+int tapdisk_vbd_complete_block_status_request(td_request_t, int);
 
 /**
  * Tells whether the VBD contains at least one dead ring.
