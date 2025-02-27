@@ -697,6 +697,8 @@ signal_completion(struct qcow2_request *r)
 
         s->returned++;
         TRACE(s);
+
+        qcow2_handle_requests(s);
 }
 
 #if DEBUGGING != 0
