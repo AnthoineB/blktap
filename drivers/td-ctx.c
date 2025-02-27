@@ -220,7 +220,7 @@ __xenio_blkif_get_requests(struct td_xenblkif * const blkif,
     ring = &blkif->rings.common;
 
     rp = ring->sring->req_prod;
-    xen_rmb(); /* TODO why? */
+    xen_rmb(); /* Ensure we see queued requests up to 'rp'. */
 
     for (rc = ring->req_cons, n = 0, barrier = false;
 			rc != rp && n < count && !barrier;
