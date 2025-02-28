@@ -1012,7 +1012,9 @@ tapdisk_vbd_pause(td_vbd_t *vbd)
 		INFO("pause requested\n");
 	}
 
+	pthread_mutex_lock(&vbd->mutex);
 	td_flag_set(vbd->state, TD_VBD_PAUSE_REQUESTED);
+	pthread_mutex_lock(&vbd->mutex);
 
 	if (vbd->nbdserver)
 		tapdisk_nbdserver_pause(vbd->nbdserver, log);
@@ -1369,14 +1371,26 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
 				  td_request_t treq, int res)
 {
 	td_image_t *image = treq.image;
-	int err, notify;
-
-        long long interval;
+	int err, notify, old_error, prev_error;
+	struct timeval ts;
+	long long interval;
 
 	err = (res <= 0 ? res : -res);
+
 	pthread_mutex_lock(&vbd->mutex);
+	if (err) {
+		vreq->error = (vreq->error ? : err);
+	}
+
+	ts = vreq->ts;
+	old_error = vreq->error;
+	prev_error = vreq->prev_error;
+
 	vbd->secs_pending  -= treq.secs;
 	vreq->secs_pending -= treq.secs;
+
+	notify = tapdisk_vbd_complete_vbd_request(vbd, vreq);
+	pthread_mutex_unlock(&vbd->mutex);
 
 	if (err != -EBUSY) {
 		td_sector_count_add(&image->stats.hits, treq.secs, treq.op);
@@ -1387,21 +1401,17 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
 		FIXME_maybe_count_enospc_redirect(vbd, treq);
 	}
 
-	if (err) {
-		if (err != -EBUSY) {
-			if (!vreq->error &&
-			    err != vreq->prev_error)
-				tlog_drv_error(image->driver, err,
-					       "req: %s %s 0x%04x secs @ 0x%08"PRIx64" - %s",
-					       op_strings[treq.op],
-						   image->name,
-					       treq.secs, treq.sec, strerror(abs(err)));
-			vbd->errors++;
-		}
-		vreq->error = (vreq->error ? : err);
+	if (err && err != -EBUSY) {
+		if (!old_error && err != prev_error)
+			tlog_drv_error(image->driver, err,
+				"req: %s %s 0x%04x secs @ 0x%08"PRIx64" - %s",
+				op_strings[treq.op],
+				image->name,
+				treq.secs, treq.sec, strerror(abs(err)));
+		vbd->errors++;
 	}
 
-        interval = timeval_to_us(&vbd->ts) - timeval_to_us(&vreq->ts);
+	interval = timeval_to_us(&vbd->ts) - timeval_to_us(&ts);
 
         if(treq.op == TD_OP_READ) {
             vbd->vdi_stats.stats->read_reqs_completed++;
@@ -1420,9 +1430,6 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
             vbd->vdi_stats.stats->discard_sectors += treq.secs;
             vbd->vdi_stats.stats->discard_total_ticks += interval;
         }
-
-	notify = tapdisk_vbd_complete_vbd_request(vbd, vreq);
-	pthread_mutex_unlock(&vbd->mutex);
 
 	return notify;
 }

@@ -508,11 +508,23 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 	}
 
 	if (likely(!blkif->dead)) {
+		if (blkif_rq_rd(&tapreq->msg) && likely(!err)) {
+                        _err = guest_copy2(blkif, tapreq);
+                        if (unlikely(_err)) {
+                                err = _err;
+                                RING_ERR(blkif, "req %lu: failed to copy from/to guest: "
+                                        "%s\n", tapreq->msg.id, strerror(-err));
+			}
+		}
+
+		if (likely(err == 0))
+			_err = BLKIF_RSP_OKAY;
+		else
+			_err = BLKIF_RSP_ERROR;
+
+		xenio_blkif_put_response(blkif, tapreq, _err, final);
+
 		if (blkif_rq_rd(&tapreq->msg)) {
-			/*
-			 * TODO stats should be collected after grant-copy for better
-			 * accuracy
-			 */
 			if (likely(blkif->stats.xenvbd)) {
 				cnt = &blkif->stats.xenvbd->st_rd_cnt;
 				sum = &blkif->stats.xenvbd->st_rd_sum_usecs;
@@ -520,14 +532,6 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 			}
 			blkif->vbd_stats.stats->read_reqs_completed++;
 			ticks = &blkif->vbd_stats.stats->read_total_ticks;
-			if (likely(!err)) {
-				_err = guest_copy2(blkif, tapreq);
-				if (unlikely(_err)) {
-					err = _err;
-					RING_ERR(blkif, "req %lu: failed to copy from/to guest: "
-							"%s\n", tapreq->msg.id, strerror(-err));
-				}
-			}
 		} else if (blkif_rq_wr(&tapreq->msg)) {
 			if (likely(blkif->stats.xenvbd)) {
 				cnt = &blkif->stats.xenvbd->st_wr_cnt;
@@ -558,13 +562,6 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 			*sum += interval;
 			*cnt += 1;
 		}
-
-		if (likely(err == 0))
-			_err = BLKIF_RSP_OKAY;
-		else
-			_err = BLKIF_RSP_ERROR;
-
-		xenio_blkif_put_response(blkif, tapreq, _err, final);
 	}
 
 	tapdisk_xenblkif_free_request(blkif, tapreq);
