@@ -336,6 +336,7 @@ qcow2_open(void *opaque)
     const char *cache = "none";
     bool has_discard = false;
     const char *discard = "off";
+    struct qcow2_request *req;
 
     s = opaque;
     conf = &s->conf;
@@ -466,6 +467,8 @@ qcow2_open(void *opaque)
     s->bh = aio_bh_new_guarded(s->ctx, block_bh,
                                s,
                                &s->mem_reentrancy_guard);
+
+    blk_set_aio_context(conf->blk, s->ctx, NULL);
 
     DBG(TLOG_INFO, "qcow2_open: ctx %p bh %p\n", s->ctx, s->bh);
 
