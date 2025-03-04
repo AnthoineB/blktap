@@ -59,9 +59,11 @@
 #include "qemu/error-report.h"
 #include "qapi/error.h"
 #include "sysemu/block-backend.h"
+#include "sysemu/iothread.h"
 #include "qapi/qmp/qdict.h"
 #include "qapi/qapi-commands-block-core.h"
 #include "qapi/qapi-commands-job.h"
+#include "qapi/qapi-commands-qom.h"
 #include "qemu/defer-call.h"
 
 #include "tapdisk.h"
@@ -145,6 +147,10 @@ struct io_stat {
 };
 #endif
 
+struct qcow2_iothread {
+    char *id;
+};
+
 struct qcow2_state {
     td_driver_t               *driver;
     const char                *name;
@@ -161,6 +167,8 @@ struct qcow2_state {
     int                       requests_inflight;
 
     QEMUBH                    *bh;
+    IOThread                  *iothread;
+    struct qcow2_iothread     *iothread_id;
     AioContext                *ctx;
 
     /* Open thread */
@@ -215,6 +223,41 @@ static inline void do_query_commit_job(struct qcow2_state *s, struct qcow2_reque
 static inline void do_cancel_commit_job(struct qcow2_state *s, struct qcow2_request *req);
 static int qcow2_cancel_commit_job(td_driver_t *driver, bool wait);
 
+static void qcow2_iothread_destroy(struct qcow2_iothread *iothread,
+                                   Error **errp)
+{
+    qmp_object_del(iothread->id, errp);
+
+    g_free(iothread->id);
+    g_free(iothread);
+}
+
+static struct qcow2_iothread *qcow2_iothread_create(const char *id,
+                                                    Error **errp)
+{
+    ERRP_GUARD();
+    struct qcow2_iothread *iothread = g_new(struct qcow2_iothread, 1);
+    ObjectOptions *opts;
+
+    iothread->id = g_strdup(id);
+
+    opts = g_new(ObjectOptions, 1);
+    *opts = (ObjectOptions) {
+        .qom_type = OBJECT_TYPE_IOTHREAD,
+        .id = g_strdup(id),
+    };
+    qmp_object_add(opts, errp);
+    qapi_free_ObjectOptions(opts);
+
+    if (*errp) {
+        g_free(iothread->id);
+        g_free(iothread);
+        return NULL;
+    }
+
+    return iothread;
+}
+
 static int
 qcow2_initialize(struct qcow2_state *s, Error **perr)
 {
@@ -231,6 +274,16 @@ qcow2_initialize(struct qcow2_state *s, Error **perr)
         s->discard_clat.min_val = ULONG_MAX;
         s->discard_lat.min_val = ULONG_MAX;
 #endif
+
+        module_call_init(MODULE_INIT_QOM);
+
+#define IOTHREAD_ID "iothread0"
+        s->iothread_id = qcow2_iothread_create(IOTHREAD_ID, perr);
+        if (*perr) {
+            return -1;
+        }
+
+        s->iothread = iothread_by_id(IOTHREAD_ID);
 
         qemu_init_cpu_loop();
         bql_lock();
@@ -463,7 +516,12 @@ qcow2_open(void *opaque)
     driver->info.discard_granularity = conf->discard_granularity;
 
     QSIMPLEQ_INIT(&s->inflight);
-    s->ctx = qemu_get_aio_context();
+    if (s->iothread) {
+        object_ref(OBJECT(s->iothread));
+        s->ctx = iothread_get_aio_context(s->iothread);
+    } else {
+        s->ctx = qemu_get_aio_context();
+    }
     s->bh = aio_bh_new_guarded(s->ctx, block_bh,
                                s,
                                &s->mem_reentrancy_guard);
@@ -504,6 +562,25 @@ qcow2_open(void *opaque)
     blk_drain_all();
 
     qemu_bh_delete(s->bh);
+    if (s->iothread) {
+        object_unref(OBJECT(s->iothread));
+    }
+
+    /*
+     * Drain all pending RCU callbacks as object_unparent() frees `xendev'
+     * in a RCU callback.
+     * And due to the property "drive" still existing in `xendev', we
+     * can't destroy the XenBlockDrive associated with `xendev' with
+     * xen_block_drive_destroy() below.
+     */
+    drain_call_rcu();
+
+    if (s->iothread) {
+        qcow2_iothread_destroy(s->iothread_id, &local_err);
+        if (local_err) {
+            error_prepend(&local_err, "failed to destroy iothread: ");
+        }
+    }
 
     s->vreq_free_count = QCOW2_REQS;
     for (i = 0; i < QCOW2_REQS; i++) {
@@ -511,6 +588,7 @@ qcow2_open(void *opaque)
     }
 
     blk_unref(conf->blk);
+
     qcow2_free(s);
 
     return NULL;

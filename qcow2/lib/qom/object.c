@@ -14,7 +14,7 @@
 #include "hw/qdev-core.h"
 #include "qapi/error.h"
 #include "qom/object.h"
-//#include "qom/object_interfaces.h"
+#include "qom/object_interfaces.h"
 #include "qemu/cutils.h"
 #include "qemu/memalign.h"
 #include "qapi/visitor.h"
@@ -262,7 +262,6 @@ static size_t type_object_get_align(TypeImpl *ti)
     return 0;
 }
 
-#if 0
 size_t object_type_get_instance_size(const char *typename)
 {
     TypeImpl *type = type_get_by_name(typename);
@@ -270,7 +269,6 @@ size_t object_type_get_instance_size(const char *typename)
     g_assert(type != NULL);
     return type_object_get_size(type);
 }
-#endif
 
 static bool type_is_ancestor(TypeImpl *type, TypeImpl *target_type)
 {
@@ -434,7 +432,6 @@ static void object_post_init_with_type(Object *obj, TypeImpl *ti)
     }
 }
 
-#if 0
 bool object_apply_global_props(Object *obj, const GPtrArray *props,
                                Error **errp)
 {
@@ -485,6 +482,7 @@ bool object_apply_global_props(Object *obj, const GPtrArray *props,
  */
 static GPtrArray *object_compat_props[3];
 
+#if 0
 /*
  * Retrieve @GPtrArray for global property defined with options
  * other than "-global".  These are generally used for syntactic
@@ -504,6 +502,7 @@ void object_register_sugar_prop(const char *driver, const char *prop,
     g->optional = optional;
     g_ptr_array_add(object_compat_props[2], g);
 }
+#endif
 
 /*
  * Set machine's global property defaults to @compat_props.
@@ -534,7 +533,6 @@ void object_apply_compat_props(Object *obj)
                                   i == 2 ? &error_fatal : &error_abort);
     }
 }
-#endif
 
 static void object_class_property_init_all(Object *obj)
 {
@@ -567,7 +565,6 @@ static void object_initialize_with_type(Object *obj, size_t size, TypeImpl *type
     object_post_init_with_type(obj, type);
 }
 
-#if 0
 void object_initialize(void *data, size_t size, const char *typename)
 {
     TypeImpl *type = type_get_by_name(typename);
@@ -658,7 +655,6 @@ void object_initialize_child_internal(Object *parent,
     object_initialize_child_with_props(parent, propname, child, size, type,
                                        &error_abort, NULL);
 }
-#endif
 
 static inline bool object_property_is_child(ObjectProperty *prop)
 {
@@ -689,7 +685,6 @@ static void object_property_del_all(Object *obj)
     g_hash_table_unref(obj->properties);
 }
 
-#if 0
 static void object_property_del_child(Object *obj, Object *child)
 {
     ObjectProperty *prop;
@@ -723,7 +718,6 @@ void object_unparent(Object *obj)
         object_property_del_child(obj->parent, obj);
     }
 }
-#endif
 
 static void object_deinit(Object *obj, TypeImpl *type)
 {
@@ -806,7 +800,6 @@ Object *object_new(const char *typename)
 }
 
 
-#if 0
 Object *object_new_with_props(const char *typename,
                               Object *parent,
                               const char *id,
@@ -907,7 +900,6 @@ bool object_set_propv(Object *obj,
 
     return true;
 }
-#endif
 
 
 Object *object_dynamic_cast(Object *obj, const char *typename)
@@ -922,10 +914,8 @@ Object *object_dynamic_cast(Object *obj, const char *typename)
 Object *object_dynamic_cast_assert(Object *obj, const char *typename,
                                    const char *file, int line, const char *func)
 {
-#if 0
-    trace_object_dynamic_cast_assert(obj ? obj->class->type->name : "(null)",
-                                     typename, file, line, func);
-#endif
+    //trace_object_dynamic_cast_assert(obj ? obj->class->type->name : "(null)",
+    //                                 typename, file, line, func);
 
 #ifdef CONFIG_QOM_CAST_DEBUG
     int i;
@@ -1015,10 +1005,8 @@ ObjectClass *object_class_dynamic_cast_assert(ObjectClass *class,
 {
     ObjectClass *ret;
 
-#if 0
-    trace_object_class_dynamic_cast_assert(class ? class->type->name : "(null)",
-                                           typename, file, line, func);
-#endif
+    //trace_object_class_dynamic_cast_assert(class ? class->type->name : "(null)",
+    //                                       typename, file, line, func);
 
 #ifdef CONFIG_QOM_CAST_DEBUG
     int i;
@@ -1065,19 +1053,16 @@ ObjectClass *object_get_class(Object *obj)
     return obj->class;
 }
 
-#if 0
 bool object_class_is_abstract(ObjectClass *klass)
 {
     return klass->type->abstract;
 }
-#endif
 
 const char *object_class_get_name(ObjectClass *klass)
 {
     return klass->type->name;
 }
 
-#if 0
 ObjectClass *object_class_by_name(const char *typename)
 {
     TypeImpl *type = type_get_by_name(typename);
@@ -1109,7 +1094,6 @@ ObjectClass *module_object_class_by_name(const char *typename)
 #endif
     return oc;
 }
-#endif
 
 ObjectClass *object_class_get_parent(ObjectClass *class)
 {
@@ -1124,7 +1108,6 @@ ObjectClass *object_class_get_parent(ObjectClass *class)
     return type->class;
 }
 
-#if 0
 typedef struct OCFData
 {
     void (*fn)(ObjectClass *klass, void *opaque);
@@ -1236,7 +1219,6 @@ GSList *object_class_get_list_sorted(const char *implements_type,
     return g_slist_sort(object_class_get_list(implements_type, include_abstract),
                         object_class_cmp);
 }
-#endif
 
 Object *object_ref(void *objptr)
 {
@@ -1423,7 +1405,6 @@ ObjectProperty *object_class_property_find(ObjectClass *klass, const char *name)
     return g_hash_table_lookup(klass->properties, name);
 }
 
-#if 0
 ObjectProperty *object_class_property_find_err(ObjectClass *klass,
                                                const char *name,
                                                Error **errp)
@@ -1445,7 +1426,6 @@ void object_property_del(Object *obj, const char *name)
     }
     g_hash_table_remove(obj->properties, name);
 }
-#endif
 
 bool object_property_get(Object *obj, const char *name, Visitor *v,
                          Error **errp)
@@ -1486,7 +1466,6 @@ bool object_property_set(Object *obj, const char *name, Visitor *v,
     return !*errp;
 }
 
-#if 0
 bool object_property_set_str(Object *obj, const char *name,
                              const char *value, Error **errp)
 {
@@ -1496,7 +1475,6 @@ bool object_property_set_str(Object *obj, const char *name,
     qobject_unref(qstr);
     return ok;
 }
-#endif
 
 char *object_property_get_str(Object *obj, const char *name,
                               Error **errp)
@@ -1521,7 +1499,6 @@ char *object_property_get_str(Object *obj, const char *name,
     return retval;
 }
 
-#if 0
 bool object_property_set_link(Object *obj, const char *name,
                               Object *value, Error **errp)
 {
@@ -1690,7 +1667,6 @@ uint64_t object_property_get_uint(Object *obj, const char *name,
     qobject_unref(ret);
     return retval;
 }
-#endif
 
 typedef struct EnumProperty {
     const QEnumLookup *lookup;
@@ -1855,7 +1831,6 @@ object_property_add_child(Object *obj, const char *name,
     return object_property_try_add_child(obj, name, child, &error_abort);
 }
 
-#if 0
 void object_property_allow_set_link(const Object *obj, const char *name,
                                     Object *val, Error **errp)
 {
@@ -2083,7 +2058,6 @@ object_property_add_const_link(Object *obj, const char *name,
                                 object_get_typename(target), target,
                                 NULL, OBJ_PROP_LINK_DIRECT);
 }
-#endif
 
 const char *object_get_canonical_path_component(const Object *obj)
 {
@@ -2153,7 +2127,6 @@ Object *object_resolve_path_component(Object *parent, const char *part)
     }
 }
 
-#if 0
 static Object *object_resolve_abs_path(Object *parent,
                                           char **parts,
                                           const char *typename)
@@ -2269,7 +2242,6 @@ Object *object_resolve_type_unambiguous(const char *typename, Error **errp)
     }
     return o;
 }
-#endif
 
 typedef struct StringProperty
 {
