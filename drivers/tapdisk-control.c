@@ -1376,6 +1376,34 @@ out:
 	return err;
 }
 
+static int
+tapdisk_control_cancel_commit_job(struct tapdisk_ctl_conn *conn,
+		       tapdisk_message_t *request, tapdisk_message_t * const response)
+{
+	int err;
+	td_vbd_t *vbd;
+
+	ASSERT(conn);
+	ASSERT(request);
+	ASSERT(response);
+
+	INFO("cancel commit job %d\n", request->cookie);
+
+	vbd = tapdisk_server_get_vbd(request->cookie);
+	if (!vbd) {
+		err = -ENODEV;
+	        ERR(err, "cancel commit job '%d' do not find an associated vbd, abort.\n", request->cookie);
+		goto out;
+	}
+
+	err = tapdisk_vbd_cancel_commit_job(vbd, request->u.params.flags);
+out:
+	response->cookie = request->cookie;
+	if (!err)
+		response->type = TAPDISK_MESSAGE_CANCEL_COMMIT_JOB_RSP;
+	return err;
+}
+
 
 struct tapdisk_control_info message_infos[] = {
 	[TAPDISK_MESSAGE_PID] = {
@@ -1440,6 +1468,10 @@ struct tapdisk_control_info message_infos[] = {
 	},
 	[TAPDISK_MESSAGE_QUERY_COMMIT_JOB] = {
 		.handler = tapdisk_control_query_commit_job,
+		.flags   = TAPDISK_MSG_VERBOSE,
+	},
+	[TAPDISK_MESSAGE_CANCEL_COMMIT_JOB] = {
+		.handler = tapdisk_control_cancel_commit_job,
 		.flags   = TAPDISK_MSG_VERBOSE,
 	}
 };

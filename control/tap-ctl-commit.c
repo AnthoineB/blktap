@@ -107,3 +107,35 @@ tap_ctl_query_commit_job(const int id, const int minor)
 
 	return err;
 }
+
+int
+tap_ctl_cancel_commit_job(const int id, const int minor, bool wait)
+{
+	int err;
+	tapdisk_message_t message;
+
+	memset(&message, 0, sizeof(message));
+	message.type = TAPDISK_MESSAGE_CANCEL_COMMIT_JOB;
+	message.cookie = minor;
+        message.u.params.flags = wait;
+
+        err = tap_ctl_connect_send_and_receive(id, &message, NULL);
+
+	if (err)
+		return err;
+
+	if (message.type == TAPDISK_MESSAGE_CANCEL_COMMIT_JOB_RSP) {
+	if (message.type == TAPDISK_MESSAGE_CANCEL_COMMIT_JOB_RSP
+			|| message.type == TAPDISK_MESSAGE_ERROR)
+		err = -message.u.response.error;
+	} else {
+		EPRINTF("got unexpected result '%s' from %d\n",
+				tapdisk_message_name(message.type), id);
+		err = -EINVAL;
+	}
+
+	if (err)
+		EPRINTF("cancel commit job failed: %s\n", strerror(-err));
+
+	return err;
+}

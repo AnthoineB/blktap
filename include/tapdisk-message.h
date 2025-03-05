@@ -245,6 +245,8 @@ enum tapdisk_message_id {
 	TAPDISK_MESSAGE_COMMIT_RSP,
 	TAPDISK_MESSAGE_QUERY_COMMIT_JOB,
 	TAPDISK_MESSAGE_QUERY_COMMIT_JOB_RSP,
+	TAPDISK_MESSAGE_CANCEL_COMMIT_JOB,
+	TAPDISK_MESSAGE_CANCEL_COMMIT_JOB_RSP,
 	TAPDISK_MESSAGE_MAX /* This value must be the last. */
 };
 
@@ -350,6 +352,12 @@ tapdisk_message_name(enum tapdisk_message_id id)
 
 	case TAPDISK_MESSAGE_QUERY_COMMIT_JOB_RSP:
 		return "query commit job response";
+
+	case TAPDISK_MESSAGE_CANCEL_COMMIT_JOB:
+		return "cancel commit job";
+
+	case TAPDISK_MESSAGE_CANCEL_COMMIT_JOB_RSP:
+		return "cancel commit job response";
 
 	default:
 		return "unknown";
