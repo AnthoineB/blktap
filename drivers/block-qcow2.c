@@ -78,10 +78,8 @@
 #define __TRACE(s)							\
 	do {								\
 		DBG(TLOG_DBG, "%s: QUEUED: %" PRIu64 ", COMPLETED: %"	\
-                    PRIu64", RETURNED: %" PRIu64 ", DATA_ALLOCATED: "	\
-                    "%u\n",				\
-                    blk_name(s->conf.blk), s->queued, s->completed, s->returned,	\
-                    QCOW2_REQS - s->vreq_free_count);                   \
+                    PRIu64", RETURNED: %" PRIu64 "\n",			\
+                    blk_name(s->conf.blk), s->queued, s->completed, s->returned);\
 	} while(0)
 
 #if (DEBUGGING == 1)
@@ -111,6 +109,7 @@ struct qcow2_state;
 struct qcow2_request;
 
 #define QCOW2_REQS 352
+#define QCOW2_QUEUE_COUNT 2
 
 struct qcow2_request {
     int                     error;
@@ -123,7 +122,7 @@ struct qcow2_request {
         /* OP_CANCEL_COMMIT */
         bool                sync;
     };
-    struct qcow2_state      *state;
+    struct qcow2_queue      *queue;
     BlockAIOCB              *aiocb;
     QSIMPLEQ_ENTRY(qcow2_request) list;
     int                     aio_inflight;
@@ -151,14 +150,9 @@ struct qcow2_iothread {
     char *id;
 };
 
-struct qcow2_state {
-    td_driver_t               *driver;
-    const char                *name;
-    struct td_vbd_encryption  *encryption;
-    td_flag_t                 flags;
-
-    BlockConf                 conf;
-    int                       blk_shift;
+struct qcow2_queue {
+    struct qcow2_state        *state;
+    pthread_mutex_t           lock;
 
     int                       vreq_free_count;
     struct qcow2_request      *vreq_free[QCOW2_REQS];
@@ -170,6 +164,19 @@ struct qcow2_state {
     IOThread                  *iothread;
     struct qcow2_iothread     *iothread_id;
     AioContext                *ctx;
+    MemReentrancyGuard        mem_reentrancy_guard;
+};
+
+struct qcow2_state {
+    td_driver_t               *driver;
+    const char                *name;
+    struct td_vbd_encryption  *encryption;
+    td_flag_t                 flags;
+
+    BlockConf                 conf;
+    int                       blk_shift;
+
+    struct qcow2_queue        queue[QCOW2_QUEUE_COUNT];
 
     /* Open thread */
     pthread_t                 thread;
@@ -177,7 +184,6 @@ struct qcow2_state {
     pthread_cond_t            cond;
     bool                      driver_opened;
     int                       open_status;
-    MemReentrancyGuard        mem_reentrancy_guard;
 
     /* commit/query synchronization */
 #define COMMIT_JOB_ID "JIDCOMMIT0"
@@ -223,6 +229,71 @@ static inline void do_query_commit_job(struct qcow2_state *s, struct qcow2_reque
 static inline void do_cancel_commit_job(struct qcow2_state *s, struct qcow2_request *req);
 static int qcow2_cancel_commit_job(td_driver_t *driver, bool wait);
 
+#define IO_PLUG_THRESHOLD 1
+
+static void qcow2_handle_requests(struct qcow2_queue *q)
+{
+    struct qcow2_request *req;
+    int inflight_atstart;
+    int batched = 0;
+
+    pthread_mutex_lock(&q->lock);
+    inflight_atstart = q->requests_inflight;
+    if (inflight_atstart > IO_PLUG_THRESHOLD) {
+        defer_call_begin();
+    }
+    while ((req = QSIMPLEQ_FIRST(&q->inflight))) {
+        QSIMPLEQ_REMOVE_HEAD(&q->inflight, list);
+        pthread_mutex_unlock(&q->lock);
+
+        if (inflight_atstart > IO_PLUG_THRESHOLD &&
+            batched >= inflight_atstart) {
+            defer_call_end();
+        }
+	switch (req->op) {
+            case QCOW2_OP_READ:
+                do_aio_read(q->state, req);
+                break;
+            case QCOW2_OP_WRITE:
+                do_aio_write(q->state, req);
+                break;
+            case QCOW2_OP_COMMIT:
+                do_commit(q->state, req);
+                break;
+            case QCOW2_OP_QUERY:
+                do_query_commit_job(q->state, req);
+                break;
+            case QCOW2_OP_CANCEL_COMMIT:
+                do_cancel_commit_job(q->state, req);
+                break;
+            case QCOW2_OP_DISCARD:
+                do_aio_discard(q->state, req);
+                break;
+        }
+        if (inflight_atstart > IO_PLUG_THRESHOLD) {
+            if (batched >= inflight_atstart) {
+                defer_call_begin();
+                batched = 0;
+            } else {
+                batched++;
+            }
+        }
+        pthread_mutex_lock(&q->lock);
+    }
+    pthread_mutex_unlock(&q->lock);
+
+    if (inflight_atstart > IO_PLUG_THRESHOLD) {
+        defer_call_end();
+    }
+}
+
+static void block_bh(void *opaque)
+{
+    struct qcow2_queue *q = opaque;
+
+    qcow2_handle_requests(q);
+}
+
 static void qcow2_iothread_destroy(struct qcow2_iothread *iothread,
                                    Error **errp)
 {
@@ -258,6 +329,95 @@ static struct qcow2_iothread *qcow2_iothread_create(const char *id,
     return iothread;
 }
 
+static int qcow2_init_queues(struct qcow2_state *s, Error **perr)
+{
+    int i;
+    struct qcow2_queue *q;
+#define ID_LENGTH 16
+    char iothread_id[ID_LENGTH];
+
+    for (i = 0; i < QCOW2_QUEUE_COUNT; i++) {
+        q = &s->queue[i];
+        pthread_mutex_init(&q->lock, NULL);
+        q->state = s;
+
+        snprintf(iothread_id, ID_LENGTH, "iothread%d", i);
+        q->iothread_id = qcow2_iothread_create(iothread_id, perr);
+        if (*perr) {
+            return -1;
+        }
+
+        q->iothread = iothread_by_id(iothread_id);
+    }
+
+    return 0;
+}
+
+static void qcow2_init_requests(struct qcow2_state *s)
+{
+    int i, r;
+    struct qcow2_queue *q;
+
+    for (i = 0; i < QCOW2_QUEUE_COUNT; i++) {
+        q = &s->queue[i];
+        q->vreq_free_count = QCOW2_REQS;
+        for (r = 0; r < QCOW2_REQS; r++) {
+            q->vreq_free[r] = q->vreq_list + r;
+            qemu_iovec_init(&q->vreq_free[r]->qiov, 1);
+        }
+
+        QSIMPLEQ_INIT(&q->inflight);
+        if (QCOW2_QUEUE_COUNT > 1) {
+            object_ref(OBJECT(q->iothread));
+            q->ctx = iothread_get_aio_context(q->iothread);
+        } else {
+            q->ctx = qemu_get_aio_context();
+        }
+        q->bh = aio_bh_new_guarded(q->ctx, block_bh, q,
+                                   &q->mem_reentrancy_guard);
+
+        DBG(TLOG_INFO, "qcow2_open: queue %d: ctx %p bh %p\n", i, q->ctx, q->bh);
+    }
+}
+
+static void qcow2_release_requests(struct qcow2_state *s)
+{
+    int i, j;
+    struct qcow2_queue *q;
+
+    for (i = 0; i < QCOW2_QUEUE_COUNT; i++) {
+        q = &s->queue[i];
+
+        qemu_bh_cancel(q->bh);
+
+        pthread_mutex_lock(&q->lock);
+        for (j = 0; j < QCOW2_REQS; j++) {
+            qemu_iovec_destroy(&q->vreq_list[j].qiov);
+        }
+        pthread_mutex_unlock(&q->lock);
+
+        qemu_bh_delete(q->bh);
+        if (q->iothread) {
+            object_unref(OBJECT(q->iothread));
+        }
+    }
+}
+
+static void qcow2_release_queues(struct qcow2_state *s, Error *local_err)
+{
+    int i;
+    struct qcow2_queue *q;
+
+    for (i = 0; i < QCOW2_QUEUE_COUNT; i++) {
+        q = &s->queue[i];
+
+        qcow2_iothread_destroy(q->iothread_id, &local_err);
+        if (local_err) {
+            error_prepend(&local_err, "failed to destroy iothread: ");
+        }
+    }
+}
+
 static int
 qcow2_initialize(struct qcow2_state *s, Error **perr)
 {
@@ -277,13 +437,11 @@ qcow2_initialize(struct qcow2_state *s, Error **perr)
 
         module_call_init(MODULE_INIT_QOM);
 
-#define IOTHREAD_ID "iothread0"
-        s->iothread_id = qcow2_iothread_create(IOTHREAD_ID, perr);
-        if (*perr) {
-            return -1;
+        err = qcow2_init_queues(s, perr);
+        if (err) {
+            EPRINTF("failed to initialize queues %d\n", err);
+            return err;
         }
-
-        s->iothread = iothread_by_id(IOTHREAD_ID);
 
         qemu_init_cpu_loop();
         bql_lock();
@@ -307,75 +465,10 @@ qcow2_free(struct qcow2_state *s)
         bql_unlock();
 }
 
-#define IO_PLUG_THRESHOLD 1
-
-static void qcow2_handle_requests(struct qcow2_state *s)
-{
-    struct qcow2_request *req;
-    int inflight_atstart;
-    int batched = 0;
-
-    pthread_mutex_lock(&s->lock);
-    inflight_atstart = s->requests_inflight;
-    if (inflight_atstart > IO_PLUG_THRESHOLD) {
-        defer_call_begin();
-    }
-    while ((req = QSIMPLEQ_FIRST(&s->inflight))) {
-        QSIMPLEQ_REMOVE_HEAD(&s->inflight, list);
-        pthread_mutex_unlock(&s->lock);
-
-        if (inflight_atstart > IO_PLUG_THRESHOLD &&
-            batched >= inflight_atstart) {
-            defer_call_end();
-        }
-	switch (req->op) {
-            case QCOW2_OP_READ:
-                do_aio_read(s, req);
-                break;
-            case QCOW2_OP_WRITE:
-                do_aio_write(s, req);
-                break;
-            case QCOW2_OP_COMMIT:
-                do_commit(s, req);
-                break;
-            case QCOW2_OP_QUERY:
-                do_query_commit_job(s, req);
-                break;
-            case QCOW2_OP_CANCEL_COMMIT:
-                do_cancel_commit_job(s, req);
-                break;
-            case QCOW2_OP_DISCARD:
-                do_aio_discard(s, req);
-                break;
-        }
-        if (inflight_atstart > IO_PLUG_THRESHOLD) {
-            if (batched >= inflight_atstart) {
-                defer_call_begin();
-                batched = 0;
-            } else {
-                batched++;
-            }
-        }
-        pthread_mutex_lock(&s->lock);
-    }
-    pthread_mutex_unlock(&s->lock);
-
-    if (inflight_atstart > IO_PLUG_THRESHOLD) {
-        defer_call_end();
-    }
-}
-
-static void block_bh(void *opaque)
-{
-    struct qcow2_state *s = opaque;
-
-    qcow2_handle_requests(s);
-}
-
 static void *
 qcow2_open(void *opaque)
 {
-    int o_flags, err, i;
+    int o_flags, err;
     struct qcow2_state *s;
     td_driver_t *driver;
     td_flag_t flags;
@@ -389,7 +482,6 @@ qcow2_open(void *opaque)
     const char *cache = "none";
     bool has_discard = false;
     const char *discard = "off";
-    struct qcow2_request *req;
 
     s = opaque;
     conf = &s->conf;
@@ -502,11 +594,7 @@ qcow2_open(void *opaque)
         goto fail;
     }
 
-    s->vreq_free_count = QCOW2_REQS;
-    for (i = 0; i < QCOW2_REQS; i++) {
-            s->vreq_free[i] = s->vreq_list + i;
-            qemu_iovec_init(&s->vreq_free[i]->qiov, 1);
-    }
+    qcow2_init_requests(s);
 
     s->blk_shift = 31 - clz32(conf->logical_block_size);
     driver->info.size        = blk_getlength(conf->blk) >> s->blk_shift;
@@ -515,20 +603,7 @@ qcow2_open(void *opaque)
     driver->info.discard     = conf->discard_granularity != -1;
     driver->info.discard_granularity = conf->discard_granularity;
 
-    QSIMPLEQ_INIT(&s->inflight);
-    if (s->iothread) {
-        object_ref(OBJECT(s->iothread));
-        s->ctx = iothread_get_aio_context(s->iothread);
-    } else {
-        s->ctx = qemu_get_aio_context();
-    }
-    s->bh = aio_bh_new_guarded(s->ctx, block_bh,
-                               s,
-                               &s->mem_reentrancy_guard);
-
-    blk_set_aio_context(conf->blk, s->ctx, NULL);
-
-    DBG(TLOG_INFO, "qcow2_open: ctx %p bh %p\n", s->ctx, s->bh);
+    blk_set_aio_context(conf->blk, s->queue[0].ctx, NULL);
 
     DBG(TLOG_INFO, "qcow2_open: done (sz:%"PRIu64", sct:%lu, inf:%u, discard:%d)\n",
         driver->info.size, driver->info.sector_size, driver->info.info,
@@ -561,31 +636,14 @@ qcow2_open(void *opaque)
 
     blk_drain_all();
 
-    qemu_bh_delete(s->bh);
-    if (s->iothread) {
-        object_unref(OBJECT(s->iothread));
-    }
+    qcow2_release_requests(s);
 
     /*
-     * Drain all pending RCU callbacks as object_unparent() frees `xendev'
-     * in a RCU callback.
-     * And due to the property "drive" still existing in `xendev', we
-     * can't destroy the XenBlockDrive associated with `xendev' with
-     * xen_block_drive_destroy() below.
+     * Drain all pending RCU callbacks.
      */
     drain_call_rcu();
 
-    if (s->iothread) {
-        qcow2_iothread_destroy(s->iothread_id, &local_err);
-        if (local_err) {
-            error_prepend(&local_err, "failed to destroy iothread: ");
-        }
-    }
-
-    s->vreq_free_count = QCOW2_REQS;
-    for (i = 0; i < QCOW2_REQS; i++) {
-            qemu_iovec_destroy(&s->vreq_list[i].qiov);
-    }
+    qcow2_release_queues(s, local_err);
 
     blk_unref(conf->blk);
 
@@ -658,6 +716,7 @@ _qcow2_close(td_driver_t *driver)
     void *res;
     int err;
     struct qcow2_state *s = (struct qcow2_state *)driver->data;
+    struct qcow2_queue *q = &s->queue[0];
 
     qcow2_cancel_commit_job(driver, true);
 
@@ -667,7 +726,7 @@ _qcow2_close(td_driver_t *driver)
     s->driver_opened = false;
     pthread_mutex_unlock(&s->lock);
 
-    qemu_bh_schedule(s->bh);
+    qemu_bh_schedule(q->bh);
 
     err = pthread_join(s->thread, &res);
     if (err) {
@@ -738,43 +797,43 @@ qcow2_get_parent_id(td_driver_t *driver, td_disk_id_t *id)
 }
 
 static inline void
-init_qcow2_request(struct qcow2_state *s, struct qcow2_request *req)
+init_qcow2_request(struct qcow2_queue *q, struct qcow2_request *req)
 {
 	//memset(req, 0, sizeof(struct qcow2_request));
-	req->state = s;
+	req->queue = q;
 #if DEBUGGING != 0
-	req->id = req - s->vreq_list;
+	req->id = req - q->vreq_list;
         gettimeofday(&req->allocate_tv, NULL);
 #endif
 }
 
 static inline struct qcow2_request *
-alloc_qcow2_request(struct qcow2_state *s)
+alloc_qcow2_request(struct qcow2_queue *q)
 {
 	struct qcow2_request *req = NULL;
 
-        pthread_mutex_lock(&s->lock);
-	if (s->vreq_free_count > 0) {
-		req = s->vreq_free[--s->vreq_free_count];
-                pthread_mutex_unlock(&s->lock);
+        pthread_mutex_lock(&q->lock);
+	if (q->vreq_free_count > 0) {
+		req = q->vreq_free[--q->vreq_free_count];
+                pthread_mutex_unlock(&q->lock);
 		ASSERT(req->treq.secs == 0);
-		init_qcow2_request(s, req);
-		s->requests_inflight++;
+		init_qcow2_request(q, req);
+                q->requests_inflight++;
 		return req;
 	}
 
-        pthread_mutex_unlock(&s->lock);
+        pthread_mutex_unlock(&q->lock);
 	return NULL;
 }
 
 static inline void
-free_qcow2_request(struct qcow2_state *s, struct qcow2_request *req)
+free_qcow2_request(struct qcow2_queue *q, struct qcow2_request *req)
 {
 	memset(&req->treq, 0, sizeof(req->treq));
-        pthread_mutex_lock(&s->lock);
-        s->requests_inflight--;
-	s->vreq_free[s->vreq_free_count++] = req;
-        pthread_mutex_unlock(&s->lock);
+        pthread_mutex_lock(&q->lock);
+        q->requests_inflight--;
+	q->vreq_free[q->vreq_free_count++] = req;
+        pthread_mutex_unlock(&q->lock);
 
         qemu_iovec_reset(&req->qiov);
 }
@@ -782,7 +841,8 @@ free_qcow2_request(struct qcow2_state *s, struct qcow2_request *req)
 static inline void
 signal_completion(struct qcow2_request *r)
 {
-	struct qcow2_state *s = r->state;
+	struct qcow2_queue *q = r->queue;
+	struct qcow2_state *s = q->state;
         td_vbd_t *vbd;
         int notify;
 
@@ -802,12 +862,10 @@ signal_completion(struct qcow2_request *r)
                 tapdisk_vbd_kick(vbd, true);
                 s->kick++;
         }
-        free_qcow2_request(s, r);
+        free_qcow2_request(q, r);
 
         s->returned++;
         TRACE(s);
-
-        qcow2_handle_requests(s);
 }
 
 #if DEBUGGING != 0
@@ -897,7 +955,7 @@ bool calc_lat(struct io_stat *is, uint64_t *min,
 static void qcow2_complete(void *opaque, int ret)
 {
     struct qcow2_request *req = (struct qcow2_request *)opaque;
-    struct qcow2_state *s = req->state;
+    struct qcow2_state *s = req->queue->state;
 #if DEBUGGING != 0
     unsigned long long latency, submit_latency, complete_latency;
     struct timeval now;
@@ -1045,21 +1103,23 @@ do_aio_discard(struct qcow2_state *s, struct qcow2_request *req)
 static int
 schedule_request(struct qcow2_state *s, td_request_t *treq, enum qcow2_ops op)
 {
+        static uint32_t queue_nr;
+        struct qcow2_queue *q = &s->queue[((queue_nr++) % QCOW2_QUEUE_COUNT)];
 	struct qcow2_request *req = NULL;
 
-	req = alloc_qcow2_request(s);
+	req = alloc_qcow2_request(q);
 	if (!req)
 		return -EBUSY;
 
 	req->treq  = *treq;
 	req->op    = op;
 
-        pthread_mutex_lock(&s->lock);
-        QSIMPLEQ_INSERT_TAIL(&s->inflight, req, list);
-        pthread_mutex_unlock(&s->lock);
+        pthread_mutex_lock(&q->lock);
+        QSIMPLEQ_INSERT_TAIL(&q->inflight, req, list);
+        pthread_mutex_unlock(&q->lock);
 
         if (treq->sidx == 0) {
-            qemu_bh_schedule(s->bh);
+            qemu_bh_schedule(q->bh);
             s->schedule++;
         }
 
@@ -1130,6 +1190,7 @@ int
 qcow2_commit(td_driver_t *driver, const char *name)
 {
     struct qcow2_state *s = (struct qcow2_state *)driver->data;
+    struct qcow2_queue *q = &s->queue[0];
     struct qcow2_request *req;
     int err;
 
@@ -1138,26 +1199,26 @@ qcow2_commit(td_driver_t *driver, const char *name)
 
     DBG(TLOG_WARN, "Qcow2: commit %s.\n", name);
 
-    req = alloc_qcow2_request(s);
+    req = alloc_qcow2_request(q);
     if (!req)
         return -EBUSY;
 
     req->top   = strdup(name);
     req->op    = QCOW2_OP_COMMIT;
 
-    pthread_mutex_lock(&s->lock);
-    QSIMPLEQ_INSERT_TAIL(&s->inflight, req, list);
-    pthread_mutex_unlock(&s->lock);
+    pthread_mutex_lock(&q->lock);
+    QSIMPLEQ_INSERT_TAIL(&q->inflight, req, list);
+    pthread_mutex_unlock(&q->lock);
 
     pthread_mutex_lock(&s->commit_lock);
-    qemu_bh_schedule(s->bh);
+    qemu_bh_schedule(q->bh);
 
     pthread_cond_wait(&s->commit_cond, &s->commit_lock);
     err = req->error;
     pthread_mutex_unlock(&s->commit_lock);
 
     free(req->top);
-    free_qcow2_request(s, req);
+    free_qcow2_request(q, req);
 
     return err;
 }
@@ -1193,23 +1254,24 @@ int
 qcow2_query_commit_job(td_driver_t *driver, td_query_t *query)
 {
     struct qcow2_state *s = (struct qcow2_state *)driver->data;
+    struct qcow2_queue *q = &s->queue[0];
     struct qcow2_request *req;
     int err;
 
     DBG(TLOG_DBG, "Qcow2: query commit job.\n");
 
-    req = alloc_qcow2_request(s);
+    req = alloc_qcow2_request(q);
     if (!req)
         return -EBUSY;
 
     req->op    = QCOW2_OP_QUERY;
 
-    pthread_mutex_lock(&s->lock);
-    QSIMPLEQ_INSERT_TAIL(&s->inflight, req, list);
-    pthread_mutex_unlock(&s->lock);
+    pthread_mutex_lock(&q->lock);
+    QSIMPLEQ_INSERT_TAIL(&q->inflight, req, list);
+    pthread_mutex_unlock(&q->lock);
 
     pthread_mutex_lock(&s->commit_lock);
-    qemu_bh_schedule(s->bh);
+    qemu_bh_schedule(q->bh);
 
     pthread_cond_wait(&s->commit_cond, &s->commit_lock);
 
@@ -1226,7 +1288,7 @@ qcow2_query_commit_job(td_driver_t *driver, td_query_t *query)
 
     DBG(TLOG_WARN, "Qcow2: query commit job done (%d).\n", err);
 
-    free_qcow2_request(s, req);
+    free_qcow2_request(q, req);
 
     return err;
 }
@@ -1292,24 +1354,25 @@ int
 qcow2_cancel_commit_job(td_driver_t *driver, bool wait)
 {
     struct qcow2_state *s = (struct qcow2_state *)driver->data;
+    struct qcow2_queue *q = &s->queue[0];
     struct qcow2_request *req;
     int err;
 
     DBG(TLOG_DBG, "Qcow2: cancel commit.\n");
 
-    req = alloc_qcow2_request(s);
+    req = alloc_qcow2_request(q);
     if (!req)
         return -EBUSY;
 
     req->op   = QCOW2_OP_CANCEL_COMMIT;
     req->sync = wait;
 
-    pthread_mutex_lock(&s->lock);
-    QSIMPLEQ_INSERT_TAIL(&s->inflight, req, list);
-    pthread_mutex_unlock(&s->lock);
+    pthread_mutex_lock(&q->lock);
+    QSIMPLEQ_INSERT_TAIL(&q->inflight, req, list);
+    pthread_mutex_unlock(&q->lock);
 
     pthread_mutex_lock(&s->commit_lock);
-    qemu_bh_schedule(s->bh);
+    qemu_bh_schedule(q->bh);
 
     pthread_cond_wait(&s->commit_cond, &s->commit_lock);
     err = req->error;
@@ -1317,7 +1380,7 @@ qcow2_cancel_commit_job(td_driver_t *driver, bool wait)
 
     DBG(TLOG_WARN, "Qcow2: cancel commit done (%d).\n", err);
 
-    free_qcow2_request(s, req);
+    free_qcow2_request(q, req);
 
     return err;
 }
