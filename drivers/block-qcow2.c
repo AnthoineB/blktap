@@ -100,6 +100,7 @@ enum qcow2_ops {
     QCOW2_OP_WRITE,
     QCOW2_OP_COMMIT,
     QCOW2_OP_QUERY,
+    QCOW2_OP_CANCEL_COMMIT,
 };
 
 struct qcow2_state;
@@ -115,6 +116,8 @@ struct qcow2_request {
         td_request_t        treq;
         /* OP_COMMIT */
         char *              top;
+        /* OP_CANCEL_COMMIT */
+        bool                sync;
     };
     struct qcow2_state      *state;
     BlockAIOCB              *aiocb;
@@ -200,6 +203,8 @@ static inline void do_aio_read(struct qcow2_state *s, struct qcow2_request *req)
 static inline void do_aio_write(struct qcow2_state *s, struct qcow2_request *req);
 static inline void do_commit(struct qcow2_state *s, struct qcow2_request *req);
 static inline void do_query_commit_job(struct qcow2_state *s, struct qcow2_request *req);
+static inline void do_cancel_commit_job(struct qcow2_state *s, struct qcow2_request *req);
+static int qcow2_cancel_commit_job(td_driver_t *driver, bool wait);
 
 static int
 qcow2_initialize(struct qcow2_state *s, Error **perr)
@@ -259,6 +264,9 @@ static void qcow2_handle_requests(struct qcow2_state *s)
                 break;
             case QCOW2_OP_QUERY:
                 do_query_commit_job(s, req);
+                break;
+            case QCOW2_OP_CANCEL_COMMIT:
+                do_cancel_commit_job(s, req);
                 break;
         }
         pthread_mutex_lock(&s->lock);
@@ -437,6 +445,18 @@ qcow2_open(void *opaque)
     }
     pthread_mutex_unlock(&s->lock);
 
+    job_lock();
+    BlockJob *bjob = block_job_get_locked(COMMIT_JOB_ID);
+    if (bjob) {
+        Job *job = &bjob->job;
+        job_dismiss_locked(&job, &local_err);
+        if (local_err) {
+            DPRINTF("Qcow2: job dismiss error: %s\n", error_get_pretty(local_err));
+            error_free(local_err);
+        }
+    }
+    job_unlock();
+
     blk_set_aio_context(conf->blk, qemu_get_aio_context(), &error_abort);
 
     blk_drain_all();
@@ -521,6 +541,8 @@ _qcow2_close(td_driver_t *driver)
     void *res;
     int err;
     struct qcow2_state *s = (struct qcow2_state *)driver->data;
+
+    qcow2_cancel_commit_job(driver, true);
 
     DBG(TLOG_WARN, "qcow2_close\n");
 
@@ -1089,9 +1111,77 @@ signal:
     pthread_mutex_unlock(&s->commit_lock);
 }
 
+
+int
+qcow2_cancel_commit_job(td_driver_t *driver, bool wait)
+{
+    struct qcow2_state *s = (struct qcow2_state *)driver->data;
+    struct qcow2_request *req;
+    int err;
+
+    DBG(TLOG_DBG, "Qcow2: cancel commit.\n");
+
+    req = alloc_qcow2_request(s);
+    if (!req)
+        return -EBUSY;
+
+    req->op   = QCOW2_OP_CANCEL_COMMIT;
+    req->sync = wait;
+
+    pthread_mutex_lock(&s->lock);
+    QSIMPLEQ_INSERT_TAIL(&s->inflight, req, list);
+    pthread_mutex_unlock(&s->lock);
+
+    pthread_mutex_lock(&s->commit_lock);
+    qemu_bh_schedule(s->bh);
+
+    pthread_cond_wait(&s->commit_cond, &s->commit_lock);
+    err = req->error;
+    pthread_mutex_unlock(&s->commit_lock);
+
+    DBG(TLOG_WARN, "Qcow2: cancel commit done (%d).\n", err);
+
+    free_qcow2_request(s, req);
+
+    return err;
+}
+
+static inline void
+do_cancel_commit_job(struct qcow2_state *s, struct qcow2_request *req)
+{
+    int err = 0;
+    BlockJob *bjob;
+
+    job_lock();
+    bjob = block_job_get_locked(COMMIT_JOB_ID);
+    if (!bjob) {
+        job_unlock();
+        DPRINTF("Qcow2: no job to cancel.\n");
+        goto signal;
+    }
+
+    if (bjob->job.status == JOB_STATUS_RUNNING) {
+        if (req->sync == false) {
+            job_cancel_locked(&bjob->job, false);
+        } else {
+            err = job_cancel_sync_locked(&bjob->job, false);
+        }
+    }
+    job_unlock();
+
+    DBG(TLOG_WARN, "Qcow2: cancel %s (%d).\n", req->sync ? "sync" : "async", err);
+
+signal:
+    pthread_mutex_lock(&s->commit_lock);
+    req->error = err;
+    pthread_cond_signal(&s->commit_cond);
+    pthread_mutex_unlock(&s->commit_lock);
+}
+
 void
 qcow2_debug(td_driver_t *driver)
 {
+#if DEBUGGING != 0
     struct qcow2_state *s = (struct qcow2_state *)driver->data;
 
     DBG(TLOG_WARN, "Qcow2: %s: queued %lu, completed %lu, returned %lu, "
@@ -1103,7 +1193,6 @@ qcow2_debug(td_driver_t *driver)
             s->writes, (s->writes ? ((float)s->write_size / s->writes) : 0.0),
             s->schedule, s->kick);
 
-#if DEBUGGING != 0
     print_latencies(s);
 #endif
 }
@@ -1121,5 +1210,6 @@ struct tap_disk tapdisk_qcow = {
 	.td_validate_parent = qcow2_validate_parent,
 	.td_commit          = qcow2_commit,
 	.td_query_commit_job = qcow2_query_commit_job,
+	.td_cancel_commit_job = qcow2_cancel_commit_job,
 	.td_debug           = qcow2_debug,
 };
