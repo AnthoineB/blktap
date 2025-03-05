@@ -148,6 +148,7 @@ int tap_ctl_blk_major(void);
  */
 int tap_ctl_commit(const int id, const int minor, const char *params);
 int tap_ctl_query_commit_job(const int id, const int minor);
+int tap_ctl_cancel_commit_job(const int id, const int minor, bool wait);
 
 /**
  * Instructs a tapdisk to connect to the shared ring.

@@ -320,6 +320,31 @@ td_query_commit_job(td_image_t *image, td_query_t *query)
 	return driver->ops->td_query_commit_job(driver, query);
 }
 
+int
+td_cancel_commit_job(td_image_t *image, bool wait)
+{
+	td_driver_t *driver;
+
+	if (!image) {
+		return -ENODEV;
+	}
+
+	driver = image->driver;
+	if (!driver) {
+		return -ENODEV;
+	}
+
+	if (!td_flag_test(driver->state, TD_DRIVER_OPEN)) {
+		return -EBADF;
+	}
+
+	if (!driver->ops->td_cancel_commit_job) {
+		return -EOPNOTSUPP;
+	}
+
+	return driver->ops->td_cancel_commit_job(driver, wait);
+}
+
 void
 td_forward_request(td_request_t treq)
 {

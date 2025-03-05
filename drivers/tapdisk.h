@@ -235,6 +235,7 @@ struct tap_disk {
 	void (*td_stats)             (td_driver_t *, td_stats_t *);
 	int (*td_commit)             (td_driver_t *, const char *);
 	int (*td_query_commit_job)   (td_driver_t *, td_query_t *);
+	int (*td_cancel_commit_job)  (td_driver_t *, bool);
 
     /**
      * Callback to produce RRD output.
