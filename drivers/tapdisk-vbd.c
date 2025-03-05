@@ -1109,6 +1109,22 @@ tapdisk_vbd_query_commit_job(td_vbd_t *vbd, td_query_t *query)
 	return err;
 }
 
+int
+tapdisk_vbd_cancel_commit_job(td_vbd_t *vbd, bool wait)
+{
+	int err;
+
+	if (log) {
+		INFO("cancel commit job.\n");
+	}
+
+	err = td_cancel_commit_job(tapdisk_vbd_first_image(vbd), wait);
+
+	INFO("cancel commit job (%d)\n", err);
+
+	return err;
+}
+
 static int
 tapdisk_vbd_request_ttl(td_vbd_request_t *vreq,
 			const struct timeval *now)
