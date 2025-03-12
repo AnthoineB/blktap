@@ -162,18 +162,18 @@ static int tdlog_open(td_driver_t* driver, const char *name,
 	return 0;
 }
 
-static void tdlog_queue_read(td_driver_t* driver, td_request_t treq)
+static void tdlog_queue_read(td_driver_t* driver, const td_request_t *treq)
 {
 	td_forward_request(treq);
 }
 
-static void tdlog_queue_write(td_driver_t* driver, td_request_t treq)
+static void tdlog_queue_write(td_driver_t* driver, const td_request_t *treq)
 {
 	struct tdlog_data* data = (struct tdlog_data*)driver->data;
 	uint64_t start_bit, last_bit;
 
-	start_bit = get_bit_for_sec(treq.sec);
-	last_bit = get_bit_for_sec(treq.sec + treq.secs - 1);
+	start_bit = get_bit_for_sec(treq->sec);
+	last_bit = get_bit_for_sec(treq->sec + treq->secs - 1);
 
 	bitmap_set(data, start_bit, (last_bit - start_bit) + 1);
 	td_forward_request(treq);

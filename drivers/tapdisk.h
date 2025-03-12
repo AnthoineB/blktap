@@ -143,7 +143,7 @@ typedef struct td_query              td_query_t;
 /* 
  * Prototype of the callback to activate as requests complete.
  */
-typedef int (*td_callback_t)(td_request_t, int);
+typedef int (*td_callback_t)(const td_request_t*, int);
 typedef void (*td_vreq_callback_t)(td_vbd_request_t*, int, void*, int);
 
 struct td_disk_id {
@@ -235,10 +235,10 @@ struct tap_disk {
 	int (*td_close)              (td_driver_t *);
 	int (*td_get_parent_id)      (td_driver_t *, td_disk_id_t *);
 	int (*td_validate_parent)    (td_driver_t *, td_driver_t *, td_flag_t);
-	void (*td_queue_read)        (td_driver_t *, td_request_t);
-	void (*td_queue_block_status)(td_driver_t *, td_request_t);
-	void (*td_queue_write)       (td_driver_t *, td_request_t);
-	void (*td_queue_discard)     (td_driver_t *, td_request_t);
+	void (*td_queue_read)        (td_driver_t *, const td_request_t *);
+	void (*td_queue_block_status)(td_driver_t *, td_request_t *);
+	void (*td_queue_write)       (td_driver_t *, const td_request_t *);
+	void (*td_queue_discard)     (td_driver_t *, const td_request_t *);
 	void (*td_debug)             (td_driver_t *);
 	void (*td_stats)             (td_driver_t *, td_stats_t *);
 	int (*td_commit)             (td_driver_t *, const char *);

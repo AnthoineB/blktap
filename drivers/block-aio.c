@@ -166,11 +166,11 @@ void tdaio_complete(void *arg, struct tiocb *tiocb, int err)
 	struct aio_request *aio = (struct aio_request *)arg;
 	struct tdaio_state *prv = aio->state;
 
-	td_complete_request(aio->treq, err);
+	td_complete_request(&aio->treq, err);
 	prv->aio_free_list[prv->aio_free_count++] = aio;
 }
 
-void tdaio_queue_read(td_driver_t *driver, td_request_t treq)
+void tdaio_queue_read(td_driver_t *driver, const td_request_t *treq)
 {
 	int size;
 	uint64_t offset;
@@ -178,17 +178,17 @@ void tdaio_queue_read(td_driver_t *driver, td_request_t treq)
 	struct tdaio_state *prv;
 
 	prv    = (struct tdaio_state *)driver->data;
-	size   = treq.secs * SECTOR_SIZE;
-	offset = treq.sec  * (uint64_t)SECTOR_SIZE;
+	size   = treq->secs * SECTOR_SIZE;
+	offset = treq->sec  * (uint64_t)SECTOR_SIZE;
 
 	if (prv->aio_free_count == 0)
 		goto fail;
 
 	aio        = prv->aio_free_list[--prv->aio_free_count];
-	aio->treq  = treq;
+	aio->treq  = *treq;
 	aio->state = prv;
 
-	td_prep_read(driver, &aio->tiocb, prv->fd, treq.buf,
+	td_prep_read(driver, &aio->tiocb, prv->fd, treq->buf,
 		     size, offset, tdaio_complete, aio);
 	td_queue_tiocb(driver, &aio->tiocb);
 
@@ -198,7 +198,7 @@ fail:
 	td_complete_request(treq, -EBUSY);
 }
 
-void tdaio_queue_write(td_driver_t *driver, td_request_t treq)
+void tdaio_queue_write(td_driver_t *driver, const td_request_t *treq)
 {
 	int size;
 	uint64_t offset;
@@ -206,17 +206,17 @@ void tdaio_queue_write(td_driver_t *driver, td_request_t treq)
 	struct tdaio_state *prv;
 
 	prv     = (struct tdaio_state *)driver->data;
-	size    = treq.secs * driver->info.sector_size;
-	offset  = treq.sec  * (uint64_t)driver->info.sector_size;
+	size    = treq->secs * driver->info.sector_size;
+	offset  = treq->sec  * (uint64_t)driver->info.sector_size;
 
 	if (prv->aio_free_count == 0)
 		goto fail;
 
 	aio        = prv->aio_free_list[--prv->aio_free_count];
-	aio->treq  = treq;
+	aio->treq  = *treq;
 	aio->state = prv;
 
-	td_prep_write(driver, &aio->tiocb, prv->fd, treq.buf,
+	td_prep_write(driver, &aio->tiocb, prv->fd, treq->buf,
 		      size, offset, tdaio_complete, aio);
 	td_queue_tiocb(driver, &aio->tiocb);
 

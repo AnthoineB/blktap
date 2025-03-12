@@ -213,24 +213,24 @@ done:
 	return ret;
 }
 
-void tdram_queue_read(td_driver_t *driver, td_request_t treq)
+void tdram_queue_read(td_driver_t *driver, const td_request_t *treq)
 {
-	int      size    = treq.secs * driver->info.sector_size;
-	uint64_t offset  = treq.sec * (uint64_t)driver->info.sector_size;
+	int      size    = treq->secs * driver->info.sector_size;
+	uint64_t offset  = treq->sec * (uint64_t)driver->info.sector_size;
 
-	memcpy(treq.buf, img + offset, size);
+	memcpy(treq->buf, img + offset, size);
 
 	td_complete_request(treq, 0);
 }
 
-void tdram_queue_write(td_driver_t *driver, td_request_t treq)
+void tdram_queue_write(td_driver_t *driver, const td_request_t *treq)
 {
-	int      size    = treq.secs * driver->info.sector_size;
-	uint64_t offset  = treq.sec * (uint64_t)driver->info.sector_size;
-	
+	int      size    = treq->secs * driver->info.sector_size;
+	uint64_t offset  = treq->sec * (uint64_t)driver->info.sector_size;
+
 	/* We assume that write access is controlled
 	 * at a higher level for multiple disks */
-	memcpy(img + offset, treq.buf, size);
+	memcpy(img + offset, treq->buf, size);
 
 	td_complete_request(treq, 0);
 }

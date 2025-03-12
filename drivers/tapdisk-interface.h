@@ -46,12 +46,12 @@ int td_commit(td_image_t *, const char *);
 int td_query_commit_job(td_image_t *, td_query_t *);
 int td_cancel_commit_job(td_image_t *, bool);
 
-void td_queue_write(td_image_t *, td_request_t);
-void td_queue_read(td_image_t *, td_request_t);
+void td_queue_write(td_image_t *, const td_request_t*);
+void td_queue_read(td_image_t *, const td_request_t*);
 void td_queue_block_status(td_image_t*, td_request_t*);
-void td_queue_discard(td_image_t *, td_request_t);
-void td_forward_request(td_request_t);
-int td_complete_request(td_request_t, int);
+void td_queue_discard(td_image_t *, const td_request_t*);
+void td_forward_request(const td_request_t*);
+int td_complete_request(const td_request_t*, int);
 
 void td_debug(td_image_t *);
 

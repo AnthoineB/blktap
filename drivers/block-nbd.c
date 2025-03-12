@@ -224,7 +224,7 @@ __cancel_req(int i, struct td_nbd_request *pos, int e)
 		pos->timeout_event = -1;
 	}
 
-	td_complete_request(pos->treq, e);
+	td_complete_request(&pos->treq, e);
 }
 
 static void
@@ -386,7 +386,7 @@ disable_write_queue(struct tdnbd_data *prv)
 
 static int
 tdnbd_queue_request(struct tdnbd_data *prv, int type, uint64_t offset,
-		char *buffer, uint32_t length, td_request_t treq, int fake)
+		char *buffer, uint32_t length, const td_request_t *treq, int fake)
 {
 	if (prv->nr_free_count == 0) 
 		return -EBUSY;
@@ -401,7 +401,7 @@ tdnbd_queue_request(struct tdnbd_data *prv, int type, uint64_t offset,
 
 	/* fill in the request */
 
-	req->treq = treq;
+	req->treq = *treq;
 	int id = global_id++;
 	snprintf(req->nreq.handle, 8, "td%05x", id % 0xffff);
 
@@ -493,11 +493,11 @@ tdnbd_reader_cb(event_id_t eb, char mode, void *data)
 		if (rc > 0)
 			return; /* need more data */
 
-		td_complete_request(prv->curr_reply_req->treq, 0);
+		td_complete_request(&prv->curr_reply_req->treq, 0);
 
 		break;
 	case TAPDISK_NBD_CMD_WRITE:
-		td_complete_request(prv->curr_reply_req->treq, 0);
+		td_complete_request(&prv->curr_reply_req->treq, 0);
 
 		break;
 	default:
@@ -963,7 +963,7 @@ tdnbd_close(td_driver_t* driver)
 	/* Send a close packet */
 
 	INFO("Sending disconnect request");
-	tdnbd_queue_request(prv, TAPDISK_NBD_CMD_DISC, 0, 0, 0, treq, 0);
+	tdnbd_queue_request(prv, TAPDISK_NBD_CMD_DISC, 0, 0, 0, &treq, 0);
 
 	INFO("Switching socket to blocking IO mode");
 	fcntl(prv->socket, F_SETFL, fcntl(prv->socket, F_GETFL) & ~O_NONBLOCK);
@@ -991,28 +991,28 @@ tdnbd_close(td_driver_t* driver)
 }
 
 static void
-tdnbd_queue_read(td_driver_t* driver, td_request_t treq)
+tdnbd_queue_read(td_driver_t* driver, const td_request_t *treq)
 {
 	struct tdnbd_data *prv = (struct tdnbd_data *)driver->data;
-	int      size    = treq.secs * driver->info.sector_size;
-	uint64_t offset  = treq.sec * (uint64_t)driver->info.sector_size;
+	int      size    = treq->secs * driver->info.sector_size;
+	uint64_t offset  = treq->sec * (uint64_t)driver->info.sector_size;
 
 	if (prv->flags & TD_OPEN_SECONDARY)
 		td_forward_request(treq);
 	else
-		tdnbd_queue_request(prv, TAPDISK_NBD_CMD_READ, offset, treq.buf, size,
+		tdnbd_queue_request(prv, TAPDISK_NBD_CMD_READ, offset, treq->buf, size,
 				treq, 0);
 }
 
 static void
-tdnbd_queue_write(td_driver_t* driver, td_request_t treq)
+tdnbd_queue_write(td_driver_t* driver, const td_request_t *treq)
 {
 	struct tdnbd_data *prv = (struct tdnbd_data *)driver->data;
-	int      size    = treq.secs * driver->info.sector_size;
-	uint64_t offset  = treq.sec * (uint64_t)driver->info.sector_size;
+	int      size    = treq->secs * driver->info.sector_size;
+	uint64_t offset  = treq->sec * (uint64_t)driver->info.sector_size;
 
 	tdnbd_queue_request(prv, TAPDISK_NBD_CMD_WRITE,
-			offset, treq.buf, size, treq, 0);
+			offset, treq->buf, size, treq, 0);
 }
 
 static int

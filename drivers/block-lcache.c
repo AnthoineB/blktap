@@ -302,7 +302,7 @@ lcache_complete_read(td_lcache_t *cache, td_lcache_req_t *req)
 		memcpy(req->treq.buf, req->buf, sz);
 	}
 
-	notify = td_complete_request(req->treq, req->err);
+	notify = td_complete_request(&req->treq, req->err);
 
 	if (unlikely(req->err) || !lcache_wr_enabled(cache)) {
 		lcache_free_request(cache, req);
@@ -315,13 +315,13 @@ lcache_complete_read(td_lcache_t *cache, td_lcache_req_t *req)
 }
 
 static int
-__lcache_read_cb(td_request_t treq, int err)
+__lcache_read_cb(const td_request_t *treq, int err)
 {
-	td_lcache_req_t *req = treq.cb_data;
+	td_lcache_req_t *req = treq->cb_data;
 	td_lcache_t *cache = req->cache;
 
-	BUG_ON(req->secs < treq.secs);
-	req->secs -= treq.secs;
+	BUG_ON(req->secs < treq->secs);
+	req->secs -= treq->secs;
 	req->err   = req->err ? : err;
 
 	if (!req->secs)
@@ -330,7 +330,7 @@ __lcache_read_cb(td_request_t treq, int err)
 }
 
 static void
-lcache_queue_read(td_driver_t *driver, td_request_t treq)
+lcache_queue_read(td_driver_t *driver, const td_request_t *treq)
 {
 	td_lcache_t *cache = driver->data;
 	td_request_t clone;
@@ -342,18 +342,18 @@ lcache_queue_read(td_driver_t *driver, td_request_t treq)
 		return;
 	}
 
-	req->treq    = treq;
+	req->treq    = *treq;
 	req->cache   = cache;
 
 	req->secs    = req->treq.secs;
 	req->err     = 0;
 
-	clone         = treq;
+	clone         = *treq;
 	clone.buf     = req->buf;
 	clone.cb      = __lcache_read_cb;
 	clone.cb_data = req;
 
-	td_forward_request(clone);
+	td_forward_request(&clone);
 }
 
 static int

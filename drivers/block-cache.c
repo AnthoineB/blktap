@@ -616,36 +616,36 @@ block_cache_hash(block_cache_t *cache, char *buf)
 }
 
 static void
-block_cache_hit(block_cache_t *cache, td_request_t treq, char *iov[])
+block_cache_hit(block_cache_t *cache, const td_request_t *treq, char *iov[])
 {
 	int i;
 	off_t off;
 
-	cache->stats.hits += treq.secs;
+	cache->stats.hits += treq->secs;
 
-	for (i = 0; i < treq.secs; i++) {
+	for (i = 0; i < treq->secs; i++) {
 		DBG("%s: block cache hit: sec 0x%08llx, hash: 0x%08llx\n",
-		    cache->name, treq.sec + i, block_cache_hash(cache, iov[i]));
+		    cache->name, treq->sec + i, block_cache_hash(cache, iov[i]));
 
 		off = (off_t)i << RADIX_TREE_NODE_SHIFT;
-		memcpy(treq.buf + off, iov[i], RADIX_TREE_NODE_SIZE);
+		memcpy(treq->buf + off, iov[i], RADIX_TREE_NODE_SIZE);
 	}
 
 	td_complete_request(treq, 0);
 }
 
 static int
-block_cache_populate_cache(td_request_t clone, int err)
+block_cache_populate_cache(const td_request_t *clone, int err)
 {
 	int i, notify;
 	radix_tree_t *tree;
 	block_cache_t *cache;
 	block_cache_request_t *breq;
 
-	breq        = (block_cache_request_t *)clone.cb_data;
+	breq        = (block_cache_request_t *)clone->cb_data;
 	cache       = breq->cache;
 	tree        = &cache->tree;
-	breq->secs -= clone.secs;
+	breq->secs -= clone->secs;
 	breq->err   = (breq->err ? breq->err : err);
 
 	if (breq->secs)
@@ -669,13 +669,13 @@ block_cache_populate_cache(td_request_t clone, int err)
 		free(breq->buf);
 
 out:
-	notify = td_complete_request(breq->treq, breq->err);
+	notify = td_complete_request(&breq->treq, breq->err);
 	block_cache_put_request(cache, breq);
 	return notify;
 }
 
 static void
-block_cache_miss(block_cache_t *cache, td_request_t treq)
+block_cache_miss(block_cache_t *cache, const td_request_t *treq)
 {
 	void *buf;
 	size_t size;
@@ -683,13 +683,13 @@ block_cache_miss(block_cache_t *cache, td_request_t treq)
 	radix_tree_t *tree;
 	block_cache_request_t *breq;
 
-	DBG("%s: block cache miss: sec 0x%08llx\n", cache->name, treq.sec);
+	DBG("%s: block cache miss: sec 0x%08llx\n", cache->name, treq->sec);
 
-	clone = treq;
+	clone = *treq;
 	tree  = &cache->tree;
-	size  = (size_t)treq.secs << RADIX_TREE_NODE_SHIFT;
+	size  = (size_t)treq->secs << RADIX_TREE_NODE_SHIFT;
 
-	cache->stats.misses += treq.secs;
+	cache->stats.misses += treq->secs;
 
 	if (radix_tree_size(tree) + size >= BLOCK_CACHE_MAX_SIZE)
 		goto out;
@@ -703,8 +703,8 @@ block_cache_miss(block_cache_t *cache, td_request_t treq)
 		goto out;
 	}
 
-	breq->treq    = treq;
-	breq->secs    = treq.secs;
+	breq->treq    = *treq;
+	breq->secs    = treq->secs;
 	breq->err     = 0;
 	breq->buf     = buf;
 	breq->cache   = cache;
@@ -714,11 +714,11 @@ block_cache_miss(block_cache_t *cache, td_request_t treq)
 	clone.cb_data = breq;
 
 out:
-	td_forward_request(clone);
+	td_forward_request(&clone);
 }
 
 static void
-block_cache_queue_read(td_driver_t *driver, td_request_t treq)
+block_cache_queue_read(td_driver_t *driver, const td_request_t *treq)
 {
 	int i;
 	radix_tree_t *tree;
@@ -728,13 +728,13 @@ block_cache_queue_read(td_driver_t *driver, td_request_t treq)
 	cache = (block_cache_t *)driver->data;
 	tree  = &cache->tree;
 
-	cache->stats.reads += treq.secs;
+	cache->stats.reads += treq->secs;
 
-	if (treq.secs > BLOCK_CACHE_NODES_PER_PAGE)
+	if (treq->secs > BLOCK_CACHE_NODES_PER_PAGE)
 		return td_forward_request(treq);
 
-	for (i = 0; i < treq.secs; i++) {
-		iov[i] = radix_tree_find_leaf(tree, treq.sec + i);
+	for (i = 0; i < treq->secs; i++) {
+		iov[i] = radix_tree_find_leaf(tree, treq->sec + i);
 		if (!iov[i])
 			return block_cache_miss(cache, treq);
 	}
@@ -743,7 +743,7 @@ block_cache_queue_read(td_driver_t *driver, td_request_t treq)
 }
 
 static void
-block_cache_queue_write(td_driver_t *driver, td_request_t treq)
+block_cache_queue_write(td_driver_t *driver, const td_request_t *treq)
 {
 	td_complete_request(treq, -EPERM);
 }

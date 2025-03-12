@@ -2003,19 +2003,19 @@ __vhd_queue_request(struct vhd_state *s, uint8_t op, td_request_t treq)
 }
 
 static void
-vhd_queue_block_status(td_driver_t *driver, td_request_t treq)
+vhd_queue_block_status(td_driver_t *driver, td_request_t *treq)
 {
 	struct vhd_state *s = (struct vhd_state *)driver->data;
 
 	DBG(TLOG_DBG, "block status: %s: lsec: 0x%08"PRIx64", secs: 0x%04x (seg: %d)\n",
-	    s->vhd.file, treq.sec, treq.secs, treq.sidx);
+	    s->vhd.file, treq->sec, treq->secs, treq->sidx);
 
-	while (treq.secs) {
+	while (treq->secs) {
 		int err;
 		td_request_t clone;
 
 		err   = 0;
-		clone = treq;
+		clone = *treq;
 
 		switch (read_bitmap_cache(s, clone.sec, VHD_OP_BLOCK_STATUS)) {
 		case -EINVAL:
@@ -2024,24 +2024,24 @@ vhd_queue_block_status(td_driver_t *driver, td_request_t treq)
 
 		case VHD_BM_BAT_CLEAR:
 			clone.secs = MIN(clone.secs, s->spb - (clone.sec % s->spb));
-			td_forward_request(clone);
+			td_forward_request(&clone);
 			break;
 
 		case VHD_BM_BIT_CLEAR:
 			clone.secs = read_bitmap_cache_span(s, clone.sec, clone.secs, 0);
-			td_forward_request(clone);
+			td_forward_request(&clone);
 			break;
 
 		case VHD_BM_BIT_SET:
 			clone.secs = read_bitmap_cache_span(s, clone.sec, clone.secs, 1);
 			clone.status = TD_BLOCK_STATE_NONE;
-			td_complete_request(clone, 0);
+			td_complete_request(&clone, 0);
 			break;
 
 		case VHD_BM_NOT_CACHED:
 			clone.secs = MIN(clone.secs, s->spb - (clone.sec % s->spb));
 			clone.status = TD_BLOCK_STATE_NONE;
-			td_complete_request(clone, 0);
+			td_complete_request(&clone, 0);
 			break;
 
 		case VHD_BM_READ_PENDING:
@@ -2057,22 +2057,23 @@ vhd_queue_block_status(td_driver_t *driver, td_request_t treq)
 			break;
 		}
 
-		treq.sec  += clone.secs;
-		treq.secs -= clone.secs;
-		treq.buf  += vhd_sectors_to_bytes(clone.secs);
+		treq->sec  += clone.secs;
+		treq->secs -= clone.secs;
+		treq->buf  += vhd_sectors_to_bytes(clone.secs);
 		continue;
 
 	fail:
-		clone.secs = treq.secs;
-		td_complete_request(clone, err);
+		clone.secs = treq->secs;
+		td_complete_request(&clone, err);
 		break;
 	}
 }
 
 static void
-vhd_queue_read(td_driver_t *driver, td_request_t treq)
+vhd_queue_read(td_driver_t *driver, const td_request_t *const_treq)
 {
 	struct vhd_state *s = (struct vhd_state *)driver->data;
+        td_request_t treq = *const_treq;
 
 	DBG(TLOG_DBG, "%s: lsec: 0x%08"PRIx64", secs: 0x%04x (seg: %d)\n",
 	    s->vhd.file, treq.sec, treq.secs, treq.sidx);
@@ -2091,12 +2092,12 @@ vhd_queue_read(td_driver_t *driver, td_request_t treq)
 
 		case VHD_BM_BAT_CLEAR:
 			clone.secs = MIN(clone.secs, s->spb - (clone.sec % s->spb));
-			td_forward_request(clone);
+			td_forward_request(&clone);
 			break;
 
 		case VHD_BM_BIT_CLEAR:
 			clone.secs = read_bitmap_cache_span(s, clone.sec, clone.secs, 0);
-			td_forward_request(clone);
+			td_forward_request(&clone);
 			break;
 
 		case VHD_BM_BIT_SET:
@@ -2137,15 +2138,16 @@ vhd_queue_read(td_driver_t *driver, td_request_t treq)
 
 	fail:
 		clone.secs = treq.secs;
-		td_complete_request(clone, err);
+		td_complete_request(&clone, err);
 		break;
 	}
 }
 
 static void
-vhd_queue_write(td_driver_t *driver, td_request_t treq)
+vhd_queue_write(td_driver_t *driver, const td_request_t *const_treq)
 {
 	struct vhd_state *s = (struct vhd_state *)driver->data;
+        td_request_t treq = *const_treq;
 
 	DBG(TLOG_DBG, "%s: lsec: 0x%08"PRIx64", secs: 0x%04x, (seg: %d)\n",
 	    s->vhd.file, treq.sec, treq.secs, treq.sidx);
@@ -2222,7 +2224,7 @@ vhd_queue_write(td_driver_t *driver, td_request_t treq)
 
 	fail:
 		clone.secs = treq.secs;
-		td_complete_request(clone, err);
+		td_complete_request(&clone, err);
 		break;
 	}
 }
@@ -2256,7 +2258,7 @@ signal_completion(struct vhd_request *list, int error)
 				break;
 			}
 		}
-		td_complete_request(r->treq, err);
+		td_complete_request(&r->treq, err);
 		DBG(TLOG_DBG, "lsec: 0x%08"PRIx64", blk: 0x%04"PRIx64", "
 		    "err: %d\n", r->treq.sec, r->treq.sec / s->spb, err);
 		free_vhd_request(s, r);
@@ -2526,9 +2528,9 @@ finish_bitmap_read(struct vhd_request *req)
 			       tmp.op == VHD_OP_DATA_WRITE);
 
 			if (tmp.op == VHD_OP_DATA_READ)
-				vhd_queue_read(s->driver, tmp.treq);
+				vhd_queue_read(s->driver, &tmp.treq);
 			else if (tmp.op == VHD_OP_DATA_WRITE)
-				vhd_queue_write(s->driver, tmp.treq);
+				vhd_queue_write(s->driver, &tmp.treq);
 
 			r = next;
 		}

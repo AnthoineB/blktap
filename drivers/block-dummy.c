@@ -218,7 +218,7 @@ signal_completion(struct dummy_request *r)
 {
 	struct dummy_state *s = r->state;
 
-        td_complete_request(r->treq, 0);
+        td_complete_request(&r->treq, 0);
 
         free_dummy_request(s, r);
 
@@ -277,7 +277,7 @@ static void dummy_complete(void *opaque, struct tiocb *tiocb, int err)
 }
 
 static int
-schedule_request(struct dummy_state *s, td_request_t *treq, enum dummy_ops op)
+schedule_request(struct dummy_state *s, const td_request_t *treq, enum dummy_ops op)
 {
 	struct dummy_request *req;
 
@@ -315,17 +315,17 @@ schedule_request(struct dummy_state *s, td_request_t *treq, enum dummy_ops op)
 }
 
 static void
-dummy_queue_block_status(td_driver_t *driver, td_request_t treq)
+dummy_queue_block_status(td_driver_t *driver, td_request_t *treq)
 {
 }
 
 static void
-dummy_queue_read(td_driver_t *driver, td_request_t treq)
+dummy_queue_read(td_driver_t *driver, const td_request_t *treq)
 {
     struct dummy_state *s = (struct dummy_state *)driver->data;
     int err;
 
-    err = schedule_request(s, &treq, DUMMY_OP_READ);
+    err = schedule_request(s, treq, DUMMY_OP_READ);
     if (err)
         goto fail;
 
@@ -335,12 +335,12 @@ fail:
 }
 
 static void
-dummy_queue_write(td_driver_t *driver, td_request_t treq)
+dummy_queue_write(td_driver_t *driver, const td_request_t *treq)
 {
     struct dummy_state *s = (struct dummy_state *)driver->data;
     int err;
 
-    err = schedule_request(s, &treq, DUMMY_OP_WRITE);
+    err = schedule_request(s, treq, DUMMY_OP_WRITE);
     if (err)
         goto fail;
 

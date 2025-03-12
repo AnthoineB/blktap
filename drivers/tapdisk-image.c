@@ -99,7 +99,7 @@ tapdisk_image_free(td_image_t *image)
 }
 
 int
-tapdisk_image_check_td_request(td_image_t *image, td_request_t treq)
+tapdisk_image_check_td_request(td_image_t *image, const td_request_t *treq)
 {
 	int rdonly, err;
 	td_disk_info_t *info;
@@ -109,27 +109,26 @@ tapdisk_image_check_td_request(td_image_t *image, td_request_t treq)
 	info   = &image->info;
 	rdonly = td_flag_test(image->flags, TD_OPEN_RDONLY);
 
-	if (treq.op != TD_OP_READ && treq.op != TD_OP_WRITE &&
-		treq.op != TD_OP_BLOCK_STATUS && treq.op != TD_OP_DISCARD)
+	if (treq->op != TD_OP_READ && treq->op != TD_OP_WRITE &&
+		treq->op != TD_OP_BLOCK_STATUS && treq->op != TD_OP_DISCARD)
 		goto fail;
 
-	if (treq.op == TD_OP_WRITE && rdonly) {
+	if (treq->op == TD_OP_WRITE && rdonly) {
 		err = -EPERM;
 		goto fail;
 	}
 
-	if ((treq.secs <= 0 || treq.sec + treq.secs > info->size) &&
-		treq.op != TD_OP_DISCARD)
+	if ((treq->secs <= 0 || treq->sec + treq->secs > info->size) &&
+		treq->op != TD_OP_DISCARD)
 		goto fail;
 
 	return 0;
 
 fail:
 	ERR(err, "bad td request on %s (%s, %"PRIu64"): %d at %"PRIu64,
-	    image->name, (rdonly ? "ro" : "rw"), info->size, treq.op,
-	    treq.sec + treq.secs);
+	    image->name, (rdonly ? "ro" : "rw"), info->size, treq->op,
+	    treq->sec + treq->secs);
 	return err;
-
 }
 
 int

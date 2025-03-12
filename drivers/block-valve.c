@@ -137,7 +137,7 @@ static void valve_kill(td_valve_t *);
 	__cond;						\
 })
 
-#define TREQ_SIZE(_treq) ((unsigned long)(_treq.secs) << 9)
+#define TREQ_SIZE(_treq) ((unsigned long)((_treq)->secs) << 9)
 
 static td_valve_request_t *
 valve_alloc_request(td_valve_t *valve)
@@ -356,7 +356,7 @@ valve_conn_close(td_valve_t *valve, int reset)
 
 	if (reset)
 		td_valve_for_each_stored_request(req, next, valve) {
-			td_forward_request(req->treq);
+			td_forward_request(&req->treq);
 			valve->stats.forw++;
 			valve_free_request(valve, req);
 		}
@@ -441,7 +441,7 @@ valve_conn_request(td_valve_t *valve, unsigned long size)
 }
 
 static int
-valve_expend_request(td_valve_t *valve, const td_request_t treq)
+valve_expend_request(td_valve_t *valve, const td_request_t *treq)
 {
 	if (valve->flags & TD_VALVE_KILLED)
 		return 0;
@@ -458,8 +458,9 @@ valve_expend_request(td_valve_t *valve, const td_request_t treq)
 }
 
 static int
-__valve_complete_treq(td_request_t treq, int error)
+__valve_complete_treq(const td_request_t *const_treq, int error)
 {
+        td_request_t treq = *const_treq;
 	td_valve_request_t *req = treq.cb_data;
 	td_valve_t *valve = req->valve;
 	int notify;
@@ -467,13 +468,13 @@ __valve_complete_treq(td_request_t treq, int error)
 	BUG_ON(req->secs < treq.secs);
 	req->secs -= treq.secs;
 
-	valve->done += TREQ_SIZE(treq);
+	valve->done += TREQ_SIZE(&treq);
 	valve_set_done_pending(valve);
 
 	/* Respond to original callback */
 	treq.cb = req->treq.cb;
 	treq.cb_data = req->treq.cb_data;
-	notify = td_complete_request(treq, error);
+	notify = td_complete_request(&treq, error);
 
 	if (!req->secs) {
 		valve_free_request(valve, req);
@@ -491,7 +492,7 @@ valve_forward_stored_requests(td_valve_t *valve)
 
 	td_valve_for_each_stored_request(req, next, valve) {
 
-		err = valve_expend_request(valve, req->treq);
+		err = valve_expend_request(valve, &req->treq);
 		if (err)
 			break;
 
@@ -503,13 +504,13 @@ valve_forward_stored_requests(td_valve_t *valve)
 		/* 'list_move' must be run before td_forward_request.
 		 * 'req' may already be freed when td_forward_request returned.
 		 */
-		td_forward_request(clone);
+		td_forward_request(&clone);
 		valve->stats.forw++;
 	}
 }
 
 static int
-valve_store_request(td_valve_t *valve, td_request_t treq)
+valve_store_request(td_valve_t *valve, const td_request_t *treq)
 {
 	td_valve_request_t *req;
 
@@ -519,8 +520,8 @@ valve_store_request(td_valve_t *valve, td_request_t treq)
 
 	valve_conn_request(valve, TREQ_SIZE(treq));
 
-	req->treq = treq;
-	req->secs = treq.secs;
+	req->treq = *treq;
+	req->secs = treq->secs;
 
 	list_add_tail(&req->entry, &valve->stor);
 	valve->stats.stor++;
@@ -606,12 +607,12 @@ fail:
 }
 
 static void
-td_valve_queue_request(td_driver_t *driver, td_request_t treq)
+td_valve_queue_request(td_driver_t *driver, const td_request_t *treq)
 {
 	td_valve_t *valve = driver->data;
 	int err;
 
-	switch (treq.op) {
+	switch (treq->op) {
 
 	case TD_OP_READ:
 		if (valve->flags & TD_VALVE_RDLIMIT)

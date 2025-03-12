@@ -636,7 +636,7 @@ vhd_index_schedule_meta_read(vhd_index_t *index, uint32_t blk)
 }
 
 static int
-vhd_index_schedule_data_read(vhd_index_t *index, td_request_t treq)
+vhd_index_schedule_data_read(vhd_index_t *index, const td_request_t *treq)
 {
 	int i, err;
 	size_t size;
@@ -646,12 +646,12 @@ vhd_index_schedule_data_read(vhd_index_t *index, td_request_t treq)
 	vhd_index_request_t *req;
 	vhd_index_file_ref_t *file;
 
-	blk   = treq.sec / index->vhdi.spb;
-	sec   = treq.sec % index->vhdi.spb;
+	blk   = treq->sec / index->vhdi.spb;
+	sec   = treq->sec % index->vhdi.spb;
 	block = vhd_index_get_block(index, blk);
 
 	ASSERT(block && vhd_index_block_valid(block));
-	for (i = 0; i < treq.secs; i++) {
+	for (i = 0; i < treq->secs; i++) {
 		ASSERT(block->vhdi_block.table[sec + i].file_id != 0);
 		ASSERT(block->vhdi_block.table[sec + i].offset != DD_BLK_UNUSED);
 	}
@@ -667,15 +667,15 @@ vhd_index_schedule_data_read(vhd_index_t *index, td_request_t treq)
 		return err;
 	}
 
-	size       = vhd_sectors_to_bytes(treq.secs);
+	size       = vhd_sectors_to_bytes(treq->secs);
 	offset     = vhd_sectors_to_bytes(block->vhdi_block.table[sec].offset);
 
 	req->file  = file;
-	req->treq  = treq;
+	req->treq  = *treq;
 	req->index = index;
 	req->off   = offset;
 
-	td_prep_read(index->driver, &req->tiocb, file->fd, treq.buf, size, offset,
+	td_prep_read(index->driver, &req->tiocb, file->fd, treq->buf, size, offset,
 		     vhd_index_complete_data_read, req);
 	td_queue_tiocb(index->driver, &req->tiocb);
 
@@ -683,7 +683,7 @@ vhd_index_schedule_data_read(vhd_index_t *index, td_request_t treq)
 }
 
 static int
-vhd_index_queue_request(vhd_index_t *index, td_request_t treq)
+vhd_index_queue_request(vhd_index_t *index, const td_request_t *treq)
 {
 	vhd_index_block_t *block;
 	vhd_index_request_t *req;
@@ -692,9 +692,9 @@ vhd_index_queue_request(vhd_index_t *index, td_request_t treq)
 	if (!req)
 		return -EBUSY;
 
-	req->treq = treq;
+	req->treq = *treq;
 
-	block = vhd_index_get_block(index, treq.sec / index->vhdi.spb);
+	block = vhd_index_get_block(index, treq->sec / index->vhdi.spb);
 	ASSERT(block && td_flag_test(block->state, VHD_INDEX_BLOCK_READ_PENDING));
 
 	list_add_tail(&req->next, &block->queue);
@@ -702,8 +702,9 @@ vhd_index_queue_request(vhd_index_t *index, td_request_t treq)
 }
 
 static void
-vhd_index_queue_read(td_driver_t *driver, td_request_t treq)
+vhd_index_queue_read(td_driver_t *driver, const td_request_t *const_treq)
 {
+	td_request_t treq = *const_treq;
 	vhd_index_t *index;
 
 	index = (vhd_index_t *)driver->data;
@@ -722,17 +723,17 @@ vhd_index_queue_read(td_driver_t *driver, td_request_t treq)
 
 		case VHD_INDEX_BAT_CLEAR:
 			clone.secs = MIN(clone.secs, index->vhdi.spb - (clone.sec % index->vhdi.spb));
-			td_forward_request(clone);
+			td_forward_request(&clone);
 			break;
 
 		case VHD_INDEX_BIT_CLEAR:
 			clone.secs = vhd_index_read_cache_span(index, clone.sec, clone.secs, 0);
-			td_forward_request(clone);
+			td_forward_request(&clone);
 			break;
 
 		case VHD_INDEX_BIT_SET:
 			clone.secs = vhd_index_read_cache_span(index, clone.sec, clone.secs, 1);
-			err = vhd_index_schedule_data_read(index, clone);
+			err = vhd_index_schedule_data_read(index, &clone);
 			if (err)
 				goto fail;
 			break;
@@ -743,12 +744,12 @@ vhd_index_queue_read(td_driver_t *driver, td_request_t treq)
 				goto fail;
 
 			clone.secs = MIN(clone.secs, index->vhdi.spb - (clone.sec % index->vhdi.spb));
-			vhd_index_queue_request(index, clone);
+			vhd_index_queue_request(index, &clone);
 			break;
 
 		case VHD_INDEX_META_READ_PENDING:
 			clone.secs = MIN(clone.secs, index->vhdi.spb - (clone.sec % index->vhdi.spb));
-			err = vhd_index_queue_request(index, clone);
+			err = vhd_index_queue_request(index, &clone);
 			if (err)
 				goto fail;
 			break;
@@ -761,13 +762,13 @@ vhd_index_queue_read(td_driver_t *driver, td_request_t treq)
 
 	fail:
 		clone.secs = treq.secs;
-		td_complete_request(clone, err);
+		td_complete_request(&clone, err);
 		break;
 	}
 }
 
 static void
-vhd_index_queue_write(td_driver_t *driver, td_request_t treq)
+vhd_index_queue_write(td_driver_t *driver, const td_request_t *treq)
 {
 	td_complete_request(treq, -EPERM);
 }
@@ -776,7 +777,7 @@ static inline void
 vhd_index_signal_completion(vhd_index_t *index,
 			    vhd_index_request_t *req, int err)
 {
-	td_complete_request(req->treq, err);
+	td_complete_request(&req->treq, err);
 	vhd_index_put_file_ref(req->file);
 	vhd_index_free_request(index, req);
 }
@@ -814,7 +815,7 @@ vhd_index_complete_meta_read(void *arg, struct tiocb *tiocb, int err)
 	vhd_index_block_for_each_request(block, r, tmp) {
 		treq = r->treq;
 		vhd_index_free_request(index, r);
-		vhd_index_queue_read(index->driver, treq);
+		vhd_index_queue_read(index->driver, &treq);
 	}
 }
 
