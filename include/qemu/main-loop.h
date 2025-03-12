@@ -57,6 +57,7 @@ void qemu_init_cpu_loop(void);
  * In the case of QEMU tools, this will also start/initialize timers.
  */
 int qemu_init_main_loop(Error **errp);
+int qemu_deinit_main_loop(void);
 
 /**
  * main_loop_wait: Run one iteration of the main loop.
