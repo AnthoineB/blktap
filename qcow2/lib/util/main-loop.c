@@ -39,7 +39,11 @@
 #include <sys/wait.h>
 #endif
 
+static void iohandler_deinit(void);
+
 #ifndef _WIN32
+
+static int sigfd = -1;
 
 /* If we have signalfd, we mask out the signals we want to handle and then
  * use signalfd to listen for them.  We rely on whatever the current signal
@@ -86,7 +90,6 @@ static void sigfd_handler(void *opaque)
 
 static int qemu_signal_init(Error **errp)
 {
-    int sigfd;
     sigset_t set;
 
     /*
@@ -188,6 +191,39 @@ int qemu_init_main_loop(Error **errp)
     g_source_set_name(src, "io-handler");
     g_source_attach(src, NULL);
     g_source_unref(src);
+    return 0;
+}
+
+int qemu_deinit_main_loop(void)
+{
+    GSource *src;
+
+    src = iohandler_get_g_source();
+    g_source_unref(src);
+    g_source_remove(g_source_get_id(src));
+    g_source_unref(src);
+
+    src = aio_get_g_source(qemu_aio_context);
+    g_source_unref(src);
+    g_source_remove(g_source_get_id(src));
+    g_source_unref(src);
+
+    g_array_free(gpollfds, TRUE);
+
+    qemu_bh_delete(qemu_notify_bh);
+    qemu_notify_bh = NULL;
+
+    if (sigfd != -1) {
+        aio_set_fd_handler(iohandler_get_aio_context(), sigfd, NULL, NULL, NULL, NULL, NULL);
+        close(sigfd);
+        sigfd = -1;
+    }
+
+    iohandler_deinit();
+    qemu_aio_context = NULL;
+
+    timerlistgroup_deinit(&main_loop_tlg);
+
     return 0;
 }
 
@@ -630,6 +666,13 @@ static void iohandler_init(void)
 {
     if (!iohandler_ctx) {
         iohandler_ctx = aio_context_new(&error_abort);
+    }
+}
+
+static void iohandler_deinit(void)
+{
+    if (iohandler_ctx) {
+        iohandler_ctx = NULL;
     }
 }
 

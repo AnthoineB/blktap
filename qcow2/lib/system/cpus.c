@@ -429,6 +429,11 @@ void qemu_init_cpu_loop(void)
     //qemu_thread_get_self(&io_thread);
 }
 
+void qemu_deinit_cpu_loop(void)
+{
+    qemu_mutex_destroy(&bql);
+}
+
 #if 0
 void run_on_cpu(CPUState *cpu, run_on_cpu_func func, run_on_cpu_data data)
 {
