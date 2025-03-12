@@ -98,6 +98,10 @@ static void commit_abort(Job *job)
      * after the failed/cancelled commit job is gone? If we already wrote
      * something to base, the intermediate images aren't valid any more. */
     bdrv_graph_rdlock_main_loop();
+    if (!s->commit_top_bs->backing) {
+        bdrv_graph_rdunlock_main_loop();
+        return;
+    }
     commit_top_backing_bs = s->commit_top_bs->backing->bs;
     bdrv_graph_rdunlock_main_loop();
 
