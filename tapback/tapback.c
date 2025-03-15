@@ -510,10 +510,12 @@ usage(FILE * const stream, const char * const prog)
     fprintf(stream,
             "usage: %s\n"
             "\t[-d|--debug]\n"
-			"\t[-h|--help]\n"
+            "\t[-h|--help]\n"
             "\t[-v|--verbose]\n"
-			"\t[-b]--nobarrier]\n"
-            "\t[-n|--name]\n", prog);
+            "\t[-p|--pidfile PIDfile]\n"
+            "\t[-x|--domain domainID]\n"
+            "\t[-b|--nobarrier]\n"
+            "\t[-n|--name backend_name (default: vbd3)]\n", prog);
 }
 
 extern char *optarg;
@@ -612,8 +614,7 @@ int main(int argc, char **argv)
             {"name", 0, NULL, 'n'},
             {"pidfile", 0, NULL, 'p'},
             {"domain", 0, NULL, 'x'},
-			{"nobarrier", 0, NULL, 'b'},
-
+            {"nobarrier", 0, NULL, 'b'},
         };
         int c;
 
