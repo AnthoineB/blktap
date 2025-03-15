@@ -193,7 +193,8 @@ int tap_ctl_disconnect_xenblkif(const pid_t pid, const domid_t domid,
  * @param pid the process ID of the tapdisk process
  * @param sectors output parameter that receives the number of sectors
  * @param sector_size output parameter that receives the size of the sector
- * @param info TODO ?
+ * @param info output parameter that receives the vdisk info flags VDISK_???,
+ * defined in include/xen/interface/io/blkif.h
  * @param minor
  *
  */
