@@ -210,10 +210,19 @@ connect_tap(vbd_t * const device)
         DBG(device, "front-end doesn't support persistent grants\n");
 
     /*
-     * persistent grants are not yet supported
+     * Persistent grants are supported by the front-end.
      */
-    if (persistent_grants)
-        WARN(device, "front-end supports persistent grants but we don't\n");
+    if (persistent_grants) {
+        if (device->backend->persistent) {
+            INFO(device, "front-end supports persistent grants, enable them!\n");
+        } else {
+            WARN(device, "front-end supports persistent grants but we don't.\n");
+            persistent_grants = device->backend->persistent;
+        }
+    } else {
+        WARN(device, "front-end doesn't support persistent grants, disable them!\n");
+        device->backend->persistent = persistent_grants;
+    }
 
     /*
      * Create the shared ring and ask the tapdisk to connect to it.
@@ -282,6 +291,13 @@ connect_frontend(vbd_t *device) {
         }
 
         abort_transaction = true;
+
+        if ((err = tapback_device_printf(device, xst, "feature-persistent", true,
+                        "%d", device->backend->persistent ? 1 : 0))) {
+            WARN(device, "failed to write feature-persistent: %s\n",
+					strerror(-err));
+            break;
+        }
 
         if (device->backend->discard &&
                 device->mode == true &&

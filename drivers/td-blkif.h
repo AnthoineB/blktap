@@ -47,6 +47,7 @@
 #include "tapdisk-vbd.h"
 #include "tapdisk-utils.h"
 #include "tapdisk-metrics.h"
+#include "rbtree.h"
 
 struct td_xenio_ctx;
 struct td_vbd_handle;
@@ -201,6 +202,18 @@ struct td_xenblkif {
 	bool in_polling;
 	int poll_duration; /* microseconds; 0 means no polling. */
 	int poll_idle_threshold;
+
+    /**
+     * Tree to store persistent grants.
+     */
+    struct rb_root          persistent_gnts;
+    unsigned int            persistent_gnt_c;
+    unsigned int            persistent_max_grants;
+    int                     persistent_gnt_in_use;
+    unsigned long           next_lru;
+    /* Used by the kworker that offload work from the persistent purge. */
+    struct list_head        persistent_purge_list;
+    //struct work_struct      persistent_purge_work;
 };
 
 #define RING_DEBUG(blkif, fmt, args...)                                     \
@@ -227,6 +240,7 @@ struct td_xenblkif {
  * @param proto protocol (native, x86, or x64)
  * @param poll_duration polling duration (microseconds; 0 means no polling)
  * @param poll_idle_threshold CPU threshold above which we permit polling
+ * @param persistent enable persistent grants feature
  * @param pool name of the context
  * @param vbd the VBD
  * @returns 0 on success
@@ -234,7 +248,7 @@ struct td_xenblkif {
 int
 tapdisk_xenblkif_connect(domid_t domid, int devid, const grant_ref_t * grefs,
         int order, evtchn_port_t port, int proto, int poll_duration,
-        int poll_idle_threshold, const char *pool, td_vbd_t * vbd);
+        int poll_idle_threshold, bool persistent, const char *pool, td_vbd_t * vbd);
 
 /**
  * Disconnects the tapdisk from the shared ring.

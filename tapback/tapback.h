@@ -214,6 +214,11 @@ typedef struct backend {
 	 * Tells whether we support discard.
 	 */
 	bool discard;
+
+	/**
+	 * Tells whether we support persistent grants.
+	 */
+	bool persistent;
 } backend_t;
 
 /**

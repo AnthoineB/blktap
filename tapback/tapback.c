@@ -230,7 +230,8 @@ tapback_write_pid(const char *pidfile)
  */
 static inline backend_t *
 tapback_backend_create(const char *name, const char *pidfile,
-	const domid_t domid, const bool barrier, const bool discard)
+	const domid_t domid, const bool barrier, const bool discard,
+	const bool persistent)
 {
     int err;
     int len;
@@ -270,6 +271,8 @@ tapback_backend_create(const char *name, const char *pidfile,
     backend->path = NULL;
 
     backend->discard = discard;
+
+    backend->persistent = persistent;
 
     INIT_LIST_HEAD(&backend->entry);
 
@@ -518,6 +521,7 @@ usage(FILE * const stream, const char * const prog)
             "\t[-x|--domain domainID]\n"
             "\t[-b|--nobarrier]\n"
             "\t[-s|--nodiscard]\n"
+            "\t[-g|--nopersistent]\n"
             "\t[-n|--name backend_name (default: vbd3)]\n", prog);
 }
 
@@ -592,6 +596,7 @@ int main(int argc, char **argv)
     domid_t opt_domid = 0;
 	bool opt_barrier = true;
 	bool opt_discard = true;
+	bool opt_persistent = true;
 
 	if (access("/dev/xen/gntdev", F_OK ) == -1) {
 		WARN(NULL, "grant device does not exist\n");
@@ -620,10 +625,11 @@ int main(int argc, char **argv)
             {"domain", 0, NULL, 'x'},
             {"nobarrier", 0, NULL, 'b'},
             {"nodiscard", 0, NULL, 's'},
+            {"nopersistent", 0, NULL, 'g'},
         };
         int c;
 
-        c = getopt_long(argc, argv, "hdvn:p:x:bs", longopts, NULL);
+        c = getopt_long(argc, argv, "hdvn:p:x:bsg", longopts, NULL);
         if (c < 0)
             break;
 
@@ -666,6 +672,9 @@ int main(int argc, char **argv)
         case 's':
             opt_discard = false;
             break;
+        case 'g':
+            opt_persistent = false;
+            break;
         case '?':
             goto usage;
         }
@@ -700,7 +709,7 @@ int main(int argc, char **argv)
     }
 
 	backend = tapback_backend_create(opt_name, opt_pidfile, opt_domid,
-                        opt_barrier, opt_discard);
+                        opt_barrier, opt_discard, opt_persistent);
 	if (!backend) {
 		err = errno;
         WARN(NULL, "error creating back-end: %s\n", strerror(err));

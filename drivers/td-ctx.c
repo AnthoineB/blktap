@@ -398,7 +398,7 @@ tapdisk_xenio_ctx_ring_event(event_id_t id __attribute__((unused)),
  * TODO The pool is ignored, we always open the default pool.
  */
 static inline int
-tapdisk_xenio_ctx_open(const char *pool)
+tapdisk_xenio_ctx_open(const char *pool, bool persistent)
 {
     struct td_xenio_ctx *ctx;
     int fd, err;
@@ -414,17 +414,29 @@ tapdisk_xenio_ctx_open(const char *pool)
         goto fail;
     }
 
+
     ctx->ring_event = -1; /* TODO is there a special value? */
     ctx->gntdev_fd = -1;
     ctx->pool = TD_XENBLKIF_DEFAULT_POOL;
 	INIT_LIST_HEAD(&ctx->blkifs);
+    ctx->persistent_grants = true /*persistent*/;
     list_add(&ctx->entry, &_td_xenio_ctxs);
 
-    ctx->gntdev_fd = open("/dev/xen/gntdev", O_NONBLOCK);
-    if (ctx->gntdev_fd == -1) {
-        err = -errno;
-        ERROR("failed to open the grant device: %s\n", strerror(-err));
-        goto fail;
+    if (!ctx->persistent_grants) {
+        ctx->gntdev_fd = open("/dev/xen/gntdev", O_NONBLOCK);
+        if (ctx->gntdev_fd == -1) {
+            err = -errno;
+            ERROR("failed to open the grant device: %s\n", strerror(-err));
+            goto fail;
+        }
+    } else {
+        ctx->gntdev_xgt = xengnttab_open(NULL, 0);
+        if (!ctx->gntdev_xgt) {
+            err = -errno;
+            ERROR("failed to open the grant table driver: %s\n",
+                    strerror(-err));
+            goto fail;
+        }
     }
 
     ctx->xce_handle = xenevtchn_open(NULL, 0);
@@ -498,7 +510,7 @@ __td_xenio_ctx_match(struct td_xenio_ctx * ctx, const char *pool)
 	} while (0)
 
 int
-tapdisk_xenio_ctx_get(const char *pool, struct td_xenio_ctx ** _ctx)
+tapdisk_xenio_ctx_get(const char *pool, bool persistent, struct td_xenio_ctx ** _ctx)
 {
     struct td_xenio_ctx *ctx;
     int err = 0;
@@ -510,7 +522,7 @@ tapdisk_xenio_ctx_get(const char *pool, struct td_xenio_ctx ** _ctx)
             return 0;
         }
 
-        err = tapdisk_xenio_ctx_open(pool);
+        err = tapdisk_xenio_ctx_open(pool, persistent);
     } while (!err);
 
     return err;

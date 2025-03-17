@@ -174,6 +174,11 @@ typedef struct tapdisk_message_blkif {
 	 * Idle CPU threshold above which polling is permitted.
 	 */
 	uint32_t poll_idle_threshold;
+
+	/**
+	 * Persistent grants feature enabled.
+	 */
+	bool persistent_grants;
 } tapdisk_message_blkif_t;
 
 /**

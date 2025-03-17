@@ -78,7 +78,22 @@ struct td_xenio_ctx {
      */
     struct list_head entry;
 
-    int gntdev_fd;
+    /**
+     * Persistent grants feature availability. Select the field in the union below.
+     */
+    bool persistent_grants;
+
+    union {
+        /**
+         * Handle to the grant table driver for grants copy.
+         */
+        int gntdev_fd;
+
+        /**
+         * Handle to the grant table driver for persistant grants.
+         */
+        xengnttab_handle *gntdev_xgt;
+    };
 };
 
 /**
@@ -88,7 +103,7 @@ struct td_xenio_ctx {
  * @returns 0 on success, -errno on error
  */
 int
-tapdisk_xenio_ctx_get(const char *pool, struct td_xenio_ctx ** _ctx);
+tapdisk_xenio_ctx_get(const char *pool, bool persistent, struct td_xenio_ctx ** _ctx);
 
 /**
  * Releases the pool, only if there is no block interface using it.

@@ -439,7 +439,7 @@ tapdisk_xenblkif_cb_chkrng(event_id_t id __attribute__((unused)),
 int
 tapdisk_xenblkif_connect(domid_t domid, int devid, const grant_ref_t * grefs,
         int order, evtchn_port_t port, int proto, int poll_duration,
-        int poll_idle_threshold, const char *pool, td_vbd_t * vbd)
+        int poll_idle_threshold, bool persistent, const char *pool, td_vbd_t * vbd)
 {
     struct td_xenblkif *td_blkif = NULL; /* TODO rename to blkif */
     struct td_xenio_ctx *td_ctx;
@@ -459,7 +459,7 @@ tapdisk_xenblkif_connect(domid_t domid, int devid, const grant_ref_t * grefs,
         return -EALREADY;
     }
 
-    err = tapdisk_xenio_ctx_get(pool, &td_ctx);
+    err = tapdisk_xenio_ctx_get(pool, persistent, &td_ctx);
     if (err) {
         /* TODO log error */
         goto fail;
@@ -607,6 +607,9 @@ tapdisk_xenblkif_connect(domid_t domid, int devid, const grant_ref_t * grefs,
     err = tapdisk_xenblkif_stats_create(td_blkif);
     if (unlikely(err))
         goto fail;
+
+    td_blkif->persistent_max_grants = BLKIF_MAX_SEGMENTS_PER_REQUEST * td_blkif->ring_size;
+    INIT_LIST_HEAD(&td_blkif->persistent_purge_list);
 
     list_add_tail(&td_blkif->entry, &vbd->rings);
 	list_add_tail(&td_blkif->entry_ctx, &td_ctx->blkifs);

@@ -77,6 +77,7 @@ libtapdisk_la_SOURCES += tapdisk-fdreceiver.c
 libtapdisk_la_SOURCES += tapdisk-fdreceiver.h
 libtapdisk_la_SOURCES += ../cpumond/cpumond.h
 libtapdisk_la_SOURCES += log.h
+libtapdisk_la_SOURCES += rbtree.c
 
 libtapdisk_la_SOURCES += block-aio.c
 libtapdisk_la_SOURCES += aio_getevents.c
