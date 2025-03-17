@@ -99,10 +99,10 @@ struct td_xenblkif {
     blkif_back_rings_t rings;
 
     /**
-     * TODO Why 8 specifically?
-     * TODO Do we really need to keep it around?
+     * Grant references of the ring that holds the request descriptors.
+     * See ring_n_pages below to know the number of used refs in this array.
      */
-    grant_ref_t ring_ref[8];
+    grant_ref_t ring_ref[MAX_RING_PAGES];
 
     /**
      * Number of pages in the ring that holds the request descriptors.
