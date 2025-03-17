@@ -34,6 +34,8 @@
 #include <inttypes.h>
 #include <sys/types.h>
 
+#include "xen_blkif.h"
+
 /*
  * TODO This is quite small since we don't allow path bigger than 256 chars. If
  * we ever increase this, make sure tapdisk_message_t structures are not
@@ -135,9 +137,9 @@ typedef struct tapdisk_message_blkif {
 
 	/**
 	 * Grant references for the shared ring.
-	 * TODO Why 8 specifically?
+         * See order below to know the number of used refs in this array.
 	 */
-	uint32_t gref[8];
+	uint32_t gref[MAX_RING_PAGES];
 
 	/**
 	 * Number of pages in the ring, expressed as a page order.
