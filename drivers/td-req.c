@@ -781,9 +781,9 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
         break;
     case BLKIF_OP_WRITE:
     case BLKIF_OP_WRITE_BARRIER:
-        if (likely(blkif->stats.xenvbd))
+        if (likely(blkif->stats.xenvbd) && tapreq->msg.nr_segments)
 			blkif->stats.xenvbd->st_wr_req++;
-	if (likely(blkif->vbd_stats.stats))
+	if (likely(blkif->vbd_stats.stats) && tapreq->msg.nr_segments)
 		blkif->vbd_stats.stats->write_reqs_submitted++;
         tapreq->prot = PROT_READ;
         vreq->op = TD_OP_WRITE;
