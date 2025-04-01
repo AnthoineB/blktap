@@ -14,6 +14,9 @@ AC_CHECK_HEADERS([uuid/uuid.h], [], [Need uuid-dev])
 AC_CHECK_HEADERS([libaio.h], [], [Need libaio-dev])
 AC_CHECK_HEADERS([limits.h], [], [AC_MSG_ERROR([cannot find limits.h])])
 AC_CHECK_HEADERS([time.h], [], [AC_MSG_ERROR([cannot find time.h])])
+AC_CHECK_HEADERS([xen/io/ring.h], [], [AC_MSG_ERROR([cannot find xen/io/ring.h, install xen-devel])])
+AC_CHECK_HEADERS([openssl/evp.h], [], [AC_MSG_ERROR([cannot find openssl/evp.h, install xs-openssl-devel])])
+AC_CHECK_HEADERS([xenevtchn.h], [], [AC_MSG_ERROR([cannot find xenevtchn.h, install xen-libs-devel])])
 
 AC_ARG_WITH([libiconv],
 	     [AS_HELP_STRING([--with-libiconv],
