@@ -33,6 +33,7 @@
 
 #include <sys/select.h>
 #include <stdint.h>
+#include <pthread.h>
 
 #include "list.h"
 
@@ -50,6 +51,7 @@ typedef struct scheduler {
 	fd_set                       except_fds;
 
 	struct list_head             events;
+	pthread_mutex_t              mutex;
 
 	event_id_t                   uuid;
 	int                          uuid_overflow;

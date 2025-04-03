@@ -743,7 +743,7 @@ test_scheduler_callback(void **state)
   // Update current time to time_now2
   fake_gettimeofday = (struct timeval){ .tv_sec = time_now2 };
 
-  scheduler_event_callback(event1, test_mode);
+  scheduler_event_callback(&s, event1, test_mode, false);
 
   // Check callback has been called
   assert_int_equal(event_cb_spy.was_called, 1);
@@ -776,7 +776,7 @@ test_scheduler_callback_ignores_masked_events(void **state)
   event1->masked = true;
 
   const int test_mode = 1;
-  scheduler_event_callback(event1, test_mode);
+  scheduler_event_callback(&s, event1, test_mode, false);
 
   // Check callback has not been called
   assert_int_equal(event_cb_spy.was_called, 0);
