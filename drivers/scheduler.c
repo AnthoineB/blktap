@@ -112,6 +112,7 @@ scheduler_prepare_events(scheduler_t *s)
 
 	gettimeofday(&now, NULL);
 
+	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event) {
 		if (event->masked || event->dead)
 			continue;
@@ -140,6 +141,7 @@ scheduler_prepare_events(scheduler_t *s)
 				s->timeout = TV_ZERO;
 		}
 	}
+	pthread_mutex_unlock(&s->mutex);
 
 	s->timeout = TV_MIN(s->timeout, s->max_timeout);
 }
@@ -149,6 +151,7 @@ scheduler_check_fd_events(scheduler_t *s, int nfds)
 {
 	event_t *event;
 
+	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event) {
 		if (!nfds)
 			break;
@@ -177,6 +180,7 @@ scheduler_check_fd_events(scheduler_t *s, int nfds)
 			--nfds;
 		}
 	}
+	pthread_mutex_unlock(&s->mutex);
 
 	return nfds;
 }
@@ -193,6 +197,7 @@ scheduler_check_timeouts(scheduler_t *s)
 
 	gettimeofday(&now, NULL);
 
+	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event) {
 		BUG_ON(event->pending && event->masked);
 
@@ -213,6 +218,7 @@ scheduler_check_timeouts(scheduler_t *s)
 
 		event->pending = SCHEDULER_POLL_TIMEOUT;
 	}
+	pthread_mutex_unlock(&s->mutex);
 }
 
 static int
@@ -246,6 +252,7 @@ scheduler_run_events(scheduler_t *s)
 	event_t *event;
 	int n_dispatched = 0;
 
+	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event) {
 		char pending;
 
@@ -255,11 +262,14 @@ scheduler_run_events(scheduler_t *s)
 		pending = event->pending;
 		if (pending) {
 			event->pending = 0;
+			pthread_mutex_unlock(&s->mutex);
 			/* NB. must clear before cb */
 			scheduler_event_callback(event, pending);
+			pthread_mutex_lock(&s->mutex);
 			n_dispatched++;
 		}
 	}
+	pthread_mutex_unlock(&s->mutex);
 
 	return n_dispatched;
 }
@@ -279,6 +289,7 @@ scheduler_get_event_uuid(scheduler_t *s) {
 	if(unlikely(s->uuid_overflow == 1)) {
 		do {
 			uuid_found = true;
+			pthread_mutex_lock(&s->mutex);
 			scheduler_for_each_event(s, event) {
 				if(event->id == s->uuid) {
 					uuid_found = false;
@@ -290,6 +301,7 @@ scheduler_get_event_uuid(scheduler_t *s) {
 					break;
 				}
 			}
+			pthread_mutex_unlock(&s->mutex);
 
 		} while(!uuid_found);
 	}
@@ -341,7 +353,9 @@ scheduler_register_event(scheduler_t *s, char mode, int fd,
 	event->id       = scheduler_get_event_uuid(s);
 	event->masked   = 0;
 
+	pthread_mutex_lock(&s->mutex);
 	list_add_tail(&event->next, &s->events);
+	pthread_mutex_unlock(&s->mutex);
 
 	return event->id;
 }
@@ -354,11 +368,13 @@ scheduler_unregister_event(scheduler_t *s, event_id_t id)
 	if (!id)
 		return;
 
+	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event)
 		if (event->id == id) {
 			event->dead = 1;
 			break;
 		}
+	pthread_mutex_unlock(&s->mutex);
 }
 
 void
@@ -369,11 +385,13 @@ scheduler_mask_event(scheduler_t *s, event_id_t id, int masked)
 	if (!id)
 		return;
 
+	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event)
 		if (event->id == id) {
 			event->masked = !!masked;
 			break;
 		}
+	pthread_mutex_unlock(&s->mutex);
 }
 
 static void
@@ -381,11 +399,13 @@ scheduler_gc_events(scheduler_t *s)
 {
 	event_t *event, *next;
 
+	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event_safe(s, event, next)
 		if (event->dead) {
 			list_del(&event->next);
 			free(event);
 		}
+	pthread_mutex_unlock(&s->mutex);
 }
 
 void
@@ -462,6 +482,8 @@ scheduler_initialize(scheduler_t *s)
 	FD_ZERO(&s->except_fds);
 
 	INIT_LIST_HEAD(&s->events);
+
+	pthread_mutex_init(&s->mutex, NULL);
 }
 
 int
@@ -474,10 +496,13 @@ scheduler_event_set_timeout(scheduler_t *sched, event_id_t event_id, struct time
 	if (!event_id)
 		return -EINVAL;
 
+	pthread_mutex_lock(&sched->mutex);
 	scheduler_for_each_event(sched, event) {
 		if (event->id == event_id) {
-			if (!(event->mode & SCHEDULER_POLL_TIMEOUT))
+			if (!(event->mode & SCHEDULER_POLL_TIMEOUT)) {
+				pthread_mutex_unlock(&sched->mutex);
 				return -EINVAL;
+			}
 			event->timeout = timeo;
 			if (TV_IS_INF(event->timeout))
 				event->deadline = TV_INF;
@@ -486,9 +511,11 @@ scheduler_event_set_timeout(scheduler_t *sched, event_id_t event_id, struct time
 				gettimeofday(&now, NULL);
 				TV_ADD(now, event->timeout, event->deadline);
 			}
+			pthread_mutex_unlock(&sched->mutex);
 			return 0;
 		}
 	}
+	pthread_mutex_unlock(&sched->mutex);
 
 	return -ENOENT;
 }
