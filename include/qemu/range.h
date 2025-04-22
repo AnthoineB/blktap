@@ -234,9 +234,9 @@ static inline int range_get_last_bit(Range *range)
  */
 int range_compare(Range *a, Range *b);
 
-#if 0
 GList *range_list_insert(GList *list, Range *data);
 
+#if 0
 /*
  * Inverse an array of sorted ranges over the [low, high] span, ie.
  * original ranges becomes holes in the newly allocated inv_ranges
