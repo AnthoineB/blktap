@@ -352,10 +352,9 @@ physical_device_path_changed(vbd_t *device) {
 		goto out;
 	}
 
-	if (device->sector_size & 0x1ff || device->sectors <= 0) {
-		WARN(device, "warning: unexpected device characteristics: sector "
-		     "size=%d, sectors=%llu\n", device->sector_size,
-		     device->sectors);
+	if (device->sector_size & 0x1ff) {
+		WARN(device, "warning: unexpected sector size=%d, "
+                        "not a multiple of 512\n", device->sector_size);
 	}
 
 	/*
@@ -510,10 +509,9 @@ physical_device_changed(vbd_t *device) {
 		goto out;
 	}
 
-    if (device->sector_size & 0x1ff || device->sectors <= 0) {
-        WARN(device, "warning: unexpected device characteristics: sector "
-                "size=%d, sectors=%llu\n", device->sector_size,
-				device->sectors);
+    if (device->sector_size & 0x1ff) {
+        WARN(device, "warning: unexpected sector size=%d, "
+                ", not a multiple on 512\n", device->sector_size);
     }
 
     /*
