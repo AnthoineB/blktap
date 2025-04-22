@@ -453,7 +453,6 @@ ssize_t qemu_write_full(int fd, const void *buf, size_t count)
     return total;
 }
 
-#if 0
 /*
  * Opens a socket with FD_CLOEXEC set
  */
@@ -496,6 +495,7 @@ int qemu_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
     return ret;
 }
 
+#if 0
 ssize_t qemu_send_full(int s, const void *buf, size_t count)
 {
     ssize_t ret = 0;

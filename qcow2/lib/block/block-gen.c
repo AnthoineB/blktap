@@ -2591,7 +2591,6 @@ int bdrv_common_block_status_above(BlockDriverState *bs, BlockDriverState *base,
 }
 
 
-#if 0
 /*
  * Wrappers for nbd_co_do_establish_connection
  */
@@ -2637,4 +2636,3 @@ int nbd_do_establish_connection(BlockDriverState *bs, bool blocking, Error **err
         return s.ret;
     }
 }
-#endif
