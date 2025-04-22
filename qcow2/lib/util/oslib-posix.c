@@ -215,6 +215,7 @@ void qemu_anon_ram_free(void *ptr, size_t size)
     trace_qemu_anon_ram_free(ptr, size);
     qemu_ram_munmap(-1, ptr, size);
 }
+#endif
 
 void qemu_socket_set_block(int fd)
 {
@@ -254,6 +255,7 @@ void qemu_set_cloexec(int fd)
     assert(f != -1);
 }
 
+#if 0
 int qemu_socketpair(int domain, int type, int protocol, int sv[2])
 {
     int ret;
