@@ -1092,10 +1092,13 @@ tapdisk_vbd_resume(td_vbd_t *vbd, const char *name)
 					strerror(-err));
 			goto resume_failed;
 		}
-		if (vbd->disk_info.size != disk_info.size
-				|| vbd->disk_info.sector_size != disk_info.sector_size
+		if (vbd->disk_info.size != disk_info.size) {
+                        INFO("VBD Resize: new size %lu\n", disk_info.size);
+                        vbd->disk_info.size = disk_info.size;
+                }
+		if (vbd->disk_info.sector_size != disk_info.sector_size
 				|| vbd->disk_info.info != disk_info.info) {
-			EPRINTF("VBD %d cannot change disk info\n", vbd->uuid);
+			EPRINTF("VBD %d cannot change disk info or sector size\n", vbd->uuid);
 			err = -EMEDIUMTYPE;
 			goto resume_failed;
 		}
