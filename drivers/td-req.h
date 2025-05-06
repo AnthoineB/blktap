@@ -40,6 +40,11 @@
 
 #define TD_REQ_BUFFER_SIZE (BLKIF_MAX_BUFFER_SEGMENTS_PER_REQUEST << PAGE_SHIFT)
 
+enum gntop {
+    GRANT_COPY,
+    GRANT_MAP,
+};
+
 /**
  * Representation of the intermediate request used to retrieve a request from
  * the shared ring and handle it over to the main tapdisk request processing
@@ -85,10 +90,12 @@ struct td_xenblkif_req {
     grant_ref_t gref[BLKIF_MAX_BUFFER_SEGMENTS_PER_REQUEST];
     int prot;
 
+    enum gntop gntop;
     union {
 	struct gntdev_grant_copy_segment
 		gcopy_segs[BLKIF_MAX_SEGMENTS_PER_REQUEST];
-        struct persistent_gnt *pgrefs[BLKIF_MAX_SEGMENTS_PER_REQUEST];
+
+	struct persistent_gnt *pgrefs[BLKIF_MAX_SEGMENTS_PER_REQUEST];
     };
 };
 

@@ -79,21 +79,19 @@ struct td_xenio_ctx {
     struct list_head entry;
 
     /**
+     * Handle to the grant table driver for grants copy.
+     */
+    int gntdev_fd;
+
+    /**
      * Persistent grants feature availability. Select the field in the union below.
      */
     bool persistent_grants;
 
-    union {
-        /**
-         * Handle to the grant table driver for grants copy.
-         */
-        int gntdev_fd;
-
-        /**
-         * Handle to the grant table driver for persistant grants.
-         */
-        xengnttab_handle *gntdev_xgt;
-    };
+    /**
+     * Handle to the grant table driver for persistant grants.
+     */
+    xengnttab_handle *gntdev_xgt;
 };
 
 /**

@@ -422,14 +422,14 @@ tapdisk_xenio_ctx_open(const char *pool, bool persistent)
     ctx->persistent_grants = true /*persistent*/;
     list_add(&ctx->entry, &_td_xenio_ctxs);
 
-    if (!ctx->persistent_grants) {
-        ctx->gntdev_fd = open("/dev/xen/gntdev", O_NONBLOCK);
-        if (ctx->gntdev_fd == -1) {
-            err = -errno;
-            ERROR("failed to open the grant device: %s\n", strerror(-err));
-            goto fail;
-        }
-    } else {
+    ctx->gntdev_fd = open("/dev/xen/gntdev", O_NONBLOCK);
+    if (ctx->gntdev_fd == -1) {
+        err = -errno;
+        ERROR("failed to open the grant device: %s\n", strerror(-err));
+        goto fail;
+    }
+
+    if (ctx->persistent_grants) {
         ctx->gntdev_xgt = xengnttab_open(NULL, 0);
         if (!ctx->gntdev_xgt) {
             err = -errno;

@@ -214,6 +214,7 @@ struct td_xenblkif {
     /* Used by the kworker that offload work from the persistent purge. */
     struct list_head        persistent_purge_list;
     //struct work_struct      persistent_purge_work;
+    bool                    overflow_max_grants;
 };
 
 #define RING_DEBUG(blkif, fmt, args...)                                     \
