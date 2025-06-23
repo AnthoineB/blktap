@@ -521,12 +521,14 @@ td_xenblkif_bufcache_free(struct td_xenblkif * const blkif)
 static void
 td_xenblkif_free_pgnt_caches(struct td_xenblkif * const blkif)
 {
+    pthread_mutex_lock(&blkif->mutex);
     /* Free all persistent grant pages */
     if (!RB_EMPTY_ROOT(&blkif->persistent_gnts))
         free_persistent_gnts(blkif);
 
     ASSERT(!RB_EMPTY_ROOT(&blkif->persistent_gnts));
     blkif->persistent_gnt_c = 0;
+    pthread_mutex_unlock(&blkif->mutex);
 
 #if 0
     /* Since we are shutting down remove all pages from the buffer */
@@ -992,6 +994,18 @@ guest_map(struct td_xenblkif * const blkif,
         req->pgrefs[i] = pgref;
     }
 
+    if (gref_to_map &&
+            blkif->persistent_gnt_c >= xen_blkif_max_pgrants) {
+        /* No space left for new persistent grants.
+         * We fallback to copy */
+        for (i = 0; i < req->msg.nr_segments; i++) {
+            if (req->pgrefs[i] != 0) {
+                put_persistent_gnt(blkif, req->pgrefs[i]);
+            }
+        }
+        return -ENOSPC;
+    }
+
     if (gref_to_map) {
         vaddr = xengnttab_map_domain_grant_refs(blkif->ctx->gntdev_xgt,
                                               gref_to_map,
@@ -1155,12 +1169,16 @@ out:
 static int
 guest_copy(struct td_xenblkif * const blkif,
         struct td_xenblkif_req * const req) {
-    if (blkif->ctx->persistent_grants &&
-            blkif->persistent_gnt_c < xen_blkif_max_pgrants) {
-        return guest_map(blkif, req);
-    } else {
-        return guest_copy2(blkif, req);
+    int err = EINVAL;
+
+    if (blkif->ctx->persistent_grants) {
+        err =  guest_map(blkif, req);
     }
+
+    if (err == 0)
+        return 0;
+    else
+        return guest_copy2(blkif, req);
 }
 
 /**
