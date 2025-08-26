@@ -193,9 +193,16 @@ static int
 lvm_parse_lv_devices(struct vg *vg, struct lv_segment *seg, char *devices)
 {
 	int i;
+	unsigned long len;
 	uint64_t start, pe_start;
 
-	for (i = 0; i < strlen(devices); i++)
+	len = strlen(devices);
+	if (len > 1023) {
+		EPRINTF("invalid devices string (greater than 1023).\n");
+		return -EINVAL;
+	}
+
+	for (i = 0; i < (int)len; i++)
 		if (strchr(",()", devices[i]))
 			devices[i] = ' ';
 
@@ -204,14 +211,15 @@ lvm_parse_lv_devices(struct vg *vg, struct lv_segment *seg, char *devices)
 		return -EINVAL;
 	}
 
-	pe_start = -1;
+#define INVALID_ADDR ((uint64_t) -1)
+	pe_start = INVALID_ADDR;
 	for (i = 0; i < vg->pv_cnt; i++)
 		if (!strcmp(vg->pvs[i].name, seg->device)) {
 			pe_start = vg->pvs[i].start;
 			break;
 		}
 
-	if (pe_start == -1) {
+	if (pe_start == INVALID_ADDR) {
 		EPRINTF("invalid pe_start value, device %s not found?\n",
 			seg->device);
 		EPRINTF("PVs known to VG %s, count %d -\n", vg->name, vg->pv_cnt);
