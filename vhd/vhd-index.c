@@ -226,7 +226,7 @@ vhd_index_add_bat_entry(vhdi_name_t *name, vhdi_context_t *vhdi,
 			continue;
 		}
 
-		if (!vhd_bitmap_test(vhd, map, i))
+		if (!vhd_bitmap_test(map, i))
 			continue;
 
 		err = vhd_offset(vhd, (uint64_t)block * vhd->spb + i, &off);
@@ -298,7 +298,7 @@ vhd_index_clone_bat_entry(vhdi_name_t *name, vhdi_context_t *vhdi,
 		goto out;
 
 	for (i = 0; i < vhd->spb; i++) {
-		if (!vhd_bitmap_test(vhd, map, i))
+		if (!vhd_bitmap_test(map, i))
 			continue;
 
 		err = vhd_offset(vhd, (uint64_t)block * vhd->spb + i, &off);
@@ -359,7 +359,7 @@ vhd_index_update_bat_entry(vhdi_name_t *name, vhdi_context_t *vhdi,
 		goto out;
 
 	for (i = 0; i < vhd->spb; i++) {
-		if (!vhd_bitmap_test(vhd, map, i))
+		if (!vhd_bitmap_test(map, i))
 			continue;
 
 		err = vhd_offset(vhd, (uint64_t)block * vhd->spb + i, &off);
@@ -861,8 +861,7 @@ vhd_index_print_vhd_summary(vhdi_name_t *name)
 static int
 vhd_index_print_vhd_block_summary(vhdi_name_t *name, uint32_t block)
 {
-	int err;
-	uint32_t i;
+	int err, i;
 	uint32_t off;
 	vhdi_bat_t bat;
 	vhdi_context_t vhdi;
