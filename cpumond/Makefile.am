@@ -1,6 +1,7 @@
 
 AM_CFLAGS  = -Wall
 AM_CFLAGS += -Werror
+AM_CFLAGS += -Wextra
 AM_CFLAGS += $(if $(GCOV),-fprofile-dir=/tmp/coverage/blktap/cpumond -fprofile-arcs -ftest-coverage)
 
 AM_CPPFLAGS  = -D_GNU_SOURCE

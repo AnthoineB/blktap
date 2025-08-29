@@ -201,7 +201,7 @@ out:
     return err;
 }
 
-int main(int argc, char **argv){
+int main(){
     cpumond_entry_t *cpumond_entry;
     int err = EXIT_SUCCESS;
 
