@@ -80,7 +80,7 @@ vhd_journal_position(vhd_journal_t *j)
 static inline int
 vhd_journal_read(vhd_journal_t *j, void *buf, size_t size)
 {
-	ssize_t ret;
+	size_t ret;
 
 	errno = 0;
 
@@ -94,7 +94,7 @@ vhd_journal_read(vhd_journal_t *j, void *buf, size_t size)
 static inline int
 vhd_journal_write(vhd_journal_t *j, void *buf, size_t size)
 {
-	ssize_t ret;
+	size_t ret;
 
 	errno = 0;
 
@@ -277,7 +277,7 @@ vhd_journal_entry_out(vhd_journal_entry_t *entry)
 static uint32_t
 vhd_journal_checksum_entry(vhd_journal_entry_t *entry, char *buf, size_t size)
 {
-	int i;
+	unsigned long i;
 	unsigned char *blob;
 	uint32_t checksum, tmp;
 
@@ -1066,7 +1066,7 @@ restore:
 		goto out;
 	}
 
-	if (j->header.journal_data_offset != off) {
+	if (j->header.journal_data_offset != (uint64_t)off) {
 		err = -EINVAL;
 		goto out;
 	}
@@ -1452,7 +1452,8 @@ vhd_journal_commit(vhd_journal_t *j)
 int
 vhd_journal_revert(vhd_journal_t *j)
 {
-	int i, err;
+	unsigned int i;
+        int err;
 	char *file;
 	void *buf;
 	vhd_context_t *vhd;

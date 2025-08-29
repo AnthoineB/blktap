@@ -119,11 +119,11 @@ vhd_util_coalesce_block(vhd_context_t *vhd, vhd_context_t *parent,
 	}
 
 	for (i = 0; i < vhd->spb; i++) {
-		if (!vhd_bitmap_test(vhd, map, i))
+		if (!vhd_bitmap_test(map, i))
 			continue;
 
 		for (secs = 0; i + secs < vhd->spb; secs++)
-			if (!vhd_bitmap_test(vhd, map, i + secs))
+			if (!vhd_bitmap_test(map, i + secs))
 				break;
 
 		err = vhd_read_at(vhd, block, i, vhd_sectors_to_bytes(secs),

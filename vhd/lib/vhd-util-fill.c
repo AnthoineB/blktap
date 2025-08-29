@@ -52,7 +52,7 @@ vhd_init_bitmap(vhd_context_t *ctx, const uint32_t block)
 {
 	int err;
 	void *buf;
-	int i;
+	uint32_t i;
 	int size;
 
 	assert(ctx);
@@ -64,7 +64,7 @@ vhd_init_bitmap(vhd_context_t *ctx, const uint32_t block)
 		return err;
 
 	for (i = 0; i < ctx->spb; i++)
-		vhd_bitmap_set(ctx, buf, i);
+		vhd_bitmap_set(buf, i);
 
 	err = vhd_write_bitmap(ctx, block, buf);
 	free(buf);
@@ -107,7 +107,7 @@ vhd_io_allocate_blocks_fast(vhd_context_t *ctx, const uint32_t from_extent,
 {
 	off64_t max;
 	int err, gap;
-	int i = 0;
+	uint32_t i = 0;
 	int spp = getpagesize() >> VHD_SECTOR_SHIFT;
 
 	assert(ctx);

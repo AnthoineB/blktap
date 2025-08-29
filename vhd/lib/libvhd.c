@@ -345,7 +345,7 @@ vhd_batmap_header_out(vhd_batmap_t *batmap)
 void
 vhd_bat_in(vhd_bat_t *bat)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < bat->entries; i++)
 		BE32_IN(&bat->bat[i]);
@@ -354,7 +354,7 @@ vhd_bat_in(vhd_bat_t *bat)
 void
 vhd_bat_out(vhd_bat_t *bat)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < bat->entries; i++)
 		BE32_OUT(&bat->bat[i]);
@@ -363,7 +363,7 @@ vhd_bat_out(vhd_bat_t *bat)
 uint32_t
 vhd_checksum_footer(vhd_footer_t *footer)
 {
-	int i;
+	unsigned long i;
 	unsigned char *blob;
 	uint32_t checksum, tmp;
 
@@ -436,7 +436,7 @@ vhd_validate_footer(vhd_footer_t *footer)
 uint32_t
 vhd_checksum_header(vhd_header_t *header)
 {
-	int i;
+	unsigned long i;
 	unsigned char *blob;
 	uint32_t checksum, tmp;
 
@@ -461,7 +461,7 @@ isPowerOf2(uint32_t value)
 int
 vhd_validate_header(vhd_header_t *header)
 {
-	int i, n;
+	unsigned long i, n;
 	uint32_t checksum;
 
 	if (memcmp(header->cookie, DD_COOKIE, 8) != 0) {
@@ -518,7 +518,7 @@ vhd_validate_bat(vhd_bat_t *bat)
 uint32_t
 vhd_checksum_batmap(vhd_context_t *ctx, vhd_batmap_t *batmap)
 {
-	int i;
+	size_t i;
 	char *blob;
 	uint32_t checksum;
 	size_t map_size;
@@ -722,19 +722,19 @@ vhd_batmap_clear(vhd_context_t *ctx, vhd_batmap_t *batmap, uint32_t block)
 }
 
 int
-vhd_bitmap_test(vhd_context_t *ctx, char *map, uint32_t block)
+vhd_bitmap_test(char *map, uint32_t block)
 {
 	return test_bit(map, block);
 }
 
 void
-vhd_bitmap_set(vhd_context_t *ctx, char *map, uint32_t block)
+vhd_bitmap_set(char *map, uint32_t block)
 {
 	return set_bit(map, block);
 }
 
 void
-vhd_bitmap_clear(vhd_context_t *ctx, char *map, uint32_t block)
+vhd_bitmap_clear(char *map, uint32_t block)
 {
 	return clear_bit(map, block);
 }
@@ -805,7 +805,8 @@ vhd_end_of_headers(vhd_context_t *ctx, off64_t *end)
 int
 vhd_end_of_data(vhd_context_t *ctx, off64_t *end)
 {
-	int i, err;
+	unsigned int i;
+        int err;
 	off64_t max;
 	uint64_t blk;
 
@@ -837,7 +838,7 @@ vhd_end_of_data(vhd_context_t *ctx, off64_t *end)
 
 		if (blk != DD_BLK_UNUSED) {
 			blk += ctx->spb + ctx->bm_secs;
-			max  = MAX(blk, max);
+			max  = MAX((off64_t)blk, max);
 		}
 	}
 
@@ -845,7 +846,7 @@ vhd_end_of_data(vhd_context_t *ctx, off64_t *end)
 	return 0;
 }
 
-uint32_t inline
+inline uint32_t
 vhd_time(time_t time)
 {
 	return (uint32_t)(time - VHD_EPOCH_START);
@@ -1862,7 +1863,8 @@ vhd_parent_locator_write_at(vhd_context_t *ctx,
 			    size_t max_bytes, vhd_parent_locator_t *loc)
 {
 	struct stat stats;
-	int err, len, size;
+	int err, len;
+        size_t size;
 	char *absolute_path, *relative_path, *encoded;
 	char __parent[PATH_MAX];
 	void *block;
@@ -2515,7 +2517,7 @@ vhd_atomic_pio(ssize_t (*f) (int, void *, size_t, off_t),
 			if (fstat(fd, &st) == -1)
 				return -1;
 
-		if (off + pos + res == st.st_size)
+		if (off + pos + res == (uint64_t)st.st_size)
 			return pos + res;
 
 		pos += (res & ~(VHD_SECTOR_SIZE - 1));
@@ -2590,7 +2592,7 @@ vhd_write(vhd_context_t *ctx, void *buf, size_t size)
 	if (ret == size)
 		return 0;
 
-	VHDLOG("%s: write of %zu returned %zd, errno: %d\n",
+	VHDLOG("%s: write of %zu returned %zu, errno: %d\n",
 	       ctx->file, size, ret, -errno);
 
 	return (errno ? -errno : -EIO);
@@ -2599,7 +2601,7 @@ vhd_write(vhd_context_t *ctx, void *buf, size_t size)
 static int
 vhd_pread(vhd_context_t *ctx, void *buf, size_t size, off64_t offset)
 {
-	ssize_t ret;
+	size_t ret;
 
 	errno = 0;
 
@@ -2607,7 +2609,7 @@ vhd_pread(vhd_context_t *ctx, void *buf, size_t size, off64_t offset)
 	if (ret == size)
 		return 0;
 
-	VHDLOG("%s: pread of %zu returned %zd, errno: %d\n",
+	VHDLOG("%s: pread of %zu returned %zu, errno: %d\n",
 	       ctx->file, size, ret, -errno);
 
 	return (errno ? -errno : -EIO);
@@ -2616,7 +2618,7 @@ vhd_pread(vhd_context_t *ctx, void *buf, size_t size, off64_t offset)
 static int
 vhd_pwrite(vhd_context_t *ctx, void *buf, size_t size, off64_t offset)
 {
-	ssize_t ret;
+	size_t ret;
 
 	errno = 0;
 
@@ -2624,7 +2626,7 @@ vhd_pwrite(vhd_context_t *ctx, void *buf, size_t size, off64_t offset)
 	if (ret == size)
 		return 0;
 
-	VHDLOG("%s: pwrite of %zu returned %zd, errno: %d\n",
+	VHDLOG("%s: pwrite of %zu returned %zu, errno: %d\n",
 	       ctx->file, size, ret, -errno);
 
 	return (errno ? -errno : -EIO);
@@ -3182,7 +3184,8 @@ vhd_create_batmap(vhd_context_t *ctx)
 static int
 vhd_create_bat(vhd_context_t *ctx)
 {
-	int i, err;
+	unsigned int i;
+        int err;
 	size_t size;
 	void *bat;
 
@@ -3214,7 +3217,8 @@ static int
 vhd_initialize_fixed_disk(vhd_context_t *ctx)
 {
 	char *buf;
-	int i, err;
+	unsigned int i;
+        int err;
 
 	if (ctx->footer.type != HD_TYPE_FIXED)
 		return -EINVAL;
@@ -3473,7 +3477,7 @@ __vhd_io_dynamic_copy_data(vhd_context_t *ctx,
 		if (test_bit(map, map_off + i))
 			goto next;
 
-		if (ctx && !vhd_bitmap_test(ctx, bitmap, bitmap_off + i))
+		if (ctx && !vhd_bitmap_test(bitmap, bitmap_off + i))
 			goto next;
 
 		memcpy(dst, src, VHD_SECTOR_SIZE);
@@ -3577,7 +3581,7 @@ __raw_read_link(char *filename,
 		goto close;
 
 	err = read(fd, data, size);
-	if (err != size) {
+	if ((uint64_t)err != size) {
 		VHDLOG("%s: reading of %"PRIu64" returned %d, errno: %d\n",
 				filename, size, err, -errno);
 		free(data);
@@ -3773,8 +3777,8 @@ __vhd_io_dynamic_write(vhd_context_t *ctx,
 {
 	char *map;
 	off64_t off;
-	uint32_t blk, sec;
-	int i, err, cnt, ret;
+	uint32_t blk, sec, i, cnt;
+        int err, ret;
 
 	if (vhd_sectors_to_bytes(sector + secs) > ctx->footer.curr_size)
 		return -ERANGE;
@@ -3833,7 +3837,7 @@ __vhd_io_dynamic_write(vhd_context_t *ctx,
 			return err;
 
 		for (i = 0; i < cnt; i++)
-			vhd_bitmap_set(ctx, map, sec + i);
+			vhd_bitmap_set(map, sec + i);
 
 		err = vhd_write_bitmap(ctx, blk, map);
 		if (err)
@@ -3841,7 +3845,7 @@ __vhd_io_dynamic_write(vhd_context_t *ctx,
 
 		if (vhd_has_batmap(ctx)) {
 			for (i = 0; i < ctx->spb; i++)
-				if (!vhd_bitmap_test(ctx, map, i)) {
+				if (!vhd_bitmap_test(map, i)) {
 					free(map);
 					goto next;
 				}
@@ -4084,7 +4088,8 @@ vhd_block_vector_init(vhd_context_t *ctx,
 		      vhd_block_vector_t *vec, uint32_t block, char *map,
 		      char *buf, uint64_t blk_start, uint64_t blk_end)
 {
-	int err, sec;
+	int err;
+        unsigned int sec;
 	char *bitmap;
 	uint32_t first_sec, last_sec;
 
@@ -4115,7 +4120,7 @@ vhd_block_vector_init(vhd_context_t *ctx,
 		if (map && !test_bit(map, sec))
 			goto next;
 
-		if (vhd_bitmap_test(ctx, bitmap, sec)) {
+		if (vhd_bitmap_test(bitmap, sec)) {
 			if (vec->entries > 0) {
 				v = vec->array + vec->entries - 1;
 				if (v->off + v->bytes == blk_start) {
@@ -4236,7 +4241,8 @@ __vhd_io_dynamic_read_link_bytes(vhd_context_t *ctx, char *map,
 				 char *buf, size_t size, uint64_t off)
 {
 	char *blkmap;
-	int i, err, map_off;
+	unsigned int i;
+        int err, map_off;
 	off64_t blk_off, blk_size;
 	uint32_t blk, bytes, first_sec, last_sec;
 
@@ -4252,7 +4258,7 @@ __vhd_io_dynamic_read_link_bytes(vhd_context_t *ctx, char *map,
 	do {
 		blk     = off / blk_size;
 		blk_off = off % blk_size;
-		bytes   = MIN(blk_size - blk_off, size);
+		bytes   = MIN(blk_size - blk_off, (off64_t)size);
 
 		first_sec = blk_off >> VHD_SECTOR_SHIFT;
 		last_sec  = secs_round_up_no_zero(blk_off + bytes);
@@ -4311,7 +4317,8 @@ __raw_read_link_bytes(const char *filename,
 	for (i = first_sec; i < last_sec; i++) {
 		if (!test_bit(map, i - first_sec)) {
 			uint32_t secs = 0;
-			uint64_t coff, csize;
+			uint64_t coff;
+                        ssize_t csize;
 
 			while (i + secs < last_sec &&
 			       !test_bit(map, i + secs - first_sec))
@@ -4466,7 +4473,8 @@ __vhd_io_dynamic_write_bytes_aligned(vhd_context_t *ctx,
 				     char *buf, size_t size, uint64_t off)
 {
 	char *map;
-	int i, err, ret;
+	unsigned int i;
+        int err, ret;
 	uint64_t blk_off, blk_size, blk_start;
 	uint32_t blk, bytes, first_sec, last_sec;
 
@@ -4525,7 +4533,7 @@ __vhd_io_dynamic_write_bytes_aligned(vhd_context_t *ctx,
 		}
 
 		for (i = first_sec; i < last_sec; i++)
-			vhd_bitmap_set(ctx, map, i);
+			vhd_bitmap_set(map, i);
 
 		err = vhd_write_bitmap(ctx, blk, map);
 		if (err)
@@ -4533,7 +4541,7 @@ __vhd_io_dynamic_write_bytes_aligned(vhd_context_t *ctx,
 
 		if (vhd_has_batmap(ctx)) {
 			for (i = 0; i < ctx->spb; i++)
-				if (!vhd_bitmap_test(ctx, map, i)) {
+				if (!vhd_bitmap_test(map, i)) {
 					free(map);
 					map = NULL;
 					goto next;

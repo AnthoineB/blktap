@@ -91,7 +91,7 @@ static int
 vhd_encrypt_copy_block(vhd_context_t *source_vhd, vhd_context_t *target_vhd, uint64_t block)
 {
 	int err;
-	int i;
+	unsigned int i;
 	void *buf;
 	char *map;
 	uint64_t sec;
@@ -118,7 +118,7 @@ vhd_encrypt_copy_block(vhd_context_t *source_vhd, vhd_context_t *target_vhd, uin
 	if (target_vhd->xts_tfm) {
 		/* If the target is encryted, encrypt each block with data */
 		for (i = 0; i < source_vhd->spb; i++) {
-			if (vhd_bitmap_test(source_vhd, map, i)) {
+			if (vhd_bitmap_test(map, i)) {
 				void * blk_ptr = buf + i * VHD_SECTOR_SIZE;
 				pvhd_crypto_encrypt_block(target_vhd, sec + i, blk_ptr, blk_ptr, VHD_SECTOR_SIZE);
 			}
@@ -141,7 +141,7 @@ static int
 copy_vhd(const char *name, const char *new_name, int key_size, const uint8_t *encryption_key)
 {
 	int err = 0;
-	int i;
+	unsigned int i;
 
 	vhd_context_t source_vhd, target_vhd;
 	struct vhd_keyhash keyhash;

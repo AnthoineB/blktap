@@ -333,9 +333,9 @@ int vhd_get_phys_size(vhd_context_t *, off64_t *);
 int vhd_set_phys_size(vhd_context_t *, off64_t);
 int vhd_set_virt_size(vhd_context_t *, uint64_t);
 
-int vhd_bitmap_test(vhd_context_t *, char *, uint32_t);
-void vhd_bitmap_set(vhd_context_t *, char *, uint32_t);
-void vhd_bitmap_clear(vhd_context_t *, char *, uint32_t);
+int vhd_bitmap_test(char *, uint32_t);
+void vhd_bitmap_set(char *, uint32_t);
+void vhd_bitmap_clear(char *, uint32_t);
 
 int vhd_initialize_header_parent_name(vhd_context_t *, const char *);
 int vhd_write_parent_locators(vhd_context_t *, const char *);

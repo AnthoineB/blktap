@@ -225,7 +225,7 @@ vhd_util_set_hex(uint8_t *dst, size_t size, const char *hex)
 	err = 0;
 
 	n = strlen(hex);
-	if (n / 2 != size) {
+	if (n / 2ul != size) {
 		ERR("invalid size for hex string\n");
 		err = -EINVAL;
 		goto out;
@@ -455,7 +455,7 @@ vhd_util_key(int argc, char **argv)
 		goto usage;
 
 	if (calc) {
-		int i;
+		unsigned long i;
 		struct vhd_keyhash keyhash;
 		err = vhd_util_set_keyhash(NULL, &keyhash, keypath, NULL, nonce);
 		if (err) {
@@ -516,7 +516,7 @@ vhd_util_key(int argc, char **argv)
 			if (keyhash.cookie != 1)
 				printf("none\n");
 			else {
-				int i;
+				unsigned long i;
 
 				for (i = 0; i < sizeof(keyhash.nonce); i++)
 					printf("%02x", keyhash.nonce[i]);

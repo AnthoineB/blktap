@@ -258,7 +258,7 @@ vhd_print_keyhash(vhd_context_t *vhd)
 	if (ret)
 		printf("error reading keyhash: %d\n", ret);
 	else if (keyhash.cookie == 1) {
-		int i;
+		unsigned long i;
 
 		printf("Batmap keyhash nonce: ");
 		for (i = 0; i < sizeof(keyhash.nonce); i++)
@@ -396,9 +396,9 @@ vhd_print_logical_to_physical(vhd_context_t *vhd,
 }
 
 static int
-vhd_print_bat(vhd_context_t *vhd, uint64_t block, int count, int hex)
+vhd_print_bat(vhd_context_t *vhd, uint64_t block, uint64_t count, int hex)
 {
-	int i;
+	uint32_t i;
 	uint64_t cur, offset;
 
 	if (check_block_range(vhd, block + count, hex))
@@ -526,7 +526,7 @@ vhd_test_bitmap(vhd_context_t *vhd, uint64_t sector, int count, int hex)
 		if (vhd->bat.bat[blk] == DD_BLK_UNUSED)
 			bit = 0;
 		else
-			bit = vhd_bitmap_test(vhd, buf, sec);
+			bit = vhd_bitmap_test(buf, sec);
 
 		printf("block %s: ", conv(hex, blk));
 		printf("sec: %s: %d\n", conv(hex, sec), bit);
@@ -578,7 +578,7 @@ vhd_print_bitmap_extents(vhd_context_t *vhd, uint64_t sector, int count,
 		if (vhd->bat.bat[blk] == DD_BLK_UNUSED)
 			bit = 0;
 		else
-			bit = vhd_bitmap_test(vhd, buf, sec);
+			bit = vhd_bitmap_test(buf, sec);
 
 		if (bit) {
 			if (r == 0)
@@ -617,8 +617,7 @@ vhd_print_batmap(vhd_context_t *vhd)
 
 	size = vhd_sectors_to_bytes(vhd->batmap.header.batmap_size);
 	gcc = write(STDOUT_FILENO, vhd->batmap.map, size);
-	if (gcc)
-		;
+	if (gcc) { }
 
 	return 0;
 }
@@ -673,8 +672,7 @@ vhd_print_data(vhd_context_t *vhd, uint64_t block, int count, int hex)
 			break;
 
 		gcc = write(STDOUT_FILENO, buf, vhd->header.block_size);
-		if (gcc)
-			;
+		if (gcc) { }
 		free(buf);
 	}
 
@@ -682,7 +680,7 @@ vhd_print_data(vhd_context_t *vhd, uint64_t block, int count, int hex)
 }
 
 static int
-vhd_read_data(vhd_context_t *vhd, uint64_t sec, int count, int hex)
+vhd_read_data(vhd_context_t *vhd, uint64_t sec, int count)
 {
 	void *buf;
 	uint64_t cur;
@@ -706,8 +704,7 @@ vhd_read_data(vhd_context_t *vhd, uint64_t sec, int count, int hex)
 			break;
 
 		gcc = write(STDOUT_FILENO, buf, vhd_sectors_to_bytes(secs));
-		if (gcc)
-			;
+		if (gcc) { }
 
 		cur   += secs;
 		count -= secs;
@@ -718,11 +715,11 @@ vhd_read_data(vhd_context_t *vhd, uint64_t sec, int count, int hex)
 }
 
 static int
-vhd_read_bytes(vhd_context_t *vhd, uint64_t byte, int count, int hex)
+vhd_read_bytes(vhd_context_t *vhd, uint64_t byte, uint64_t count)
 {
 	void *buf;
-	uint64_t cur;
-	int err, max, bytes;
+	uint64_t cur, max;
+	int err, bytes;
 
 	if (byte + count > vhd->footer.curr_size)
 		return -ERANGE;
@@ -770,16 +767,16 @@ vhd_util_read(int argc, char **argv)
 	headers = 0;
 	bat_str = 0;
 	count   = 1;
-	bat     = -1;
-	bitmap  = -1;
-	tbitmap = -1;
-	ebitmap = -1;
-	batmap  = -1;
-	tbatmap = -1;
-	data    = -1;
-	lsec    = -1;
-	read    = -1;
-	bread   = -1;
+	bat     = UINT64_MAX;
+	bitmap  = UINT64_MAX;
+	tbitmap = UINT64_MAX;
+	ebitmap = UINT64_MAX;
+	batmap  = UINT64_MAX;
+	tbatmap = UINT64_MAX;
+	data    = UINT64_MAX;
+	lsec    = UINT64_MAX;
+	read    = UINT64_MAX;
+	bread   = UINT64_MAX;
 	name    = NULL;
 
 	if (!argc || !argv)
@@ -864,13 +861,13 @@ vhd_util_read(int argc, char **argv)
 	if (headers)
 		vhd_print_headers(&vhd, hex);
 
-	if (lsec != -1) {
+	if (lsec != UINT64_MAX) {
 		err = vhd_print_logical_to_physical(&vhd, lsec, count, hex);
 		if (err)
 			goto out;
 	}
 
-	if (bat != -1) {
+	if (bat != UINT64_MAX) {
 		err = vhd_print_bat(&vhd, bat, count, hex);
 		if (err)
 			goto out;
@@ -882,50 +879,50 @@ vhd_util_read(int argc, char **argv)
 			goto out;
 	}
 
-	if (bitmap != -1) {
+	if (bitmap != UINT64_MAX) {
 		err = vhd_print_bitmap(&vhd, bitmap, count, hex);
 		if (err)
 			goto out;
 	}
 
-	if (tbitmap != -1) {
+	if (tbitmap != UINT64_MAX) {
 		err = vhd_test_bitmap(&vhd, tbitmap, count, hex);
 		if (err)
 			goto out;
 	}
 
-	if (ebitmap != -1) {
+	if (ebitmap != UINT64_MAX) {
 		err = vhd_print_bitmap_extents(&vhd, ebitmap, count, hex);
 		if (err)
 			goto out;
 	}
 
-	if (batmap != -1) {
+	if (batmap != UINT64_MAX) {
 		err = vhd_print_batmap(&vhd);
 		if (err)
 			goto out;
 	}
 
-	if (tbatmap != -1) {
+	if (tbatmap != UINT64_MAX) {
 		err = vhd_test_batmap(&vhd, tbatmap, count, hex);
 		if (err)
 			goto out;
 	}
 
-	if (data != -1) {
+	if (data != UINT64_MAX) {
 		err = vhd_print_data(&vhd, data, count, hex);
 		if (err)
 			goto out;
 	}
 
-	if (read != -1) {
-		err = vhd_read_data(&vhd, read, count, hex);
+	if (read != UINT64_MAX) {
+		err = vhd_read_data(&vhd, read, count);
 		if (err)
 			goto out;
 	}
 
-	if (bread != -1) {
-		err = vhd_read_bytes(&vhd, bread, count, hex);
+	if (bread != UINT64_MAX) {
+		err = vhd_read_bytes(&vhd, bread, count);
 		if (err)
 			goto out;
 	}

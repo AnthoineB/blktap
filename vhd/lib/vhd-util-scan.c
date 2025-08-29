@@ -300,7 +300,7 @@ vhd_util_scan_print_image_indent(struct vhd_image *image, int tab)
 		       "parent=%s%s\n", tab, pad, name, image->capacity,
 		       image->size, image->hidden, parent, pmsg);
 	else {
-		int i;
+		unsigned long i;
 		uint8_t *hash;
 		char *p, str[65];
 
@@ -1113,7 +1113,8 @@ vhd_util_scan_find_file_targets(int cnt, char **names,
 {
 	glob_t g;
 	struct target *targets;
-	int i, globs, err, total;
+	int globs, err;
+        size_t i, total;
 
 	total     = cnt;
 	globs     = 0;

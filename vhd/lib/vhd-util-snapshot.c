@@ -45,7 +45,8 @@
 static int
 vhd_util_find_snapshot_target(const char *name, char **result, int *parent_raw)
 {
-	int i, err;
+	int err;
+        uint32_t i;
 	char *target;
 	vhd_context_t vhd;
 

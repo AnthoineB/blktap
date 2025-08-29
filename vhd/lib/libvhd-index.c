@@ -114,10 +114,10 @@ vhdi_position(vhdi_context_t *ctx)
 static inline int
 vhdi_read(vhdi_context_t *ctx, void *buf, size_t size)
 {
-	int err;
+	ssize_t err;
 
 	err = read(ctx->fd, buf, size);
-	if (err != size)
+	if (err == -1 || (size_t)err != size)
 		return (errno ? -errno : -EIO);
 
 	return 0;
@@ -126,10 +126,10 @@ vhdi_read(vhdi_context_t *ctx, void *buf, size_t size)
 static inline int
 vhdi_write(vhdi_context_t *ctx, void *buf, size_t size)
 {
-	int err;
+	ssize_t err;
 
 	err = write(ctx->fd, buf, size);
-	if (err != size)
+	if (err == -1 || (size_t)err != size)
 		return (errno ? -errno : -EIO);
 
 	return 0;
@@ -446,6 +446,7 @@ vhdi_create(const char *name, uint32_t vhd_block_size)
 {
 	void *buf;
 	int err, fd;
+        ssize_t rsize;
 	size_t size;
 	vhdi_header_t header;
 
@@ -483,8 +484,8 @@ vhdi_create(const char *name, uint32_t vhd_block_size)
 		goto fail;
 	}
 
-	err = write(fd, buf, size);
-	if (err != size) {
+	rsize = write(fd, buf, size);
+	if (rsize == -1 || (size_t)rsize != size) {
 		err = (errno ? -errno : -EIO);
 		goto fail;
 	}
@@ -507,6 +508,7 @@ int
 vhdi_open(vhdi_context_t *ctx, const char *file, int flags)
 {
 	int err, fd;
+	ssize_t rsize;
 	size_t size;
 	char *name;
 	void *buf;
@@ -532,8 +534,8 @@ vhdi_open(vhdi_context_t *ctx, const char *file, int flags)
 		goto fail;
 	}
 
-	err = read(fd, buf, size);
-	if (err != size) {
+	rsize = read(fd, buf, size);
+	if (rsize == -1 || (size_t)err != size) {
 		err = (errno ? -errno : -EIO);
 		goto fail;
 	}
@@ -803,6 +805,7 @@ vhdi_bat_load(const char *name, vhdi_bat_t *bat)
 {
 	char *path;
 	int err, fd;
+	ssize_t rsize;
 	size_t size;
 	uint32_t *table;
 	vhdi_bat_header_t header;
@@ -830,8 +833,8 @@ vhdi_bat_load(const char *name, vhdi_bat_t *bat)
 		goto out;
 	}
 
-	err = read(fd, table, size);
-	if (err != size) {
+	rsize = read(fd, table, size);
+	if (rsize == -1 || (size_t)rsize != size) {
 		err = (errno ? -errno : -EIO);
 		goto out;
 	}
@@ -893,6 +896,7 @@ vhdi_bat_write(const char *name, vhdi_bat_t *bat)
 {
 	int err, fd;
 	size_t size;
+        ssize_t rsize;
 	vhdi_bat_header_t header;
 
 	fd = open(name, O_RDWR | O_LARGEFILE);
@@ -916,8 +920,8 @@ vhdi_bat_write(const char *name, vhdi_bat_t *bat)
 	}
 
 	size = bat->vhd_blocks * sizeof(uint32_t);
-	err = write(fd, bat->table, size);
-	if (err != size) {
+	rsize = write(fd, bat->table, size);
+	if (rsize == -1 || (size_t)rsize != size) {
 		err = (errno ? -errno : -EIO);
 		goto out;
 	}
@@ -973,7 +977,9 @@ vhdi_file_table_load(const char *name, vhdi_file_table_t *table)
 {
 	off64_t off;
 	size_t size;
-	int err, i, fd;
+	ssize_t rsize;
+	int err, fd;
+        unsigned int i;
 	vhdi_file_table_header_t header;
 	vhdi_file_table_entry_t *entries;
 
@@ -1010,8 +1016,8 @@ vhdi_file_table_load(const char *name, vhdi_file_table_t *table)
 		goto out;
 	}
 
-	err = read(fd, entries, size);
-	if (err != size) {
+	rsize = read(fd, entries, size);
+	if (rsize == -1 || (size_t)rsize != size) {
 		err = (errno ? -errno : -EIO);
 		goto out;
 	}
@@ -1149,6 +1155,7 @@ vhdi_file_table_add(const char *name, const char *file, vhdi_file_id_t *_fid)
 {
 	off64_t off;
 	size_t size;
+	ssize_t rsize;
 	vhdi_file_id_t fid;
 	int err, fd, len;
 	vhdi_file_table_entry_t entry;
@@ -1189,8 +1196,8 @@ vhdi_file_table_add(const char *name, const char *file, vhdi_file_id_t *_fid)
 
 	vhdi_file_table_entry_out(&entry);
 
-	err = write(fd, &entry, size);
-	if (err != size) {
+	rsize = write(fd, &entry, size);
+	if (rsize == -1 || (size_t)rsize != size) {
 		err = (errno ? -errno : -EIO);
 		goto out;
 	}

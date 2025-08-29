@@ -159,7 +159,7 @@ static inline char *
 name(const char *path)
 {
 	char *p = strrchr(path, '/');
-	if (p && (p - path) == strlen(path))
+	if (p && (size_t)(p - path) == strlen(path))
 		p = strrchr(--p, '/');
 	return (char *)(p ? ++p : path);
 }
@@ -227,7 +227,7 @@ vhd_util_check_stats_print(struct vhd_util_check_ctx *ctx)
 static int
 vhd_util_check_zeros(void *buf, size_t size)
 {
-	int i;
+	size_t i;
 	char *p;
 
 	p = buf;
@@ -320,7 +320,8 @@ static char *
 vhd_util_check_validate_header(int fd, vhd_header_t *header)
 {
 	off64_t eof;
-	int i, cnt, size;
+	int cnt, size;
+        unsigned long i;
 	uint32_t checksum;
 
 	size = sizeof(header->cookie);
@@ -518,6 +519,7 @@ vhd_util_check_footer(struct vhd_util_check_ctx *ctx,
 {
 	int err;
 	size_t size;
+	ssize_t rsize;
 	char *msg;
 	void *buf;
 	off64_t eof, off;
@@ -549,8 +551,8 @@ vhd_util_check_footer(struct vhd_util_check_ctx *ctx,
 		goto out;
 	}
 
-	err = read(fd, buf, 512);
-	if (err != size) {
+	rsize = read(fd, buf, 512);
+	if (rsize == -1 || (size_t)rsize != size) {
 		err = (errno ? -errno : -EIO);
 		printf("error reading primary footer: %d\n", err);
 		goto out;
@@ -587,8 +589,8 @@ check_backup:
 	size = 512;
 	memset(buf, 0, sizeof(primary));
 
-	err = read(fd, buf, size);
-	if (err != size) {
+	rsize = read(fd, buf, size);
+	if (rsize == -1 || (size_t)rsize != size) {
 		err = (errno ? -errno : -EIO);
 		printf("error reading backup footer: %d\n", err);
 		goto out;
@@ -703,7 +705,8 @@ static int
 vhd_util_check_bitmap(struct vhd_util_check_ctx *ctx,
 		      vhd_context_t *vhd, uint32_t block)
 {
-	int err, i;
+	int err;
+        uint32_t i;
 	uint64_t sector;
 	char *bitmap, *data;
 
@@ -727,7 +730,7 @@ vhd_util_check_bitmap(struct vhd_util_check_ctx *ctx,
 
 	for (i = 0; i < vhd->spb; i++) {
 		if (ctx->opts.collect_stats &&
-		    vhd_bitmap_test(vhd, bitmap, i)) {
+		    vhd_bitmap_test(bitmap, i)) {
 			ctx_cur_stats(ctx)->secs_written++;
 			set_bit_u64(ctx_cur_stats(ctx)->bitmap, sector + i);
 		}
@@ -735,7 +738,7 @@ vhd_util_check_bitmap(struct vhd_util_check_ctx *ctx,
 		if (ctx->opts.check_data) {
 			char *buf = data + (i << VHD_SECTOR_SHIFT);
 			int set   = vhd_util_check_zeros(buf, VHD_SECTOR_SIZE);
-			int map   = vhd_bitmap_test(vhd, bitmap, i);
+			int map   = vhd_bitmap_test(bitmap, i);
 
 			if (set && !map) {
 				printf("sector 0x%x of block 0x%x has data "
@@ -756,7 +759,8 @@ vhd_util_check_bat(struct vhd_util_check_ctx *ctx, vhd_context_t *vhd)
 {
 	off64_t eof, eoh;
 	uint64_t vhd_blks;
-	int i, j, err, block_size;
+	int err, block_size;
+        uint32_t i, j;
 
 	if (ctx->opts.collect_stats) {
 		err = vhd_util_check_stats_alloc_one(ctx, vhd);
@@ -878,7 +882,8 @@ static int
 vhd_util_check_batmap(vhd_context_t *vhd)
 {
 	char *msg;
-	int i, err;
+	int err;
+        uint64_t i;
 
 	err = vhd_get_bat(vhd);
 	if (err) {
@@ -903,7 +908,7 @@ vhd_util_check_batmap(vhd_context_t *vhd)
 			continue;
 
 		if (vhd->bat.bat[i] == DD_BLK_UNUSED) {
-			printf("batmap shows unallocated block %d full\n", i);
+			printf("batmap shows unallocated block %ld full\n", i);
 			return -EINVAL;
 		}
 	}

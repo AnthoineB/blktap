@@ -141,7 +141,8 @@ vhd_fixed_grow(vhd_journal_t *journal, uint64_t secs)
 {
 	int err;
 	vhd_context_t *vhd;
-	uint64_t size, eof, new_eof;
+	uint64_t size, new_eof;
+        off64_t eof;
 
 	size = vhd_sectors_to_bytes(secs);
 	vhd  = &journal->vhd;
@@ -489,7 +490,7 @@ vhd_clear_bat_entries(vhd_journal_t *journal, uint32_t entries)
 #endif
 
 static int
-vhd_dynamic_shrink(vhd_journal_t *journal, uint64_t secs)
+vhd_dynamic_shrink(/*vhd_journal_t *journal, uint64_t secs*/)
 {
 	printf("dynamic shrink not fully implemented\n");
 	return -ENOSYS;
@@ -561,7 +562,7 @@ out:
 static inline void
 vhd_first_data_block(vhd_context_t *vhd, vhd_block_t *block)
 {
-	int i;
+	uint32_t i;
 	uint32_t blk;
 
 	memset(block, 0, sizeof(vhd_block_t));
@@ -581,7 +582,7 @@ vhd_first_data_block(vhd_context_t *vhd, vhd_block_t *block)
 static inline uint32_t
 vhd_next_block_offset(vhd_context_t *vhd)
 {
-	int i;
+	uint32_t i;
 	uint32_t blk, end, next;
 
 	next = 0;
@@ -720,7 +721,7 @@ vhd_shift_metadata(vhd_journal_t *journal, off64_t eob,
 		if (loc->code == PLAT_CODE_NONE)
 			continue;
 
-		if (loc->data_offset < eob)
+		if (eob < 0 || loc->data_offset < (uint64_t)eob)
 			continue;
 
 		size = vhd_parent_locator_size(loc);
@@ -776,7 +777,7 @@ vhd_shift_metadata(vhd_journal_t *journal, off64_t eob,
 		/* write the new header after writing the new bat */
 	}
 
-	if (vhd_has_batmap(vhd) && vhd->batmap.header.batmap_offset > eob) {
+	if (vhd_has_batmap(vhd) && (eob < 0 || vhd->batmap.header.batmap_offset > (uint64_t)eob)) {
 		vhd->batmap.header.batmap_offset += bat_needed;
 
 		/* write the new batmap after writing the new bat */
@@ -796,7 +797,8 @@ out:
 static int
 vhd_add_bat_entries(vhd_journal_t *journal, int entries)
 {
-	int i, err;
+	int err;
+        uint32_t i;
 	off64_t off;
 	vhd_bat_t new_bat;
 	vhd_context_t *vhd;
@@ -1044,7 +1046,7 @@ vhd_dynamic_resize(vhd_journal_t *journal, uint64_t size)
 	}
 
 	if (cur_secs > new_secs)
-		err = vhd_dynamic_shrink(journal, cur_secs - new_secs);
+		err = vhd_dynamic_shrink(/*journal, cur_secs - new_secs*/);
 	else
 		err = vhd_dynamic_grow(journal, new_secs - cur_secs);
 
