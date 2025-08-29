@@ -61,7 +61,7 @@ tap_ctl_unpause(const int id, const int minor, const char *params, int flags,
 		err = snprintf(message.u.params.secondary,
 			       sizeof(message.u.params.secondary), "%s",
 			       secondary);
-		if (err >= sizeof(message.u.params.secondary)) {
+		if (err < 0 || (unsigned long)err >= sizeof(message.u.params.secondary)) {
 			EPRINTF("secondary image name too long\n");
 			return -ENAMETOOLONG;
 		}

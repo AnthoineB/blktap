@@ -44,7 +44,7 @@
 
 int
 tap_ctl_destroy(const int id, const int minor,
-		int force, struct timeval *timeout)
+		struct timeval *timeout)
 {
 	int err;
 

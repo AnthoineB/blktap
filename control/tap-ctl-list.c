@@ -129,7 +129,8 @@ _tap_ctl_find_minors(struct list_head *list)
 	const char *pattern;
 	glob_t glbuf = { 0 };
 	tap_list_t *tl;
-	int i, err;
+	int err;
+        size_t i;
 
 	INIT_LIST_HEAD(list);
 
@@ -183,7 +184,8 @@ _tap_ctl_find_tapdisks(struct list_head *list)
 {
 	const char *pattern;
 	glob_t glbuf = { 0 };
-	int err, i, n_taps = 0;
+	int err, n_taps = 0;
+        size_t i;
 
 	pattern = BLKTAP2_CONTROL_DIR"/"BLKTAP2_CONTROL_SOCKET"*";
 

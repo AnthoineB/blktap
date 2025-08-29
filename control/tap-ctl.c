@@ -416,7 +416,7 @@ tap_cli_destroy(int argc, char **argv)
 	if (pid == -1 || minor == -1)
 		goto usage;
 
-	return tap_ctl_destroy(pid, minor, 0, timeout);
+	return tap_ctl_destroy(pid, minor, timeout);
 
 usage:
 	tap_cli_destroy_usage(stderr);
@@ -930,7 +930,7 @@ tap_cli_check(int argc, char **argv)
 	int err;
 	const char *msg;
 
-	if (argc != 1)
+	if (argc != 1 && !strcmp(argv[0], "check"))
 		goto usage;
 
 	err = tap_ctl_check(&msg);

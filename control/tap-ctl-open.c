@@ -59,7 +59,7 @@ tap_ctl_open(const int id, const int minor, const char *params, int flags,
 
 	err = snprintf(message.u.params.path,
 		       sizeof(message.u.params.path) - 1, "%s", params);
-	if (err >= sizeof(message.u.params.path)) {
+	if (err < 0 || (unsigned long)err >= sizeof(message.u.params.path)) {
 		EPRINTF("name too long\n");
 		return ENAMETOOLONG;
 	}
@@ -68,7 +68,7 @@ tap_ctl_open(const int id, const int minor, const char *params, int flags,
 		err = snprintf(message.u.params.secondary,
 			       sizeof(message.u.params.secondary) - 1, "%s",
 			       secondary);
-		if (err >= sizeof(message.u.params.secondary)) {
+		if (err < 0 || (unsigned long)err >= sizeof(message.u.params.secondary)) {
 			EPRINTF("secondary image name too long\n");
 			return ENAMETOOLONG;
 		}
