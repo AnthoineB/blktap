@@ -145,8 +145,10 @@ static int tdlog_close(td_driver_t* driver)
 	return 0;
 }
 
-static int tdlog_open(td_driver_t* driver, const char *name,
-		      struct td_vbd_encryption *encryption, td_flag_t flags)
+static int tdlog_open(td_driver_t* driver,
+                      __attribute__ ((unused)) const char *name,
+		      __attribute__ ((unused)) struct td_vbd_encryption *encryption,
+                      __attribute__ ((unused)) td_flag_t flags)
 {
 	struct tdlog_data* data = (struct tdlog_data*)driver->data;
 	int rc;
@@ -162,7 +164,8 @@ static int tdlog_open(td_driver_t* driver, const char *name,
 	return 0;
 }
 
-static void tdlog_queue_read(td_driver_t* driver, td_request_t treq)
+static void tdlog_queue_read(__attribute__ ((unused)) td_driver_t* driver,
+                             td_request_t treq)
 {
 	td_forward_request(treq);
 }
@@ -179,13 +182,14 @@ static void tdlog_queue_write(td_driver_t* driver, td_request_t treq)
 	td_forward_request(treq);
 }
 
-static int tdlog_get_parent_id(td_driver_t* driver, td_disk_id_t* id)
+static int tdlog_get_parent_id(__attribute__ ((unused)) td_driver_t* driver,
+                               __attribute__ ((unused)) td_disk_id_t* id)
 {
 	return -EINVAL;
 }
 
-static int tdlog_validate_parent(td_driver_t *driver,
-				 td_driver_t *parent, td_flag_t flags)
+static int tdlog_validate_parent(__attribute__ ((unused)) td_driver_t *driver,
+				 __attribute__ ((unused)) td_driver_t *parent)
 {
 	return 0;
 }

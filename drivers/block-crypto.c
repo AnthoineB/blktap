@@ -419,7 +419,8 @@ vhd_close_crypto(vhd_context_t *vhd)
 void
 vhd_crypto_decrypt(vhd_context_t *vhd, td_request_t *t)
 {
-	int sec, ret;
+	int ret;
+        unsigned int sec;
 
 	for (sec = 0; sec < t->secs; sec++) {
 		ret = xts_aes_plain_decrypt(vhd->xts_tfm, t->sec + sec,
@@ -445,7 +446,8 @@ vhd_crypto_encrypt_block(vhd_context_t *vhd, sector_t sector, uint8_t *source,
 void
 vhd_crypto_encrypt(vhd_context_t *vhd, td_request_t *t, char *orig_buf)
 {
-	int sec, ret;
+	int ret;
+        unsigned int sec;
 
 	for (sec = 0; sec < t->secs; sec++) {
 		ret = vhd_crypto_encrypt_block(

@@ -161,6 +161,7 @@ tapdisk_image_check_request(td_image_t *image, td_vbd_request_t *vreq)
 			goto fail;
 		}
 		/* continue */
+                __attribute__ ((fallthrough));
 	case TD_OP_READ: /* fall through */
 	case TD_OP_BLOCK_STATUS:
 		if (vreq->sec + secs > info->size) {

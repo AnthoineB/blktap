@@ -51,6 +51,8 @@
 #include <dlfcn.h>
 #include <math.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "debug.h"
 #include "qemu/osdep.h"
 #include "qcow2.h"
@@ -62,6 +64,7 @@
 #include "qapi/qmp/qdict.h"
 #include "qapi/qapi-commands-block-core.h"
 #include "qapi/qapi-commands-job.h"
+#pragma GCC diagnostic pop
 
 #include "tapdisk.h"
 #include "tapdisk-driver.h"
@@ -235,7 +238,7 @@ qcow2_initialize(struct qcow2_state *s, Error **perr)
 }
 
 static void
-qcow2_free(struct qcow2_state *s)
+qcow2_free(void)
 {
         qemu_deinit_main_loop();
 
@@ -407,7 +410,7 @@ qcow2_open(void *opaque)
         goto fail;
     }
 
-    if (conf->discard_granularity == -1) {
+    if (conf->discard_granularity == UINT_MAX) {
         conf->discard_granularity = conf->physical_block_size;
     }
 
@@ -471,7 +474,7 @@ qcow2_open(void *opaque)
 
     drain_call_rcu();
 
-    qcow2_free(s);
+    qcow2_free();
 
     return NULL;
 fail:
@@ -485,7 +488,7 @@ fail1:
     pthread_cond_signal(&s->cond);
     pthread_mutex_unlock(&s->lock);
 
-    qcow2_free(s);
+    qcow2_free();
     return NULL;
 }
 
@@ -586,7 +589,7 @@ _qcow2_close(td_driver_t *driver)
 
 int
 qcow2_validate_parent(td_driver_t *child_driver,
-                      td_driver_t *parent_driver, td_flag_t flags)
+                      td_driver_t *parent_driver)
 {
 	DPRINTF("qcow2_validate_parent. ptype %d, ctype %d",
 		parent_driver->type, child_driver->type);
@@ -604,7 +607,8 @@ qcow2_validate_parent(td_driver_t *child_driver,
 }
 
 int
-qcow2_get_parent_id(td_driver_t *driver, td_disk_id_t *id)
+qcow2_get_parent_id(__attribute__ ((unused)) td_driver_t *driver,
+                    __attribute__ ((unused)) td_disk_id_t *id)
 {
 	DBG(TLOG_DBG, "\n");
 	memset(id, 0, sizeof(td_disk_id_t));
@@ -884,7 +888,8 @@ schedule_request(struct qcow2_state *s, td_request_t *treq, enum qcow2_ops op)
 }
 
 static void
-qcow2_queue_block_status(td_driver_t *driver, td_request_t treq)
+qcow2_queue_block_status(__attribute__ ((unused)) td_driver_t *driver,
+                         __attribute__ ((unused)) td_request_t treq)
 {
 #if 0
     struct qcow2_state *s = (struct qcow2_state *)driver->data;

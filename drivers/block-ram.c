@@ -87,7 +87,7 @@ static int get_image_info(int fd, td_disk_info_t *info)
 		{
 			info->sector_size = DEFAULT_SECTOR_SIZE;
 			ioctl(fd, BLKSSZGET, &info->sector_size);
-			
+
 			if (info->sector_size != DEFAULT_SECTOR_SIZE)
 				DPRINTF("Note: sector size is %ld (not %d)\n",
 					info->sector_size, DEFAULT_SECTOR_SIZE);
@@ -124,11 +124,13 @@ static int get_image_info(int fd, td_disk_info_t *info)
 
 /* Open the disk file and initialize ram state. */
 int tdram_open (td_driver_t *driver, const char *name,
-		struct td_vbd_encryption *encryption, td_flag_t flags)
+		__attribute__ ((unused)) struct td_vbd_encryption *encryption,
+                td_flag_t flags)
 {
 	char *p;
 	uint64_t size;
-	int i, fd, ret = 0, count = 0, o_flags;
+	td_sector_t i, count = 0;
+        int fd, ret = 0, o_flags;
 	struct tdram_state *prv = (struct tdram_state *)driver->data;
 
 	connections++;
@@ -202,7 +204,7 @@ int tdram_open (td_driver_t *driver, const char *name,
 			p = img + count;
 		}
 	}
-	DPRINTF("[%d]\n",count);
+	DPRINTF("[%lu]\n",count);
 	if (count != driver->info.size << SECTOR_SHIFT) {
 		ret = -1;
 	} else {
@@ -235,20 +237,21 @@ void tdram_queue_write(td_driver_t *driver, td_request_t treq)
 	td_complete_request(treq, 0);
 }
 
-int tdram_close(td_driver_t *driver)
+int tdram_close(__attribute__ ((unused)) td_driver_t *driver)
 {
 	connections--;
 	
 	return 0;
 }
 
-int tdram_get_parent_id(td_driver_t *driver, td_disk_id_t *id)
+int tdram_get_parent_id(__attribute__ ((unused)) td_driver_t *driver,
+                        __attribute__ ((unused)) td_disk_id_t *id)
 {
 	return TD_NO_PARENT;
 }
 
-int tdram_validate_parent(td_driver_t *driver,
-			  td_driver_t *pdriver, td_flag_t flags)
+int tdram_validate_parent(__attribute__ ((unused)) td_driver_t *driver,
+			  __attribute__ ((unused)) td_driver_t *pdriver)
 {
 	return -EINVAL;
 }

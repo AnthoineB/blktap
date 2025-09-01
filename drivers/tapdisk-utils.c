@@ -310,7 +310,8 @@ int
 tapdisk_snprintf(char *buf, int * const off, int * const size,
 		unsigned int depth,	const char *format, ...) {
 
-	int err, i;
+	int err;
+        unsigned int i;
 	va_list ap;
 
 	ASSERT(buf);

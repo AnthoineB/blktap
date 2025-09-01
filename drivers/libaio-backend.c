@@ -169,7 +169,7 @@ queue_deferred_tiocbs(libaio_queue *queue)
  * td_complete may queue more tiocbs
  */
 static void
-complete_tiocb(libaio_queue *queue, struct tiocb *tiocb, unsigned long res)
+complete_tiocb(struct tiocb *tiocb, unsigned long res)
 {
 	int err;
 	struct iocb *iocb = &(tiocb->uiocb.io);
@@ -204,7 +204,7 @@ cancel_tiocbs(libaio_queue *queue, int err)
 	queue->queued = 0;
 
 	for (; tiocb != NULL; tiocb = tiocb->next)
-		complete_tiocb(queue, tiocb, err);
+		complete_tiocb(tiocb, err);
 
 	return queued;
 }
@@ -395,7 +395,8 @@ libaio_backend_lio_ack_event(libaio_queue *queue)
 }
 
 static void
-libaio_backend_lio_event(event_id_t id, char mode, void *private)
+libaio_backend_lio_event(__attribute__ ((unused)) event_id_t id,
+                         __attribute__ ((unused)) char mode, void *private)
 {
 	libaio_queue *queue = private;
 	struct lio *lio;
@@ -426,7 +427,7 @@ libaio_backend_lio_event(event_id_t id, char mode, void *private)
 		iocb  = ep->obj;
 		tiocb = iocb->data;
 		if (tiocb)
-			complete_tiocb(queue, tiocb, ep->res);
+			complete_tiocb(tiocb, ep->res);
 	}
 
 	queue_deferred_tiocbs(queue);

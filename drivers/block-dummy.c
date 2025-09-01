@@ -137,8 +137,10 @@ struct dummy_state {
 };
 
 static int
-dummy_open(td_driver_t *driver, const char *name,
-           struct td_vbd_encryption *encryption, td_flag_t flags)
+dummy_open(td_driver_t *driver,
+           __attribute__ ((unused)) const char *name,
+           __attribute__ ((unused)) struct td_vbd_encryption *encryption,
+           __attribute__ ((unused)) td_flag_t flags)
 {
     int i;
     struct dummy_state *s = (struct dummy_state *)driver->data;
@@ -159,20 +161,21 @@ dummy_open(td_driver_t *driver, const char *name,
 }
 
 static int
-dummy_close(td_driver_t *driver)
+dummy_close(__attribute__ ((unused)) td_driver_t *driver)
 {
     return 0;
 }
 
 int
-dummy_validate_parent(td_driver_t *child_driver,
-                      td_driver_t *parent_driver, td_flag_t flags)
+dummy_validate_parent(__attribute__ ((unused)) td_driver_t *child_driver,
+                      __attribute__ ((unused)) td_driver_t *parent_driver)
 {
 	return 0;
 }
 
 int
-dummy_get_parent_id(td_driver_t *driver, td_disk_id_t *id)
+dummy_get_parent_id(__attribute__ ((unused)) td_driver_t *driver,
+                    __attribute__ ((unused)) td_disk_id_t *id)
 {
 	return TD_NO_PARENT;
 }
@@ -304,7 +307,8 @@ schedule_request(struct dummy_state *s, td_request_t *treq, enum dummy_ops op)
 }
 
 static void
-dummy_queue_block_status(td_driver_t *driver, td_request_t treq)
+dummy_queue_block_status(__attribute__ ((unused)) td_driver_t *driver,
+                         __attribute__ ((unused)) td_request_t treq)
 {
 }
 
@@ -339,7 +343,7 @@ fail:
 }
 
 void
-dummy_debug(td_driver_t *driver)
+dummy_debug(__attribute__ ((unused)) td_driver_t *driver)
 {
 }
 

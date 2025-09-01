@@ -80,7 +80,7 @@ void tapdisk_server_mask_event(event_id_t, int);
 void tapdisk_server_set_max_timeout(int);
 
 int tapdisk_server_init(void);
-int tapdisk_server_initialize(const char *, const char *);
+int tapdisk_server_initialize(void);
 int tapdisk_server_complete(void);
 int tapdisk_server_run(void);
 void tapdisk_server_iterate(void);

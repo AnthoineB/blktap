@@ -85,7 +85,7 @@ struct tapdisk_stream {
 
 	td_stream_req_t                  reqs[TD_STREAM_MAX_REQS];
 	td_stream_req_t                 *free[TD_STREAM_MAX_REQS];
-	int                              n_free;
+	unsigned int                     n_free;
 };
 
 static unsigned int tapdisk_stream_count;
@@ -279,7 +279,7 @@ tapdisk_stream_queue_request(td_stream_t *s, td_stream_req_t *req)
 	int secs, err;
 
 	iov   = &req->iov;
-	secs  = MIN(TD_STREAM_REQ_SIZE >> SECTOR_SHIFT, s->count);
+	secs  = MIN((unsigned long)TD_STREAM_REQ_SIZE >> SECTOR_SHIFT, s->count);
 
 	iov->base           = req->buf;
 	iov->secs           = secs;
@@ -325,11 +325,11 @@ tapdisk_stream_open_image(struct tapdisk_stream *s, const char *name)
 
 	s->id = tapdisk_stream_count++;
 
-	err = tapdisk_server_initialize(NULL, NULL);
+	err = tapdisk_server_initialize();
 	if (err)
 		goto out;
 
-	err = tapdisk_vbd_initialize(-1, -1, s->id);
+	err = tapdisk_vbd_initialize(s->id);
 	if (err)
 		goto out;
 
@@ -378,7 +378,7 @@ tapdisk_stream_set_position(td_stream_t *s,
 		return err;
 	}
 
-	if (count == -1LL)
+	if (count == UINT64_MAX)
 		count = info.size - skip;
 
 	if (count + skip > info.size) {
@@ -395,7 +395,9 @@ tapdisk_stream_set_position(td_stream_t *s,
 }
 
 void
-__tapdisk_stream_event_cb(event_id_t id, char mode, void *arg)
+__tapdisk_stream_event_cb(__attribute__ ((unused)) event_id_t id,
+                          __attribute__ ((unused)) char mode,
+                          __attribute__ ((unused)) void *arg)
 {
 }
 
@@ -484,6 +486,7 @@ main(int argc, char *argv[])
 			break;
 		default:
 			err = EINVAL;
+                        __attribute__ ((fallthrough));
 		case 'h':
 			usage(argv[0], err);
 		}

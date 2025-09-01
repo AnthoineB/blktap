@@ -112,9 +112,11 @@ static int tdaio_get_image_info(int fd, td_disk_info_t *info)
 
 /* Open the disk file and initialize aio state. */
 int tdaio_open(td_driver_t *driver, const char *name,
-	       struct td_vbd_encryption *encryption, td_flag_t flags)
+	       __attribute__ ((unused)) struct td_vbd_encryption *encryption,
+               td_flag_t flags)
 {
-	int i, fd, ret, o_flags;
+	unsigned int i;
+        int fd, ret, o_flags;
 	struct tdaio_state *prv;
 
 	ret = 0;
@@ -161,7 +163,9 @@ done:
 	return ret;	
 }
 
-void tdaio_complete(void *arg, struct tiocb *tiocb, int err)
+void tdaio_complete(void *arg,
+                    __attribute__ ((unused)) struct tiocb *tiocb,
+                    int err)
 {
 	struct aio_request *aio = (struct aio_request *)arg;
 	struct tdaio_state *prv = aio->state;
@@ -235,13 +239,14 @@ int tdaio_close(td_driver_t *driver)
 	return 0;
 }
 
-int tdaio_get_parent_id(td_driver_t *driver, td_disk_id_t *id)
+int tdaio_get_parent_id(__attribute__ ((unused)) td_driver_t *driver,
+                        __attribute__ ((unused)) td_disk_id_t *id)
 {
 	return TD_NO_PARENT;
 }
 
-int tdaio_validate_parent(td_driver_t *driver,
-			  td_driver_t *pdriver, td_flag_t flags)
+int tdaio_validate_parent(__attribute__ ((unused)) td_driver_t *driver,
+			  __attribute__ ((unused)) td_driver_t *pdriver)
 {
 	return -EINVAL;
 }

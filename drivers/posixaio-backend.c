@@ -197,7 +197,7 @@ queue_deferred_tiocbs(posix_aio_queue *queue)
  * td_complete may queue more tiocbs
  */
 static void
-complete_tiocb(posix_aio_queue *queue, struct tiocb *tiocb)
+complete_tiocb(struct tiocb *tiocb)
 {
 	int err;
 	unsigned long actual_res;
@@ -238,7 +238,7 @@ posixaio_backend_lio_destroy_aio(posix_aio_queue *queue)
 }
 
 static int
-__lio_setup_aio_eventfd(posix_aio_queue *queue, int qlen)
+__lio_setup_aio_eventfd(posix_aio_queue *queue)
 {
 	struct lio *lio = queue->tio_data;
 	sigset_t mask;
@@ -257,14 +257,14 @@ __lio_setup_aio_eventfd(posix_aio_queue *queue, int qlen)
 }
 
 static int
-posixaio_backend_lio_setup_aio(posix_aio_queue *queue, int qlen)
+posixaio_backend_lio_setup_aio(posix_aio_queue *queue)
 {
 	struct lio *lio = queue->tio_data;
 	int err = 0;
 
 	lio->event_fd = -1;
 
-	err = __lio_setup_aio_eventfd(queue, qlen);
+	err = __lio_setup_aio_eventfd(queue);
 
 	return err;
 }
@@ -291,7 +291,8 @@ posixaio_backend_lio_destroy(posix_aio_queue *queue)
 }
 
 static void
-posixaio_backend_lio_event(event_id_t id, char mode, void *private)
+posixaio_backend_lio_event(__attribute__ ((unused)) event_id_t id,
+                           __attribute__ ((unused)) char mode, void *private)
 {
 	posix_aio_queue *queue = private;
 	struct tiocb *tiocb;
@@ -302,7 +303,7 @@ posixaio_backend_lio_event(event_id_t id, char mode, void *private)
 
 	while((tiocb = pop_pending_tiocb(queue))) {
 		if ( EINPROGRESS != aio_error(&(tiocb->uiocb.aio))) {
-                	complete_tiocb(queue, tiocb);
+                	complete_tiocb(tiocb);
 		} else {
 			push_list(&list, tiocb);
 			tiocbs_pending++;
@@ -324,7 +325,7 @@ posixaio_backend_lio_setup(posix_aio_queue *queue, int qlen)
 
 	lio->event_id = -1;
 
-	err = posixaio_backend_lio_setup_aio(queue, qlen);
+	err = posixaio_backend_lio_setup_aio(queue);
 	if (err)
 		goto fail;
 
@@ -464,7 +465,7 @@ posixaio_backend_free_queue(tqueue* pqueue)
 
 static int
 posixaio_backend_init_queue(tqueue *pqueue, int size,
-		   int drv, struct tfilter *filter)
+		   int drv, __attribute__ ((unused)) struct tfilter *filter)
 {
 	int err;
 	*pqueue = (tqueue)malloc(sizeof(posix_aio_queue));

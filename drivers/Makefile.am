@@ -1,6 +1,7 @@
 SUBDIRS = crypto
 AM_CFLAGS  = -Wall
 AM_CFLAGS += -Werror
+AM_CFLAGS += -Wextra
 AM_CFLAGS += $(if $(GCOV),-fprofile-dir=/tmp/coverage/blktap/drivers -fprofile-arcs -ftest-coverage)
 # TODO add -Wextra
 

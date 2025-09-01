@@ -57,7 +57,8 @@ int ll_write_error(int curr, int error)
 	return 0;
 }
 
-void ll_log_switch(int type, int error,
+void ll_log_switch(__attribute__ ((unused)) int type,
+                   int error,
 		   td_image_t *local, td_image_t *shared)
 {
 	WARN("WARNING: %s, on %s:%s. Switching to %s:%s.",
@@ -144,7 +145,7 @@ struct llpcache {
 
 	td_llpcache_req_t       reqv[TD_LLPCACHE_MAX_REQ];
 	td_llpcache_req_t      *free[TD_LLPCACHE_MAX_REQ];
-	int                     n_free;
+	unsigned int            n_free;
 };
 
 static td_llpcache_req_t *
@@ -167,7 +168,8 @@ llpcache_free_request(td_llpcache_t *s, td_llpcache_req_t *req)
 
 static void
 __llpcache_write_cb(td_vbd_request_t *vreq, int error,
-		   void *token, int final)
+		   void *token,
+                   __attribute__ ((unused)) int final)
 {
 	td_llpcache_t *s = token;
 	struct llpcache_vreq *lvr;
@@ -322,6 +324,7 @@ llpcache_queue_read(td_driver_t *driver, td_request_t treq)
 		break;
 	case LLP_SHARED:
 		td_forward_request(treq);
+                break;
 	default:
 		BUG();
 	}
@@ -345,7 +348,8 @@ llpcache_open(td_driver_t *driver, const char *name,
 	      struct td_vbd_encryption *encryption, td_flag_t flags)
 {
 	td_llpcache_t *s = driver->data;
-	int i, err;
+	unsigned int i;
+        int err;
 
 	s->mode = LLP_MIRROR;
 
@@ -379,8 +383,8 @@ llcache_get_parent_id(td_driver_t *driver, td_disk_id_t *id)
 }
 
 static int
-llcache_validate_parent(td_driver_t *driver,
-			td_driver_t *pdriver, td_flag_t flags)
+llcache_validate_parent(__attribute__ ((unused)) td_driver_t *driver,
+			__attribute__ ((unused)) td_driver_t *pdriver)
 {
 	return -ENOSYS;
 }
@@ -449,7 +453,7 @@ typedef struct llecache_request         td_llecache_req_t;
 struct llecache_request {
 	td_llecache_t          *s;
 	td_request_t            treq;
-	int                     pending;
+	unsigned int            pending;
 	int                     error;
 };
 
@@ -459,7 +463,7 @@ struct llecache {
 
 	td_llecache_req_t       reqv[TD_LLECACHE_MAX_REQ];
 	td_llecache_req_t      *free[TD_LLECACHE_MAX_REQ];
-	int                     n_free;
+	unsigned int            n_free;
 };
 
 static td_llecache_req_t *
@@ -498,7 +502,8 @@ llecache_open(td_driver_t *driver, const char *name,
 	      struct td_vbd_encryption *encryption, td_flag_t flags)
 {
 	td_llecache_t *s = driver->data;
-	int i, err;
+	unsigned int i;
+        int err;
 
 	s->mode = LLE_LOCAL;
 

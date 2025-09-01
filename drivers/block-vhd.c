@@ -676,8 +676,10 @@ vhd_log_open(struct vhd_state *s)
 }
 
 static int dummy_open_crypto(
-	vhd_context_t *vhd, const uint8_t *key, size_t key_bytes,
-	const char *name)
+	__attribute__ ((unused)) vhd_context_t *vhd,
+        const uint8_t *key,
+        __attribute__ ((unused)) size_t key_bytes,
+	__attribute__ ((unused)) const char *name)
 {
 	if (key) {
 		EPRINTF("Encryption requested with no support library\n");
@@ -687,7 +689,7 @@ static int dummy_open_crypto(
 	return 0;
 }
 
-void dummy_close_crypto(vhd_context_t *vhd)
+void dummy_close_crypto(__attribute__ ((unused)) vhd_context_t *vhd)
 {
 
 }
@@ -782,7 +784,8 @@ static int
 __vhd_open(td_driver_t *driver, const char *name,
 	   struct td_vbd_encryption *encryption, vhd_flag_t flags)
 {
-        int i, o_flags, err;
+        unsigned int i;
+        int o_flags, err;
 	struct vhd_state *s;
 
         DBG(TLOG_INFO, "vhd_open: %s\n", name);
@@ -980,7 +983,7 @@ _vhd_close(td_driver_t *driver)
 
 int
 vhd_validate_parent(td_driver_t *child_driver,
-		    td_driver_t *parent_driver, td_flag_t flags)
+		    td_driver_t *parent_driver)
 {
 	struct vhd_state *child  = (struct vhd_state *)child_driver->data;
 	struct vhd_state *parent;
@@ -1394,15 +1397,17 @@ read_bitmap_cache(struct vhd_state *s, uint64_t sector, uint8_t op)
 	if (test_vhd_flag(bm->status, VHD_FLAG_BM_READ_PENDING))
 		return VHD_BM_READ_PENDING;
 
-	return ((vhd_bitmap_test(&s->vhd, bm->map, sec)) ? 
+	return ((vhd_bitmap_test(bm->map, sec)) ? 
 		VHD_BM_BIT_SET : VHD_BM_BIT_CLEAR);
 }
 
 static int
 read_bitmap_cache_span(struct vhd_state *s, 
-		       uint64_t sector, int nr_secs, int value)
+		       uint64_t sector,
+                       unsigned int nr_secs,
+                       int value)
 {
-	int ret;
+	unsigned int ret;
 	uint32_t blk, sec;
 	struct vhd_bitmap *bm;
 
@@ -1421,7 +1426,7 @@ read_bitmap_cache_span(struct vhd_state *s,
 	ASSERT(bm && bitmap_valid(bm));
 
 	for (ret = 0; sec < s->spb && ret < nr_secs; sec++, ret++)
-		if (vhd_bitmap_test(&s->vhd, bm->map, sec) != value)
+		if (vhd_bitmap_test(bm->map, sec) != value)
 			break;
 
 	return ret;
@@ -1704,7 +1709,7 @@ allocate_block(struct vhd_state *s, uint32_t blk)
 
 	size  = vhd_sectors_to_bytes(s->spb + s->bm_secs + gap);
 	count = write(s->vhd.fd, vhd_zeros(size), size);
-	if (count != size) {
+	if (count < 0 || (uint64_t)count != size) {
 		err = count < 0 ? -errno : -ENOSPC;
 		ERR(s, -errno,
 		    "write failed (%zd, offset %"PRIu64")\n", count, offset);
@@ -2272,7 +2277,7 @@ start_new_bitmap_transaction(struct vhd_state *s, struct vhd_bitmap *bm)
 {
 	struct vhd_transaction *tx;
 	struct vhd_request *r, *next;
-	int i;
+	unsigned int i;
 
 	if (!bm->queue.head)
 		return;
@@ -2297,8 +2302,7 @@ start_new_bitmap_transaction(struct vhd_state *s, struct vhd_bitmap *bm)
 			if (!r->error) {
 				uint32_t sec = r->treq.sec % s->spb;
 				for (i = 0; i < r->treq.secs; i++)
-					vhd_bitmap_set(&s->vhd,
-						       bm->shadow, sec + i);
+					vhd_bitmap_set(bm->shadow, sec + i);
 			}
 		}
 		r = next;
@@ -2582,7 +2586,7 @@ finish_data_read(struct vhd_request *req)
 static void
 finish_data_write(struct vhd_request *req)
 {
-	int i;
+	unsigned int i;
 	struct vhd_transaction *tx = req->tx;
 	struct vhd_state *s = (struct vhd_state *)req->state;
 
@@ -2606,7 +2610,7 @@ finish_data_write(struct vhd_request *req)
 
 		if (!req->error)
 			for (i = 0; i < req->treq.secs; i++)
-				vhd_bitmap_set(&s->vhd, bm->shadow,  sec + i);
+				vhd_bitmap_set(bm->shadow,  sec + i);
 
 		if (transaction_completed(tx))
 			finish_data_transaction(s, bm);
@@ -2620,7 +2624,9 @@ finish_data_write(struct vhd_request *req)
 }
 
 void
-vhd_complete(void *arg, struct tiocb *tiocb, int err)
+vhd_complete(void *arg,
+             __attribute__ ((unused)) struct tiocb *tiocb,
+             int err)
 {
 	struct vhd_request *req = (struct vhd_request *)arg;
 	struct vhd_state *s = req->state;
@@ -2675,7 +2681,7 @@ vhd_complete(void *arg, struct tiocb *tiocb, int err)
 void 
 vhd_debug(td_driver_t *driver)
 {
-	int i;
+	unsigned int i;
 	struct vhd_state *s = (struct vhd_state *)driver->data;
 
 	DBG(TLOG_WARN, "%s: QUEUED: 0x%08"PRIx64", COMPLETED: 0x%08"PRIx64", "

@@ -143,7 +143,7 @@ vhd_index_initialize_block(vhd_index_block_t *block)
 static void
 vhd_index_init(vhd_index_t *index)
 {
-	int i;
+	unsigned int i;
 
 	memset(index, 0, sizeof(vhd_index_t));
 
@@ -244,7 +244,8 @@ fail:
 
 static int
 vhd_index_open(td_driver_t *driver, const char *name,
-	       struct td_vbd_encryption *encryption, td_flag_t flags)
+	       __attribute__ ((unused)) struct td_vbd_encryption *encryption,
+               __attribute__ ((unused)) td_flag_t flags)
 {
 	int err;
 	vhd_index_t *index;
@@ -579,9 +580,9 @@ vhd_index_read_cache(vhd_index_t *index, uint64_t sector)
 
 static int
 vhd_index_read_cache_span(vhd_index_t *index,
-			  uint64_t sector, int secs, int value)
+			  uint64_t sector, unsigned int secs, int value)
 {
-	int i;
+	uint32_t i;
 	uint32_t blk, sec;
 	vhd_index_block_t *block;
 
@@ -593,7 +594,7 @@ vhd_index_read_cache_span(vhd_index_t *index,
 	block = vhd_index_get_block(index, blk);
 	ASSERT(block && vhd_index_block_valid(block));
 
-	for (i = 0; i < secs && i + sec < index->vhdi.spb; i++)
+	for (i = 0; i < secs && i + sec < (uint32_t)index->vhdi.spb; i++)
 		if (value ^
 		    (block->vhdi_block.table[sec + i].offset != DD_BLK_UNUSED))
 			break;
@@ -638,7 +639,8 @@ vhd_index_schedule_meta_read(vhd_index_t *index, uint32_t blk)
 static int
 vhd_index_schedule_data_read(vhd_index_t *index, td_request_t treq)
 {
-	int i, err;
+	unsigned int i;
+        int err;
 	size_t size;
 	off64_t offset;
 	uint32_t blk, sec;
@@ -767,7 +769,8 @@ vhd_index_queue_read(td_driver_t *driver, td_request_t treq)
 }
 
 static void
-vhd_index_queue_write(td_driver_t *driver, td_request_t treq)
+vhd_index_queue_write(__attribute__ ((unused)) td_driver_t *driver,
+                      td_request_t treq)
 {
 	td_complete_request(treq, -EPERM);
 }
@@ -782,7 +785,9 @@ vhd_index_signal_completion(vhd_index_t *index,
 }
 
 static void
-vhd_index_complete_meta_read(void *arg, struct tiocb *tiocb, int err)
+vhd_index_complete_meta_read(void *arg,
+                             __attribute__ ((unused)) struct tiocb *tiocb,
+                             int err)
 {
 	int i;
 	uint32_t blk;
@@ -819,7 +824,9 @@ vhd_index_complete_meta_read(void *arg, struct tiocb *tiocb, int err)
 }
 
 static void
-vhd_index_complete_data_read(void *arg, struct tiocb *tiocb, int err)
+vhd_index_complete_data_read(void *arg,
+                             __attribute__ ((unused)) struct tiocb *tiocb,
+                             int err)
 {
 	vhd_index_t *index;
 	vhd_index_request_t *req;
@@ -831,14 +838,15 @@ vhd_index_complete_data_read(void *arg, struct tiocb *tiocb, int err)
 }
 
 static int
-vhd_index_get_parent_id(td_driver_t *driver, td_disk_id_t *id)
+vhd_index_get_parent_id(__attribute__ ((unused)) td_driver_t *driver,
+                        __attribute__ ((unused)) td_disk_id_t *id)
 {
 	return -EINVAL;
 }
 
 static int
-vhd_index_validate_parent(td_driver_t *driver,
-			  td_driver_t *parent, td_flag_t flags)
+vhd_index_validate_parent(__attribute__ ((unused)) td_driver_t *driver,
+			  __attribute__ ((unused)) td_driver_t *parent)
 {
 	return -EINVAL;
 }
@@ -846,14 +854,14 @@ vhd_index_validate_parent(td_driver_t *driver,
 static void
 vhd_index_debug(td_driver_t *driver)
 {
-	int i;
+	unsigned int i;
 	vhd_index_t *index;
 
 	index = (vhd_index_t *)driver->data;
 
 	WARN("VHD INDEX %s\n", index->name);
 	WARN("FILES:\n");
-	for (i = 0; i < index->files.entries; i++) {
+	for (i = 0; i < (unsigned int)index->files.entries; i++) {
 		int j, fd, refcnt;
 
 		fd     = -1;

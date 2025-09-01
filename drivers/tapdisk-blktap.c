@@ -165,7 +165,7 @@ tapdisk_blktap_kick(td_blktap_t *tap)
 }
 
 static int
-tapdisk_blktap_error_status(td_blktap_t *tap, int error)
+tapdisk_blktap_error_status(int error)
 {
 	int status;
 
@@ -211,7 +211,7 @@ tapdisk_blktap_fail_request(td_blktap_t *tap,
 
 	rsp->id        = msg->id;
 	rsp->operation = msg->operation;
-	rsp->status    = tapdisk_blktap_error_status(tap, error);
+	rsp->status    = tapdisk_blktap_error_status(error);
 
 	__tapdisk_blktap_push_response(tap, 1);
 	pthread_mutex_unlock(&tap->mutex);
@@ -253,7 +253,7 @@ tapdisk_blktap_put_response(td_blktap_t *tap,
 
 	rsp->id        = req->id;
 	rsp->operation = op;
-	rsp->status    = tapdisk_blktap_error_status(tap, error);
+	rsp->status    = tapdisk_blktap_error_status(error);
 
 	tapdisk_blktap_free_request(tap, req);
 
@@ -419,7 +419,8 @@ fail_ring:
 }
 
 static void
-tapdisk_blktap_fd_event(event_id_t id, char mode, void *data)
+tapdisk_blktap_fd_event(__attribute__ ((unused)) event_id_t id,
+                        __attribute__ ((unused)) char mode, void *data)
 {
 	td_blktap_t *tap = data;
 

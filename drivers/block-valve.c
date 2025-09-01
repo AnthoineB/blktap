@@ -54,7 +54,7 @@ typedef struct td_valve_request td_valve_request_t;
 
 struct td_valve_request {
 	td_request_t            treq;
-	int                     secs;
+	unsigned int            secs;
 
 	struct list_head        entry;
 	td_valve_t             *valve;
@@ -84,7 +84,7 @@ struct td_valve {
 
 	td_valve_request_t      reqv[MAX_REQUESTS];
 	td_valve_request_t     *free[MAX_REQUESTS];
-	int                     n_free;
+	unsigned int            n_free;
 
 	struct td_valve_stats   stats;
 };
@@ -159,7 +159,9 @@ valve_free_request(td_valve_t *valve, td_valve_request_t *req)
 }
 
 static void
-__valve_sock_event(event_id_t id, char mode, void *private)
+__valve_sock_event(__attribute__ ((unused)) event_id_t id,
+                   __attribute__ ((unused)) char mode,
+                   void *private)
 {
 	td_valve_t *valve = private;
 
@@ -183,7 +185,9 @@ valve_clear_done_pending(td_valve_t *valve)
 }
 
 static void
-__valve_sched_event(event_id_t id, char mode, void *private)
+__valve_sched_event(__attribute__ ((unused)) event_id_t id,
+                    __attribute__ ((unused)) char mode,
+                    void *private)
 {
 	td_valve_t *valve = private;
 
@@ -288,7 +292,7 @@ valve_sock_send(td_valve_t *valve, const void *msg, size_t size)
 	n = send(valve->sock, msg, size, MSG_DONTWAIT);
 	if (n < 0)
 		return -errno;
-	if (n != size)
+	if ((size_t)n != size)
 		return -EPROTO;
 
 	return 0;
@@ -307,7 +311,9 @@ valve_sock_recv(td_valve_t *valve, void *msg, size_t size)
 }
 
 static void
-__valve_retry_timeout(event_id_t id, char mode, void *private)
+__valve_retry_timeout(__attribute__ ((unused)) event_id_t id,
+                      __attribute__ ((unused)) char mode,
+                      void *private)
 {
 	td_valve_t *valve = private;
 	int err;
@@ -376,7 +382,8 @@ valve_conn_receive(td_valve_t *valve)
 {
 	unsigned long buf[32], cred = 0;
 	ssize_t n;
-	int i, err;
+	int err;
+        unsigned long i;
 
 	n = valve_sock_recv(valve, buf, sizeof(buf));
 	if (!n) {
@@ -580,7 +587,8 @@ td_valve_close(td_driver_t *driver)
 
 static int
 td_valve_open(td_driver_t *driver, const char *name,
-	      struct td_vbd_encryption *encryption, td_flag_t flags)
+	      __attribute__ ((unused)) struct td_vbd_encryption *encryption,
+              __attribute__ ((unused)) td_flag_t flags)
 {
 	td_valve_t *valve = driver->data;
 	int err;
@@ -642,14 +650,15 @@ forward:
 }
 
 static int
-td_valve_get_parent_id(td_driver_t *driver, td_disk_id_t *id)
+td_valve_get_parent_id(__attribute__ ((unused)) td_driver_t *driver,
+                       __attribute__ ((unused)) td_disk_id_t *id)
 {
 	return -EINVAL;
 }
 
 static int
-td_valve_validate_parent(td_driver_t *driver,
-			 td_driver_t *parent_driver, td_flag_t flags)
+td_valve_validate_parent(__attribute__ ((unused)) td_driver_t *driver,
+			 __attribute__ ((unused)) td_driver_t *parent_driver)
 {
 	return -EINVAL;
 }

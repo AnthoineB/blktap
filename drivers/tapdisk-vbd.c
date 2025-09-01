@@ -125,7 +125,7 @@ tapdisk_vbd_create(uint16_t uuid)
 }
 
 int
-tapdisk_vbd_initialize(int rfd, int wfd, uint16_t uuid)
+tapdisk_vbd_initialize(uint16_t uuid)
 {
 	td_vbd_t *vbd;
 
@@ -719,7 +719,7 @@ tapdisk_vbd_detach(td_vbd_t *vbd)
 }
 
 int
-tapdisk_vbd_attach(td_vbd_t *vbd, const char *devname, int minor)
+tapdisk_vbd_attach(td_vbd_t *vbd, const char *devname)
 {
 
 	if (vbd->tap)
@@ -927,12 +927,6 @@ tapdisk_vbd_retry_needed(td_vbd_t *vbd)
 		 list_empty(&vbd->new_requests));
 	pthread_mutex_unlock(&vbd->mutex);
 	return retry;
-}
-
-int
-tapdisk_vbd_lock(td_vbd_t *vbd)
-{
-	return 0;
 }
 
 int

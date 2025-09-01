@@ -66,12 +66,6 @@ __tapdisk_fs_storage_type(const char *rpath)
 	return type;
 }
 
-static int
-__tapdisk_blk_storage_type(const char *rpath)
-{
-	return TAPDISK_STORAGE_TYPE_LVM;
-}
-
 int
 tapdisk_storage_type(const char *path)
 {
@@ -89,7 +83,7 @@ tapdisk_storage_type(const char *path)
 
 	switch (st.st_mode & S_IFMT) {
 	case S_IFBLK:
-		rv = __tapdisk_blk_storage_type(rpath);
+		rv = TAPDISK_STORAGE_TYPE_LVM;
 		break;
 	case S_IFREG:
 		rv = __tapdisk_fs_storage_type(rpath);

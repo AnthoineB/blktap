@@ -134,7 +134,8 @@ static void disable_write_queue(struct tdnbd_data *prv);
 /* -- fdreceiver bits and pieces -- */
 
 static void
-tdnbd_stash_passed_fd(int fd, char *msg, void *data) 
+tdnbd_stash_passed_fd(int fd, char *msg,
+                      __attribute__ ((unused)) void *data)
 {
 	int free_index = -1;
 	int i;
@@ -319,7 +320,9 @@ tdnbd_read_some(int fd, struct nbd_queued_io *data)
 }
 
 static void
-tdnbd_writer_cb(event_id_t eb, char mode, void *data)
+tdnbd_writer_cb(__attribute__ ((unused)) event_id_t eb,
+                __attribute__ ((unused)) char mode,
+                void *data)
 {
 	struct td_nbd_request *pos, *q;
 	struct tdnbd_data *prv = data;
@@ -432,7 +435,9 @@ tdnbd_queue_request(struct tdnbd_data *prv, int type, uint64_t offset,
 /* NBD Reader callback */
 
 static void
-tdnbd_reader_cb(event_id_t eb, char mode, void *data)
+tdnbd_reader_cb(__attribute__ ((unused)) event_id_t eb,
+                __attribute__ ((unused)) char mode,
+                void *data)
 {
 	char handle[9];
 	int do_disable = 0;
@@ -639,7 +644,7 @@ tdnbd_nbd_negotiate_old(struct tdnbd_data *prv, td_driver_t *driver)
 		ERROR("Error in nbd_negotiate: %s", strerror(-rc));
 		goto errout;
 	}
-	if (rc < sizeof(size)) {
+	if ((unsigned long)rc < sizeof(size)) {
 		ERROR("Short read in OLD negotiation(3) (%d)\n", rc);
 		goto errout;
 	}
@@ -655,7 +660,7 @@ tdnbd_nbd_negotiate_old(struct tdnbd_data *prv, td_driver_t *driver)
 		ERROR("Error in nbd_negotiate: %s", strerror(-rc));
 		goto errout;
 	}
-	if (rc < sizeof(flags)) {
+	if ((unsigned long)rc < sizeof(flags)) {
 		ERROR("Short read in OLD negotiation(4) (%d)\n", rc);
 		goto errout;
 	}
@@ -710,14 +715,18 @@ tdnbd_nbd_negotiate_new(struct tdnbd_data *prv, td_driver_t *driver)
 		ERROR("Error in nbd_negotiate: %s", strerror(-rc));
 		goto errout;
 	}
-	if (rc < sizeof(gflags)) {
+	if ((unsigned long)rc < sizeof(gflags)) {
 		ERROR("Short read in NEW negotiation(3) (%d)\n", rc);
 		goto errout;
 	}
 
 	/* Send back flags*/
 	rc = send(sock, &cflags, sizeof(cflags), 0);
-	if (rc < sizeof(cflags)) {
+	if (rc < 0) {
+		ERROR("Error in send back nbd_negotiate flags: %s", strerror(-rc));
+		goto errout;
+	}
+	if ((unsigned long)rc < sizeof(cflags)) {
 		ERROR("Failed to send client flags");
 		goto errout;
 	}
@@ -743,7 +752,7 @@ tdnbd_nbd_negotiate(struct tdnbd_data *prv, td_driver_t *driver)
 		ERROR("Error in nbd_negotiate: %s", strerror(-rc));
 		goto errout;
 	}
-	if (rc < sizeof(magic)) {
+	if ((unsigned long)rc < sizeof(magic)) {
 		ERROR("Short read in negotiation(1) (wanted %ld got %d)\n", sizeof(magic), rc);
 		goto errout;
 	}
@@ -759,7 +768,7 @@ tdnbd_nbd_negotiate(struct tdnbd_data *prv, td_driver_t *driver)
 		ERROR("Error in nbd_negotiate: %s", strerror(-rc));
 		goto errout;
 	}
-	if (rc < sizeof(magic)) {
+	if ((unsigned long)rc < sizeof(magic)) {
 		ERROR("Short read in negotiation(2) (wanted %ld got %d)\n", sizeof(magic), rc);
 		goto errout;
 	}
@@ -842,13 +851,14 @@ static int tdnbd_close(td_driver_t*);
 
 static int
 tdnbd_open(td_driver_t* driver, const char* name,
-	   struct td_vbd_encryption *encryption, td_flag_t flags)
+	   __attribute__ ((unused)) struct td_vbd_encryption *encryption,
+           td_flag_t flags)
 {
 	struct tdnbd_data *prv;
 	char peer_ip[256];
 	int port;
 	int rc;
-	int i;
+	unsigned int i;
 	struct stat buf;
 
 	driver->info.sector_size = 512;
@@ -1016,14 +1026,15 @@ tdnbd_queue_write(td_driver_t* driver, td_request_t treq)
 }
 
 static int
-tdnbd_get_parent_id(td_driver_t* driver, td_disk_id_t* id)
+tdnbd_get_parent_id(__attribute__ ((unused)) td_driver_t* driver,
+                    __attribute__ ((unused)) td_disk_id_t* id)
 {
 	return TD_NO_PARENT;
 }
 
 static int
-tdnbd_validate_parent(td_driver_t *driver,
-		td_driver_t *parent, td_flag_t flags)
+tdnbd_validate_parent(__attribute__ ((unused)) td_driver_t *driver,
+		      __attribute__ ((unused)) td_driver_t *parent)
 {
 	return -EINVAL;
 }

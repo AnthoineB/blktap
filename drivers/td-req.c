@@ -70,7 +70,9 @@ static inline void
 td_xenblkif_bufcache_evt_unreg(struct td_xenblkif * const blkif);
 
 static void
-td_xenblkif_bufcache_event(event_id_t id, char mode, void *private)
+td_xenblkif_bufcache_event(__attribute__ ((unused)) event_id_t id,
+                           __attribute__ ((unused)) char mode,
+                           void *private)
 {
     struct td_xenblkif *blkif = private;
 

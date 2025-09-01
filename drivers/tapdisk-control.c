@@ -268,7 +268,7 @@ tapdisk_ctl_conn_send_buf(struct tapdisk_ctl_conn *conn)
 }
 
 static void
-tapdisk_ctl_conn_send_event(event_id_t id, char mode, void *private)
+tapdisk_ctl_conn_send_event(__attribute__ ((unused)) event_id_t id, char mode, void *private)
 {
 	struct tapdisk_ctl_conn *conn = private;
 	ssize_t rv;
@@ -588,7 +588,7 @@ tapdisk_control_list(struct tapdisk_ctl_conn *conn,
 }
 
 static int
-tapdisk_control_get_pid(struct tapdisk_ctl_conn *conn,
+tapdisk_control_get_pid(__attribute__ ((unused)) struct tapdisk_ctl_conn *conn,
 			tapdisk_message_t *request, tapdisk_message_t * const response)
 {
 	ASSERT(response);
@@ -641,7 +641,7 @@ tapdisk_control_attach_vbd(struct tapdisk_ctl_conn *conn,
 		goto fail_vbd;
 	}
 
-	err = tapdisk_vbd_attach(vbd, devname, minor);
+	err = tapdisk_vbd_attach(vbd, devname);
 	if (err) {
 		ERR(err, "failure attaching to %d\n", minor);
 		goto fail_vbd;
@@ -1155,7 +1155,7 @@ tapdisk_control_stats(struct tapdisk_ctl_conn *conn,
 		goto out;
 	}
 
-	if (rv > conn->out.bufsz - sizeof(*response)) {
+	if (rv > (ssize_t)(conn->out.bufsz - sizeof(*response))) {
 		ASSERT(conn->out.prod == conn->out.buf);
 		ASSERT(conn->out.cons == conn->out.buf);
 		new_size = rv + sizeof(*response);
@@ -1579,7 +1579,8 @@ tapdisk_control_process_request(event_id_t event_id,
 
 
 static void
-tapdisk_control_handle_request(event_id_t id, char mode, void *private)
+tapdisk_control_handle_request(__attribute__ ((unused)) event_id_t id,
+                               __attribute__ ((unused)) char mode, void *private)
 {
 	int err;
 	struct tapdisk_ctl_conn *conn = private;
@@ -1622,7 +1623,9 @@ tapdisk_control_handle_request(event_id_t id, char mode, void *private)
 }
 
 static void
-tapdisk_control_accept(event_id_t id, char mode, void *private)
+tapdisk_control_accept(__attribute__ ((unused)) event_id_t id,
+                       __attribute__ ((unused)) char mode,
+                       __attribute__ ((unused)) void *private)
 {
 	int err, fd;
 	struct tapdisk_ctl_conn *conn;

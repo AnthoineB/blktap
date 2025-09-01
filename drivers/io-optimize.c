@@ -116,7 +116,7 @@ restore_iocb(struct opio *op)
 }
 
 static inline int
-iocb_optimized(struct opioctx *ctx, struct iocb *io)
+iocb_optimized(struct iocb *io)
 {
 	return iocb_vectorized(io->aio_lio_opcode) == io->aio_lio_opcode;
 }
@@ -124,7 +124,7 @@ iocb_optimized(struct opioctx *ctx, struct iocb *io)
 static inline int
 contiguous_sectors(struct iocb *l, struct iocb *r)
 {
-	return (iocb_offset(l) + iocb_nbytes(l) == iocb_offset(r));
+	return (iocb_offset(l) + (int64_t)iocb_nbytes(l) == iocb_offset(r));
 }
 
 static inline int
@@ -161,7 +161,7 @@ opio_iocb_init(struct opioctx *ctx, struct iocb *io)
 static inline struct opio *
 opio_get(struct opioctx *ctx, struct iocb *io)
 {
-	if (iocb_optimized(ctx, io))
+	if (iocb_optimized(io))
 		return (struct opio *)io->data;
 	else
 	        return opio_iocb_init(ctx, io);
@@ -182,7 +182,7 @@ merge_tail(struct opioctx *ctx, struct iocb *head, struct iocb *io)
 		return -ENOMEM;
 
 	opio->head        = ophead;
-	if (!iocb_optimized(ctx, head)) {
+	if (!iocb_optimized(head)) {
 		void *data = head->data;
 		/* convert PREAD/PWRITE into PREADV/PWRITEV with 1 element */
 		iovec = &ophead->iov[0];
@@ -204,7 +204,7 @@ merge_tail(struct opioctx *ctx, struct iocb *head, struct iocb *io)
 		head->data = data;
 		ASSERT(head->data == ophead);
 	}
-	ASSERT(iocb_optimized(ctx, head));
+	ASSERT(iocb_optimized(head));
         ASSERT(head->u.v.nr < sizeof(ophead->iov)/sizeof(ophead->iov[0]));
 	iovec = &ophead->iov[head->u.v.nr++];
 	iovec->iov_base = iocb_buf(io);
@@ -225,7 +225,7 @@ merge(struct opioctx *ctx, struct iocb *head, struct iocb *io)
 		return -EINVAL;
 
 	/* otherwise we overflow and overwrite other values in the record */
-	if(iocb_optimized(ctx, head) && head->u.v.nr == UIO_FASTIOV)
+	if(iocb_optimized(head) && head->u.v.nr == UIO_FASTIOV)
 	    return -EINVAL;
 
 	return merge_tail(ctx, head, io);		
@@ -243,7 +243,7 @@ __print_iocb(struct opioctx *ctx, struct iocb *io, char *prefix)
 	DBG(ctx, "%soff: %08llx, nbytes: %04lx, buf: %p, type: %s, data: %08lx,"
 	    " optimized: %d\n", prefix, iocb_offset(io), iocb_nbytes(io),
 	    buf, iocb_opcode(io),
-	    (unsigned long)io->data, iocb_optimized(ctx, io));
+	    (unsigned long)io->data, iocb_optimized(io));
 }
 
 #define print_iocb(ctx, io) __print_iocb(ctx, io, "")
@@ -278,7 +278,7 @@ print_merged_iocbs(struct opioctx *ctx, struct iocb **iocbs, int num_iocbs)
 		snprintf(pref, 10, "%d: ", cnt++);
 		__print_iocb(ctx, io, pref);
 
-		if (iocb_optimized(ctx, io)) {
+		if (iocb_optimized(io)) {
 			op = (struct opio *)io->data;
 			print_optimized_iocbs(ctx, op->next, &cnt);
 		}
@@ -347,7 +347,7 @@ io_expand_iocbs(struct opioctx *ctx, struct iocb **queue, int idx, int num)
 
 	for (i = idx; i < num; i++) {
 		io = q[i];
-		if (!iocb_optimized(ctx, io))
+		if (!iocb_optimized(io))
 			queue[on_queue++] = io;
 		else
 			on_queue += expand_iocb(ctx, queue + on_queue, io);
@@ -380,7 +380,7 @@ expand_event(struct opioctx *ctx,
 		next    = op->next;
 		ep      = &queue[idx++];
 		ep->obj = op->iocb;
-		ep->res = (err ? err : iocb_nbytes(&op->orig_iocb));
+		ep->res = (err ? (size_t)err : iocb_nbytes(&op->orig_iocb));
 		restore_iocb(op);
 		free_opio(ctx, op);
 		op      = next;
@@ -405,7 +405,7 @@ io_split(struct opioctx *ctx, struct io_event *events, int num)
 
 	for (ep = q; num-- > 0; ep++) {
 		io = ep->obj;
-		if (!iocb_optimized(ctx, io))
+		if (!iocb_optimized(io))
 			events[on_queue++] = *ep;
 		else
 			on_queue = expand_event(ctx, ep, events, on_queue);

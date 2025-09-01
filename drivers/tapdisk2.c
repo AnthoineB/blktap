@@ -55,12 +55,12 @@ usage(const char *app, int err)
 }
 
 static FILE *
-fdup(FILE *stream, const char *mode)
+fdup(int stream, const char *mode)
 {
 	int fd, err;
 	FILE *f;
 
-	fd = dup(STDOUT_FILENO);
+	fd = dup(stream);
 	if (fd < 0)
 		goto fail;
 
@@ -111,7 +111,7 @@ main(int argc, char *argv[])
 		goto out;
 	}
 
-	out = fdup(stdout, "w");
+	out = fdup(STDOUT_FILENO, "w");
 	if (!out) {
 		err = -errno;
 		DPRINTF("failed to dup stdout: %d\n", err);

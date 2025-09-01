@@ -47,8 +47,8 @@ __stats_vsprintf(td_stats_t *st,
 		      const char *fmt, va_list ap)
 {
 	char *buf;
-	int written, new_size, off;
-	size_t size = 0;
+	int new_size, off;
+	size_t written, size = 0;
 	written = 1;
 	while (written >= size) {
 		va_list aq;

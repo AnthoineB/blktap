@@ -482,7 +482,8 @@ tapdisk_server_signal_handler(event_id_t id, char mode __attribute__((unused)), 
 
 
 static void
-tlog_reopen_cb(event_id_t id, char mode __attribute__((unused)), void *private)
+tlog_reopen_cb(event_id_t id, char mode __attribute__((unused)),
+               __attribute__ ((unused)) void *private)
 {
 	tlog_reopen();
 	tapdisk_server_event_set_timeout(id, TV_INF);
@@ -556,7 +557,9 @@ static void lowmem_cleanup(void)
 }
 
 /* Called when backoff period finishes */
-static void lowmem_timeout(event_id_t id, char mode, void *data)
+static void lowmem_timeout(__attribute__ ((unused)) event_id_t id,
+                           __attribute__ ((unused)) char mode,
+                           __attribute__ ((unused)) void *data)
 {
 	int ret;
 	td_vbd_t           *vbd,   *tmpv;
@@ -583,7 +586,9 @@ static void lowmem_timeout(event_id_t id, char mode, void *data)
 }
 
 /* We received a low memory event.  Switch into low memory mode. */
-static void lowmem_event(event_id_t id, char mode, void *data)
+static void lowmem_event(__attribute__ ((unused)) event_id_t id,
+                         __attribute__ ((unused)) char mode,
+                         __attribute__ ((unused)) void *data)
 {
 	uint64_t result;
 	ssize_t n;
@@ -650,7 +655,9 @@ static void lowmem_event(event_id_t id, char mode, void *data)
 /* If a low memory event isn't received for RESET_BACKOFF seconds, reset the
  * backoff
  */
-static void reset_timeout(event_id_t id, char mode, void *data)
+static void reset_timeout(__attribute__ ((unused)) event_id_t id,
+                          __attribute__ ((unused)) char mode,
+                          __attribute__ ((unused)) void *data)
 {
 	server.mem_state.backoff = MIN_BACKOFF;
 	tapdisk_server_unregister_event(server.mem_state.reset_evid);
@@ -725,7 +732,7 @@ tapdisk_server_initialize_lowmem_mode(void)
 static void cpumond_state_init(void)
 {
 	server.cpumond_state.fd = -1;
-	server.cpumond_state.cpumon = (cpumond_t *) 0;
+	server.cpumond_state.cpumon = NULL;
 }
 
 static void cpumond_cleanup(void)
@@ -741,7 +748,7 @@ static void cpumond_cleanup(void)
 float
 tapdisk_server_system_idle_cpu(void)
 {
-	if (server.cpumond_state.cpumon > 0)
+	if (server.cpumond_state.cpumon != NULL)
 		return server.cpumond_state.cpumon->idle;
 	else
 		return 0.0;
@@ -757,7 +764,7 @@ tapdisk_server_initialize_cpumond_client(void)
 
 	server.cpumond_state.cpumon = mmap(NULL, sizeof(cpumond_t), PROT_READ, MAP_PRIVATE, server.cpumond_state.fd, 0);
 	if (server.cpumond_state.cpumon == (cpumond_t *) -1) {
-		server.cpumond_state.cpumon = 0;
+		server.cpumond_state.cpumon = NULL;
 		return -errno;
 	}
 
@@ -827,7 +834,7 @@ fail:
 }
 
 int
-tapdisk_server_initialize(const char *read, const char *write)
+tapdisk_server_initialize()
 {
 	int err;
 

@@ -158,7 +158,7 @@ tlog_syslog_open(const char *ident, int facility)
 	int err;
 
 	err = tapdisk_syslog_open(syslog,
-				  tapdisk_log.ident, facility,
+				  ident, facility,
 				  TLOG_SYSLOG_BUFSZ);
 	return err;
 }

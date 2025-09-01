@@ -434,21 +434,21 @@ send_meta_context (int new_fd, uint32_t reply, uint32_t context_id, const char *
 	fixed_new_option_reply.replylen = htobe32 (sizeof context + namelen);
 	context.context_id = htobe32 (context_id);
 
-	int rc = send (new_fd, &fixed_new_option_reply, sizeof(fixed_new_option_reply), 0);
+	ssize_t rc = send (new_fd, &fixed_new_option_reply, sizeof(fixed_new_option_reply), 0);
 	if(rc != sizeof(fixed_new_option_reply)) {
-		ERR("Failed to send new_option_reply, sent %d of %lu",
+		ERR("Failed to send new_option_reply, sent %ld of %lu",
 		    rc, sizeof(fixed_new_option_reply));
 		return -1;
 	}
 	rc = send (new_fd, &context, sizeof(context), 0);
 	if(rc != sizeof(context)) {
-		ERR("Failed to send context, sent %d of %lu",
+		ERR("Failed to send context, sent %ld of %lu",
 		    rc, sizeof(context));
 		return -1;
 	}
 	rc = send (new_fd, name, namelen, 0);
-	if(rc != namelen) {
-		ERR("Failed to send name, sent %d of %lu",
+	if(rc == -1 || (size_t)rc != namelen) {
+		ERR("Failed to send name, sent %ld of %lu",
 		    rc, namelen);
 		return -1;
 	}
@@ -878,8 +878,10 @@ static void tapdisk_nbd_server_free_vreq(
 
 
 static void
-__tapdisk_nbdserver_block_status_cb(td_vbd_request_t *vreq, int err,
-		void *token, int final)
+__tapdisk_nbdserver_block_status_cb(td_vbd_request_t *vreq,
+                                    __attribute__ ((unused)) int err,
+		                    void *token,
+                                    __attribute__ ((unused)) int final)
 {
 	td_nbdserver_client_t *client = token;
 	td_nbdserver_req_t *req = container_of(vreq, td_nbdserver_req_t, vreq);
@@ -913,7 +915,8 @@ __tapdisk_nbdserver_send_structured_reply(
 
 static void
 __tapdisk_nbdserver_structured_read_cb(
-	td_vbd_request_t *vreq, int error, void *token, int final)
+	td_vbd_request_t *vreq, int error, void *token,
+        __attribute__ ((unused)) int final)
 {
 	td_nbdserver_client_t *client = token;
 	td_nbdserver_t *server = client->server;
@@ -975,7 +978,7 @@ finish:
 
 static void
 __tapdisk_nbdserver_request_cb(td_vbd_request_t *vreq, int error,
-		void *token, int final)
+		void *token, __attribute__ ((unused)) int final)
 {
 	td_nbdserver_client_t *client = token;
 	td_nbdserver_t *server = client->server;
@@ -1039,7 +1042,8 @@ finish:
 }
 
 void
-tapdisk_nbdserver_handshake_cb(event_id_t id, char mode, void *data)
+tapdisk_nbdserver_handshake_cb(event_id_t id,
+                               __attribute__ ((unused)) char mode, void *data)
 {
 	uint32_t cflags = 0;
 	int tmp_fd;
@@ -1247,7 +1251,8 @@ failreq:
 
 
 void
-tapdisk_nbdserver_clientcb(event_id_t id, char mode, void *data)
+tapdisk_nbdserver_clientcb(__attribute__ ((unused)) event_id_t id,
+                           __attribute__ ((unused)) char mode, void *data)
 {
 	td_nbdserver_client_t *client = data;
 	td_nbdserver_t *server = client->server;
@@ -1380,7 +1385,8 @@ tapdisk_nbdserver_fdreceiver_cb(int fd, char *msg, void *data)
 }
 
 static void
-tapdisk_nbdserver_newclient(event_id_t id, char mode, void *data)
+tapdisk_nbdserver_newclient(__attribute__ ((unused)) event_id_t id,
+                            __attribute__ ((unused)) char mode, void *data)
 {
 	struct sockaddr_storage their_addr;
 	socklen_t sin_size = sizeof(their_addr);
@@ -1411,7 +1417,8 @@ tapdisk_nbdserver_newclient(event_id_t id, char mode, void *data)
 }
 
 static void
-tapdisk_nbdserver_newclient_unix(event_id_t id, char mode, void *data)
+tapdisk_nbdserver_newclient_unix(__attribute__ ((unused)) event_id_t id,
+                                 __attribute__ ((unused)) char mode, void *data)
 {
 	int new_fd = 0;
 	struct sockaddr_un remote;

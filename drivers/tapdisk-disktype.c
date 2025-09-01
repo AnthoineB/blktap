@@ -200,7 +200,7 @@ const struct tap_disk *tapdisk_disk_drivers[] = {
 int
 tapdisk_disktype_find(const char *name)
 {
-	int i;
+	unsigned long i;
 
 	for (i = 0; i < ARRAY_SIZE(tapdisk_disk_types); i++) {
 		const disk_info_t *info = tapdisk_disk_types[i];

@@ -162,7 +162,7 @@ td_validate_parent(td_image_t *image, td_image_t *parent)
 	    !td_flag_test(pdriver->state, TD_DRIVER_OPEN))
 		return -EBADF;
 
-	return driver->ops->td_validate_parent(driver, pdriver, 0);
+	return driver->ops->td_validate_parent(driver, pdriver);
 }
 
 void

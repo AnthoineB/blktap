@@ -78,7 +78,7 @@ struct lcache_request {
 	int                             err;
 
 	td_request_t                    treq;
-	int                             secs;
+	unsigned int                    secs;
 
 	td_vbd_request_t                vreq;
 	struct td_iovec                 iov;
@@ -91,7 +91,7 @@ struct lcache {
 
 	td_lcache_req_t                 reqv[TD_LCACHE_MAX_REQ];
 	td_lcache_req_t                *free[TD_LCACHE_MAX_REQ];
-	int                             n_free;
+	unsigned int                    n_free;
 
 	char                           *buf;
 	size_t                          bufsz;
@@ -133,7 +133,8 @@ lcache_destroy_buffers(td_lcache_t *cache)
 static int
 lcache_create_buffers(td_lcache_t *cache)
 {
-	int prot, flags, i, err;
+	int prot, flags, err;
+        unsigned int i;
 
 	prot  = PROT_READ|PROT_WRITE;
 	flags = MAP_ANONYMOUS|MAP_PRIVATE|MAP_LOCKED;
@@ -175,7 +176,8 @@ lcache_close(td_driver_t *driver)
 
 static int
 lcache_open(td_driver_t *driver, const char *name,
-	    struct td_vbd_encryption *encryption, td_flag_t flags)
+	    __attribute__ ((unused)) struct td_vbd_encryption *encryption,
+            __attribute__ ((unused)) td_flag_t flags)
 {
 	td_lcache_t *cache = driver->data;
 	int err;
@@ -254,7 +256,8 @@ lcache_wr_enabled(td_lcache_t *cache)
 
 static void
 __lcache_write_cb(td_vbd_request_t *vreq, int error,
-		  void *token, int final)
+		  void *token,
+                  __attribute__ ((unused)) int final)
 {
 	td_lcache_req_t *req = container_of(vreq, td_lcache_req_t, vreq);
 	td_lcache_t *cache = token;
@@ -352,14 +355,15 @@ lcache_queue_read(td_driver_t *driver, td_request_t treq)
 }
 
 static int
-lcache_get_parent_id(td_driver_t *driver, td_disk_id_t *id)
+lcache_get_parent_id(__attribute__ ((unused)) td_driver_t *driver,
+                     __attribute__ ((unused)) td_disk_id_t *id)
 {
 	return -EINVAL;
 }
 
 static int
 lcache_validate_parent(td_driver_t *driver,
-		       td_driver_t *pdriver, td_flag_t flags)
+		       td_driver_t *pdriver)
 {
 	/* Check types for both */
 	if (driver->type != DISK_TYPE_LCACHE ||

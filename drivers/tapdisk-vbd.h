@@ -193,7 +193,7 @@ tapdisk_vbd_move_request(td_vbd_request_t *vreq, struct list_head *dest)
 }
 
 td_vbd_t *tapdisk_vbd_create(td_uuid_t);
-int tapdisk_vbd_initialize(int, int, td_uuid_t);
+int tapdisk_vbd_initialize(td_uuid_t);
 int tapdisk_vbd_open(td_vbd_t *, const char *, int, const char *, td_flag_t);
 int tapdisk_vbd_close(td_vbd_t *);
 
@@ -213,7 +213,7 @@ int tapdisk_vbd_open_vdi(td_vbd_t * vbd, const char *params, td_flag_t flags,
         int prt_devnum);
 void tapdisk_vbd_close_vdi(td_vbd_t *);
 
-int tapdisk_vbd_attach(td_vbd_t *, const char *, int);
+int tapdisk_vbd_attach(td_vbd_t *, const char *);
 void tapdisk_vbd_detach(td_vbd_t *);
 
 int tapdisk_vbd_queue_request(td_vbd_t *, td_vbd_request_t *);

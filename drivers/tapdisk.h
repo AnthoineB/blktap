@@ -194,7 +194,7 @@ struct td_request {
 
 	int                          status;
 	td_sector_t                  sec;
-	int                          secs;
+	unsigned int                 secs;
 
 	td_image_t                  *image;
 
@@ -229,7 +229,7 @@ struct tap_disk {
 	int (*td_open)               (td_driver_t *, const char *, struct td_vbd_encryption *encryption, td_flag_t);
 	int (*td_close)              (td_driver_t *);
 	int (*td_get_parent_id)      (td_driver_t *, td_disk_id_t *);
-	int (*td_validate_parent)    (td_driver_t *, td_driver_t *, td_flag_t);
+	int (*td_validate_parent)    (td_driver_t *, td_driver_t *);
 	void (*td_queue_read)        (td_driver_t *, td_request_t);
 	void (*td_queue_block_status)(td_driver_t *, td_request_t);
 	void (*td_queue_write)       (td_driver_t *, td_request_t);

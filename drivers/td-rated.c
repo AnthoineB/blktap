@@ -51,7 +51,8 @@
 #include "util.h"
 
 static void
-rlb_vlog_vfprintf(int prio, const char *fmt, va_list ap)
+rlb_vlog_vfprintf(__attribute__ ((unused)) int prio,
+                  const char *fmt, va_list ap)
 {
 	vfprintf(stderr, fmt, ap); fputc('\n', stderr);
 }
@@ -208,10 +209,13 @@ rlb_strtol(const char *s)
 			switch (p) {
 			case_G:
 				u *= 1024;
+                                __attribute__ ((fallthrough));
 			case_M:
 				u *= 1024;
+                                __attribute__ ((fallthrough));
 			case_K:
 				u *= 1024;
+                                break;
 			}
 			break;
 
@@ -219,10 +223,13 @@ rlb_strtol(const char *s)
 			switch (p) {
 			case_G:
 				u *= 1000;
+                                __attribute__ ((fallthrough));
 			case_M:
 				u *= 1000;
+                                __attribute__ ((fallthrough));
 			case_K:
 				u *= 1000;
+                                break;
 			}
 			break;
 
@@ -436,7 +443,8 @@ fail:
 }
 
 static int
-rlb_sock_send(td_rlb_t *rlb, td_rlb_conn_t *conn,
+rlb_sock_send(__attribute__ ((unused)) td_rlb_t *rlb,
+              td_rlb_conn_t *conn,
 	      const void *msg, size_t size)
 {
 	ssize_t n;
@@ -444,14 +452,15 @@ rlb_sock_send(td_rlb_t *rlb, td_rlb_conn_t *conn,
 	n = send(conn->sock, msg, size, MSG_DONTWAIT);
 	if (n < 0)
 		return -errno;
-	if (n && n != size)
+	if (n && (size_t)n != size)
 		return -EPROTO;
 
 	return 0;
 }
 
 static int
-rlb_sock_recv(td_rlb_t *rlb, td_rlb_conn_t *conn,
+rlb_sock_recv(__attribute__ ((unused)) td_rlb_t *rlb,
+              td_rlb_conn_t *conn,
 	      void *msg, size_t size)
 {
 	ssize_t n;
@@ -541,7 +550,8 @@ rlb_conn_receive(td_rlb_t *rlb, td_rlb_conn_t *conn)
 {
 	struct td_valve_req buf[32], req = { -1, -1 };
 	ssize_t n;
-	int i, err;
+	int err;
+        unsigned long i;
 
 	n = rlb_sock_recv(rlb, conn, buf, sizeof(buf));
 	if (!n)
@@ -764,7 +774,8 @@ rlb_token_dispatch(td_rlb_t *rlb, void *data)
 }
 
 static void
-rlb_token_reset(td_rlb_t *rlb, void *data)
+rlb_token_reset(__attribute__ ((unused)) td_rlb_t *rlb,
+                void *data)
 {
 	td_rlb_token_t *token = data;
 
@@ -772,7 +783,8 @@ rlb_token_reset(td_rlb_t *rlb, void *data)
 }
 
 static void
-rlb_token_destroy(td_rlb_t *rlb, void *data)
+rlb_token_destroy(__attribute__ ((unused)) td_rlb_t *rlb,
+                  void *data)
 {
 	td_rlb_token_t *token = data;
 
@@ -855,7 +867,9 @@ usage:
 }
 
 static void
-rlb_token_usage(td_rlb_t *rlb, FILE *stream, void *data)
+rlb_token_usage(__attribute__ ((unused)) td_rlb_t *rlb,
+                FILE *stream,
+                __attribute__ ((unused)) void *data)
 {
 	fprintf(stream,
 		" {-t|--type}=token --"
@@ -864,7 +878,8 @@ rlb_token_usage(td_rlb_t *rlb, FILE *stream, void *data)
 }
 
 static void
-rlb_token_info(td_rlb_t *rlb, void *data)
+rlb_token_info(__attribute__ ((unused)) td_rlb_t *rlb,
+               void *data)
 {
 	td_rlb_token_t *token = data;
 
@@ -1095,9 +1110,10 @@ rlb_meminfo_create(td_rlb_t *rlb, int argc, char **argv, void **data)
 
 		switch (c) {
 		case 'p':
-			m->period = rlb_strtol(optarg);
-			if (m->period < 0)
+			dbr = rlb_strtol(optarg);
+			if (dbr < 0)
 				goto usage;
+                        m->period = dbr;
 			break;
 
 		case 'H':
@@ -1230,7 +1246,8 @@ rlb_meminfo_test_high(td_rlb_t *rlb, td_rlb_meminfo_t *m, long long cred)
 }
 
 static void
-rlb_meminfo_dispatch_low(td_rlb_t *rlb, td_rlb_meminfo_t *m,
+rlb_meminfo_dispatch_low(td_rlb_t *rlb,
+                         __attribute__ ((unused)) td_rlb_meminfo_t *m,
 			 long long *_cred)
 {
 	td_rlb_conn_t *conn, *next;
@@ -1241,7 +1258,7 @@ rlb_meminfo_dispatch_low(td_rlb_t *rlb, td_rlb_meminfo_t *m,
 		if (cred <= 0)
 			break;
 
-		grant = MIN(cred, conn->need);
+		grant = MIN(cred, (long long)conn->need);
 
 		rlb_conn_respond(rlb, conn, grant);
 

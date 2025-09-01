@@ -53,7 +53,8 @@
 #define ERROR(_f, _a...)           tlog_syslog(TLOG_WARN, "nbd: " _f, ##_a)
 
 static void
-td_fdreceiver_recv_fd(event_id_t id, char mode, void *data)
+td_fdreceiver_recv_fd(__attribute__ ((unused)) event_id_t id,
+                      __attribute__ ((unused)) char mode, void *data)
 {
 	struct td_fdreceiver *fdreceiver = data;
 	int ret,  cv_flags = 0, *fdp, fd = -1;
@@ -129,7 +130,8 @@ out:
 }
 
 static void
-td_fdreceiver_accept_fd(event_id_t id, char mode, void *data)
+td_fdreceiver_accept_fd(__attribute__ ((unused)) event_id_t id,
+                        __attribute__ ((unused)) char mode, void *data)
 {
 	struct sockaddr_storage their_addr;
 	socklen_t sin_size = sizeof(their_addr);
@@ -222,7 +224,7 @@ td_fdreceiver_start(char *path, fd_cb_t callback, void *data)
 	fdreceiver->callback_data = data;
 
 	err = snprintf(local.sun_path, sizeof(local.sun_path), "%s", path);
-	if (unlikely(err >= sizeof(local.sun_path))) {
+	if (unlikely(err < 0 || (unsigned long)err >= sizeof(local.sun_path))) {
 		ERROR("td_fdreceiver_start: socket name too long (path=%s)", path);
 		goto error;
 	} else if (unlikely(err < 0)) {

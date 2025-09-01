@@ -192,7 +192,7 @@ tapdisk_logfile_vprintf(td_logfile_t *log, const char *fmt, va_list ap)
 		len += snprintf(buf + len, size - len, "\n");
 
 	n = fwrite(buf, len, 1, log->file);
-	if (n != len)
+	if (n != (size_t)len)
 		len = -ferror(log->file);
 
 	return len;

@@ -171,7 +171,8 @@ radix_tree_index(radix_tree_node_t *node, uint64_t sector)
 }
 
 static inline int
-radix_tree_node_contains_leaves(radix_tree_t *tree, radix_tree_node_t *node)
+radix_tree_node_contains_leaves(__attribute__ ((unused)) radix_tree_t *tree,
+                                radix_tree_node_t *node)
 {
 	return (node->height == 0);
 }
@@ -247,7 +248,7 @@ radix_tree_allocate_page(radix_tree_t *tree,
 static inline void
 radix_tree_free_page(radix_tree_t *tree, radix_tree_page_t *page)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < page->size >> RADIX_TREE_NODE_SHIFT; i++)
 		DBG("%s: ejecting sector 0x%llx\n",
@@ -278,12 +279,13 @@ radix_tree_remove_page(radix_tree_t *tree, radix_tree_page_t *page)
 }
 
 static void
-radix_tree_insert_leaf(radix_tree_t *tree, radix_tree_link_t *link,
+radix_tree_insert_leaf(__attribute__ ((unused)) radix_tree_t *tree,
+                       radix_tree_link_t *link,
 		       radix_tree_page_t *page, off_t off)
 {
 	int i;
 
-	if (off + RADIX_TREE_NODE_SIZE > page->size)
+	if ((size_t)off + RADIX_TREE_NODE_SIZE > page->size)
 		return;
 
 	for (i = 0; i < BLOCK_CACHE_NODES_PER_PAGE; i++) {
@@ -362,7 +364,7 @@ static int
 radix_tree_add_leaves(radix_tree_t *tree, char *buf,
 		      uint64_t sector, uint64_t sectors)
 {
-	int i;
+	uint64_t i;
 	radix_tree_page_t *page;
 
 	page = radix_tree_allocate_page(tree, buf, sector,
@@ -497,7 +499,9 @@ radix_tree_free(radix_tree_t *tree)
 }
 
 static void
-block_cache_prune_event(event_id_t id, char mode, void *private)
+block_cache_prune_event(__attribute__ ((unused)) event_id_t id,
+                        __attribute__ ((unused)) char mode,
+                        void *private)
 {
 	radix_tree_t *tree;
 	block_cache_t *cache;
@@ -526,9 +530,11 @@ block_cache_put_request(block_cache_t *cache, block_cache_request_t *breq)
 
 static int
 block_cache_open(td_driver_t *driver, const char *name,
-		 struct td_vbd_encryption *encryption, td_flag_t flags)
+		 __attribute__ ((unused)) struct td_vbd_encryption *encryption,
+                 td_flag_t flags)
 {
-	int i, err;
+	unsigned int i;
+        int err;
 	radix_tree_t *tree;
 	block_cache_t *cache;
 
@@ -597,7 +603,7 @@ block_cache_close(td_driver_t *driver)
 }
 
 static inline uint64_t
-block_cache_hash(block_cache_t *cache, char *buf)
+block_cache_hash(/*block_cache_t *cache, char *buf*/)
 {
 	return 0;
 #if 0
@@ -618,14 +624,14 @@ block_cache_hash(block_cache_t *cache, char *buf)
 static void
 block_cache_hit(block_cache_t *cache, td_request_t treq, char *iov[])
 {
-	int i;
+	unsigned int i;
 	off_t off;
 
 	cache->stats.hits += treq.secs;
 
 	for (i = 0; i < treq.secs; i++) {
 		DBG("%s: block cache hit: sec 0x%08llx, hash: 0x%08llx\n",
-		    cache->name, treq.sec + i, block_cache_hash(cache, iov[i]));
+		    cache->name, treq.sec + i, block_cache_hash(/*cache, iov[i]*/));
 
 		off = (off_t)i << RADIX_TREE_NODE_SHIFT;
 		memcpy(treq.buf + off, iov[i], RADIX_TREE_NODE_SIZE);
@@ -637,7 +643,7 @@ block_cache_hit(block_cache_t *cache, td_request_t treq, char *iov[])
 static void
 block_cache_populate_cache(td_request_t clone, int err)
 {
-	int i;
+	unsigned int i;
 	radix_tree_t *tree;
 	block_cache_t *cache;
 	block_cache_request_t *breq;
@@ -719,7 +725,7 @@ out:
 static void
 block_cache_queue_read(td_driver_t *driver, td_request_t treq)
 {
-	int i;
+	unsigned int i;
 	radix_tree_t *tree;
 	block_cache_t *cache;
 	char *iov[BLOCK_CACHE_NODES_PER_PAGE];
@@ -742,20 +748,22 @@ block_cache_queue_read(td_driver_t *driver, td_request_t treq)
 }
 
 static void
-block_cache_queue_write(td_driver_t *driver, td_request_t treq)
+block_cache_queue_write(__attribute__ ((unused)) td_driver_t *driver,
+                        td_request_t treq)
 {
 	td_complete_request(treq, -EPERM);
 }
 
 static int
-block_cache_get_parent_id(td_driver_t *driver, td_disk_id_t *id)
+block_cache_get_parent_id(__attribute__ ((unused)) td_driver_t *driver,
+                          __attribute__ ((unused)) td_disk_id_t *id)
 {
 	return -EINVAL;
 }
 
 static int
 block_cache_validate_parent(td_driver_t *driver,
-			    td_driver_t *pdriver, td_flag_t flags)
+			    td_driver_t *pdriver)
 {
 	if (!td_flag_test(pdriver->state, TD_DRIVER_RDONLY))
 		return -EINVAL;

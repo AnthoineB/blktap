@@ -288,7 +288,8 @@ xenio_blkif_get_requests(struct td_xenblkif * const blkif,
 
 int
 tapdisk_xenio_ctx_process_ring(struct td_xenblkif *blkif,
-		               struct td_xenio_ctx *ctx, int final)
+		               __attribute__ ((unused)) struct td_xenio_ctx *ctx,
+                               int final)
 {
     int n_reqs;
     int start;

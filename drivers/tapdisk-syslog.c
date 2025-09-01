@@ -191,7 +191,7 @@ tapdisk_syslog_ring_read_pkt(td_syslog_t *log, char *msg, size_t size)
 	sz   = 0;
 	cons = log->cons;
 
-	while (sz < size) {
+	while ((size_t)sz < size) {
 		char c;
 
 		if (cons == log->prod)
@@ -211,7 +211,7 @@ tapdisk_syslog_ring_read_pkt(td_syslog_t *log, char *msg, size_t size)
 static int
 tapdisk_syslog_ring_dispatch_one(td_syslog_t *log)
 {
-	size_t len;
+	ssize_t len;
 	int err;
 
 	len = tapdisk_syslog_ring_read_pkt(log, log->msg,
@@ -410,7 +410,8 @@ tapdisk_syslog_sock_send(td_syslog_t *log, const void *msg, size_t size)
 }
 
 static void
-tapdisk_syslog_sock_event(event_id_t id, char mode, void *private)
+tapdisk_syslog_sock_event(__attribute__ ((unused)) event_id_t id,
+                          __attribute__ ((unused)) char mode, void *private)
 {
 	td_syslog_t *log = private;
 
