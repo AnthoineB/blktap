@@ -124,7 +124,8 @@ struct blkback_stats {
 	 */
 	unsigned long long flags;
 
-	unsigned long long kick;
+	unsigned long long kick_in;
+	unsigned long long kick_out;
 	unsigned long long notify;
 } __attribute__ ((aligned (8)));
 

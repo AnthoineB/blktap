@@ -397,6 +397,8 @@ tapdisk_xenio_ctx_ring_event(event_id_t id __attribute__((unused)),
     }
 
     blkif->stats.kicks.in++;
+    if (blkif->stats.xenvbd)
+        blkif->stats.xenvbd->kick_in++;
 
     tapdisk_xenio_ctx_process_ring(blkif, ctx, 0);
 }

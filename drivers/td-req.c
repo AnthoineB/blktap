@@ -513,7 +513,7 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 				cnt = &blkif->stats.xenvbd->st_rd_cnt;
 				sum = &blkif->stats.xenvbd->st_rd_sum_usecs;
 				max = &blkif->stats.xenvbd->st_rd_max_usecs;
-				kick = &blkif->stats.xenvbd->kick;
+				kick = &blkif->stats.xenvbd->kick_out;
 				notify = &blkif->stats.xenvbd->notify;
 			}
 			blkif->vbd_stats.stats->read_reqs_completed++;
@@ -531,7 +531,7 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 				cnt = &blkif->stats.xenvbd->st_wr_cnt;
 				sum = &blkif->stats.xenvbd->st_wr_sum_usecs;
 				max = &blkif->stats.xenvbd->st_wr_max_usecs;
-				kick = &blkif->stats.xenvbd->kick;
+				kick = &blkif->stats.xenvbd->kick_out;
 				notify = &blkif->stats.xenvbd->notify;
 			}
 			blkif->vbd_stats.stats->write_reqs_completed++;
