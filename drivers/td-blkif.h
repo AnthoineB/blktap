@@ -196,11 +196,13 @@ struct td_xenblkif {
 	} barrier;
 
 	event_id_t chkrng_event;
+#if 0
 	event_id_t stoppolling_event;
 
 	bool in_polling;
 	int poll_duration; /* microseconds; 0 means no polling. */
 	int poll_idle_threshold;
+#endif
 };
 
 #define RING_DEBUG(blkif, fmt, args...)                                     \
@@ -285,12 +287,14 @@ tapdisk_xenblkif_evtchn_event_id(const struct td_xenblkif *blkif);
 extern event_id_t
 tapdisk_xenblkif_chkrng_event_id(const struct td_xenblkif * const blkif);
 
+#if 0
 /**
  * Returns the event ID associated with stopping polling. This is a private
  * event.
  */
 extern event_id_t
 tapdisk_xenblkif_stoppolling_event_id(const struct td_xenblkif * const blkif);
+#endif
 
 /**
  * Updates ring stats.
@@ -317,6 +321,7 @@ tapdisk_xenblkif_resume(struct td_xenblkif * const blkif);
 int
 tapdisk_xenblkif_reqs_pending(const struct td_xenblkif * const blkif);
 
+#if 0
 /**
  * Schedules the cessation of polling.
  */
@@ -334,6 +339,7 @@ tapdisk_xenblkif_unsched_stoppolling(const struct td_xenblkif *blkif);
  */
 void
 tapdisk_start_polling(struct td_xenblkif *blkif);
+#endif
 
 /**
  * Schedules a ring check.

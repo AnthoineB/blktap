@@ -424,7 +424,7 @@ static void
 tapdisk_server_signal_handler(int signal)
 {
 	td_vbd_t *vbd, *tmp;
-	struct td_xenblkif *blkif;
+//	struct td_xenblkif *blkif;
 	static int xfsz_error_sent = 0;
 
 	switch (signal) {
@@ -450,9 +450,11 @@ tapdisk_server_signal_handler(int signal)
 
 	case SIGUSR2:
 		DBG(TLOG_INFO, "triggering polling on signal %d\n", signal);
+#if 0
 		tapdisk_server_for_each_vbd(vbd, tmp)
 			list_for_each_entry(blkif, &vbd->rings, entry)
 				tapdisk_start_polling(blkif);
+#endif
 		break;
 
 	case SIGHUP:
