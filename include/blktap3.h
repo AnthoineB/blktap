@@ -129,6 +129,7 @@ struct blkback_stats {
 	unsigned long long st_wr_barrier_sect;
 	long long st_wr_barrier_sum_usecs;
 	long long st_wr_barrier_max_usecs;
+	unsigned long long st_empty_wr_barrier_req;
 
 	unsigned long long kick_in;
 	unsigned long long kick_out;

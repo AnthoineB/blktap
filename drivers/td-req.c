@@ -825,10 +825,18 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
         vreq->op = TD_OP_WRITE;
         break;
     case BLKIF_OP_WRITE_BARRIER:
-        if (likely(blkif->stats.xenvbd))
-			blkif->stats.xenvbd->st_wr_barrier_req++;
-	if (likely(blkif->vbd_stats.stats))
+        if (likely(blkif->stats.xenvbd)) {
+            blkif->stats.xenvbd->st_wr_barrier_req++;
+            if (tapreq->msg.nr_segments == 0) {
+                blkif->stats.xenvbd->st_empty_wr_barrier_req++;
+            }
+        }
+	if (likely(blkif->vbd_stats.stats)) {
 		blkif->vbd_stats.stats->write_barrier_reqs_submitted++;
+            if (tapreq->msg.nr_segments == 0) {
+                blkif->vbd_stats.stats->empty_write_barrier_reqs_submitted++;
+            }
+        }
         tapreq->prot = PROT_READ;
         vreq->op = TD_OP_WRITE;
         break;

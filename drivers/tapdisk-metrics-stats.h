@@ -54,6 +54,7 @@ struct stats {
     uint64_t write_barrier_reqs_completed;
     uint64_t write_barrier_sectors;
     uint64_t write_barrier_total_ticks;
+    uint64_t empty_write_barrier_reqs_submitted;
 };
 
 #endif /* TAPDISK_METRICS_STATS_H */
