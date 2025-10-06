@@ -274,6 +274,7 @@ tapdisk_server_submit_tiocbs(void)
 	server.ro_backend->submit_all(server.ro_queue);
 }
 
+#if 0
 static void
 tapdisk_server_kick_responses(void)
 {
@@ -282,6 +283,7 @@ tapdisk_server_kick_responses(void)
 	tapdisk_server_for_each_vbd(vbd, tmp)
 		tapdisk_vbd_kick(vbd, false);
 }
+#endif
 
 static void
 tapdisk_server_check_vbds(void)
@@ -407,7 +409,7 @@ tapdisk_server_iterate(void)
 	tapdisk_server_check_vbds();
 	do {
 		tapdisk_server_submit_tiocbs();
-		tapdisk_server_kick_responses();
+		//tapdisk_server_kick_responses();
 
 		ret = tapdisk_server_recheck_vbds();
 	} while (ret); /* repeat until there are no new requests to issue */
