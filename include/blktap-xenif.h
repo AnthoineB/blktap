@@ -19,7 +19,9 @@
 #else
 #define xen_mb()  asm volatile ( "lock addl $0, -32(%%rsp)" ::: "memory" )
 #endif
-#define xen_rmb() asm volatile ("" ::: "memory")
-#define xen_wmb() asm volatile ("" ::: "memory")
+#define xen_rmb()  asm volatile ( "lock addl $0, -32(%%rsp)" ::: "memory" )
+#define xen_wmb()  asm volatile ( "lock addl $0, -32(%%rsp)" ::: "memory" )
+//#define xen_rmb() asm volatile ("" ::: "memory")
+//#define xen_wmb() asm volatile ("" ::: "memory")
 
 #endif /* __BLKTAPXENIF_H__ */

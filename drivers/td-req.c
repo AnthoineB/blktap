@@ -287,10 +287,13 @@ xenio_blkif_put_response(struct td_xenblkif * const blkif,
         unsigned long long *stat_notify)
 {
     blkif_common_back_ring_t * const ring = &blkif->rings.common;
+    RING_IDX rp;
 
     if (req) {
+        rp = ring->rsp_prod_pvt;
+        xen_mb();
         blkif_response_t * msg = xenio_blkif_get_response(blkif,
-                ring->rsp_prod_pvt);
+                rp);
 		if (!msg)
 			return -errno;
 
@@ -304,6 +307,7 @@ xenio_blkif_put_response(struct td_xenblkif * const blkif,
         msg->status = status;
 
         ring->rsp_prod_pvt++;
+        xen_mb();
     }
 
     if (final) {
