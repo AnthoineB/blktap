@@ -106,7 +106,8 @@ td_xenblkif_bufcache_evt_reg(struct td_xenblkif * const blkif)
     blkif->reqs_bufcache_evtid =
         tapdisk_server_register_event(SCHEDULER_POLL_TIMEOUT,
                                       -1, /* dummy fd */
-                                      TV_SECS(TD_REQS_BUFCACHE_EXPIRE),
+                                      //TV_SECS(TD_REQS_BUFCACHE_EXPIRE),
+                                      TV_INF,
                                       td_xenblkif_bufcache_event,
                                       blkif);
 }
