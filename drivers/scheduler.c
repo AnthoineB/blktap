@@ -490,6 +490,7 @@ int
 scheduler_event_set_timeout(scheduler_t *sched, event_id_t event_id, struct timeval timeo)
 {
 	event_t *event;
+        struct timeval now;
 
 	ASSERT(sched);
 
@@ -497,6 +498,7 @@ scheduler_event_set_timeout(scheduler_t *sched, event_id_t event_id, struct time
 		return -EINVAL;
 
 	pthread_mutex_lock(&sched->mutex);
+        gettimeofday(&now, NULL);
 	scheduler_for_each_event(sched, event) {
 		if (event->id == event_id) {
 			if (!(event->mode & SCHEDULER_POLL_TIMEOUT)) {
@@ -507,8 +509,6 @@ scheduler_event_set_timeout(scheduler_t *sched, event_id_t event_id, struct time
 			if (TV_IS_INF(event->timeout))
 				event->deadline = TV_INF;
 			else {
-				struct timeval now;
-				gettimeofday(&now, NULL);
 				TV_ADD(now, event->timeout, event->deadline);
 			}
 			pthread_mutex_unlock(&sched->mutex);
