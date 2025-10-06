@@ -267,6 +267,7 @@ tapdisk_server_check_progress(void)
 		tapdisk_vbd_check_progress(vbd);
 }
 
+#if 0
 static void
 tapdisk_server_submit_tiocbs(void)
 {
@@ -274,7 +275,6 @@ tapdisk_server_submit_tiocbs(void)
 	server.ro_backend->submit_all(server.ro_queue);
 }
 
-#if 0
 static void
 tapdisk_server_kick_responses(void)
 {
@@ -319,6 +319,7 @@ tapdisk_server_stop_vbds(void)
 		tapdisk_vbd_kill_queue(vbd);
 }
 
+#if 0
 static int
 tapdisk_server_init_aio(void)
 {
@@ -338,6 +339,7 @@ tapdisk_server_close_aio(void)
 	server.rw_backend->free_queue(&server.rw_queue);
 	server.ro_backend->free_queue(&server.ro_queue);
 }
+#endif
 
 int
 tapdisk_server_openlog(const char *name, int options, int facility)
@@ -390,7 +392,7 @@ tapdisk_server_close(void)
 		tapdisk_server_unregister_event(server.tlog_reopen_evid);
 
 	tapdisk_server_close_tlog();
-	tapdisk_server_close_aio();
+	//tapdisk_server_close_aio();
 }
 
 void
@@ -409,7 +411,7 @@ tapdisk_server_iterate(void)
         DBG(TLOG_WARN, "server wait returned\n");
 	tapdisk_server_check_vbds();
 	do {
-		tapdisk_server_submit_tiocbs();
+		//tapdisk_server_submit_tiocbs();
 		//tapdisk_server_kick_responses();
 
 		ret = tapdisk_server_recheck_vbds();
@@ -790,12 +792,14 @@ int
 tapdisk_server_complete(void)
 {
 	int err;
+#if 0
 	server.rw_backend = get_libaio_backend();
 	server.ro_backend = get_libaio_backend();
 
 	err = tapdisk_server_init_aio();
 	if (err)
 		goto fail;
+#endif
 
 	err = tapdisk_server_open_tlog();
 	if (err)
@@ -807,7 +811,7 @@ tapdisk_server_complete(void)
 
 fail:
 	tapdisk_server_close_tlog();
-	tapdisk_server_close_aio();
+	//tapdisk_server_close_aio();
 	return err;
 }
 
