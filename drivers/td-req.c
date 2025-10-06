@@ -525,10 +525,19 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 				cnt = &blkif->stats.xenvbd->st_wr_cnt;
 				sum = &blkif->stats.xenvbd->st_wr_sum_usecs;
 				max = &blkif->stats.xenvbd->st_wr_max_usecs;
+				kick = &blkif->stats.xenvbd->kick;
+				notify = &blkif->stats.xenvbd->notify;
 			}
 			blkif->vbd_stats.stats->write_reqs_completed++;
 			ticks = &blkif->vbd_stats.stats->write_total_ticks;
 		}
+
+		if (likely(err == 0))
+			_err = BLKIF_RSP_OKAY;
+		else
+			_err = BLKIF_RSP_ERROR;
+
+		xenio_blkif_put_response(blkif, tapreq, _err, final);
 
 		if (likely(cnt)) {
 			struct timeval now;
@@ -542,13 +551,6 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 			*sum += interval;
 			*cnt += 1;
 		}
-
-		if (likely(err == 0))
-			_err = BLKIF_RSP_OKAY;
-		else
-			_err = BLKIF_RSP_ERROR;
-
-		xenio_blkif_put_response(blkif, tapreq, _err, final);
 	}
 
 	tapdisk_xenblkif_free_request(blkif, tapreq);
