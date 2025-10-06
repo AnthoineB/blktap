@@ -259,4 +259,8 @@ void tapdisk_vbd_complete_block_status_request(td_request_t, int);
  * Tells whether the VBD contains at least one dead ring.
  */
 bool tapdisk_vbd_contains_dead_rings(td_vbd_t * vbd);
+
+struct reqs_batch;
+struct reqs_batch *tapdisk_vbd_batch_init(td_vbd_t *, const int);
+int tapdisk_vbd_batch_dec(td_vbd_t *, struct reqs_batch *);
 #endif

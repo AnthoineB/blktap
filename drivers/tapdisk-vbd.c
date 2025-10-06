@@ -75,12 +75,64 @@
 
 char* op_strings[TD_OPS_END] ={"read", "write", "block_status"};
 
-static void tapdisk_vbd_complete_vbd_request(td_vbd_t *, td_vbd_request_t *);
+static int  tapdisk_vbd_complete_vbd_request(td_vbd_t *, td_vbd_request_t *);
 static int  tapdisk_vbd_queue_ready(td_vbd_t *);
 static void tapdisk_vbd_check_complete_requests(td_vbd_t *);
 static void tapdisk_vbd_check_requests_for_issue(td_vbd_t *);
 
 static bool log=true;
+
+struct reqs_batch {
+	td_vbd_t	    *vbd;
+	unsigned int	    nr_reqs;
+	struct list_head    head;
+};
+
+static struct list_head rbatch;
+static struct list_head fbatch;
+
+struct reqs_batch *
+tapdisk_vbd_batch_init(td_vbd_t *vbd, const int nr_reqs) {
+	struct reqs_batch *new_batch;
+
+	pthread_mutex_lock(&vbd->mutex);
+
+	new_batch = list_entry(list_first(&fbatch), struct reqs_batch, head);
+
+	new_batch->nr_reqs = nr_reqs;
+	new_batch->vbd = vbd;
+
+	list_move_tail(&new_batch->head, &rbatch);
+
+	pthread_mutex_unlock(&vbd->mutex);
+
+	return new_batch;
+}
+
+static int tapdisk_vbd_batch_dec_nolock(td_vbd_t *vbd, struct reqs_batch *b) {
+	struct reqs_batch *batch;
+
+	if (b)
+		batch = b;
+	else
+		batch = list_entry(list_first(&rbatch), struct reqs_batch, head);
+	batch->nr_reqs--;
+	if (batch->nr_reqs == 0) {
+		list_move(&batch->head, &fbatch);
+		return 1;
+	}
+	return 0;
+}
+
+int tapdisk_vbd_batch_dec(td_vbd_t *vbd, struct reqs_batch *batch) {
+	int kick;
+
+	pthread_mutex_lock(&vbd->mutex);
+	kick = tapdisk_vbd_batch_dec_nolock(vbd, batch);
+	pthread_mutex_unlock(&vbd->mutex);
+
+	return kick;
+}
 
 /*
  * initialization
@@ -96,11 +148,24 @@ td_vbd_t*
 tapdisk_vbd_create(uint16_t uuid)
 {
 	td_vbd_t *vbd;
+	struct reqs_batch *batch;
+	int i;
 
 	vbd = calloc(1, sizeof(td_vbd_t));
 	if (!vbd) {
 		EPRINTF("failed to allocate tapdisk state\n");
 		return NULL;
+	}
+
+	batch = calloc(32, sizeof(struct reqs_batch));
+	if (!batch) {
+		EPRINTF("failed to allocate batch struct\n");
+		return NULL;
+	}
+	INIT_LIST_HEAD(&fbatch);
+	INIT_LIST_HEAD(&rbatch);
+	for (i = 0; i < 32; i++) {
+		list_add(&batch[i].head, &fbatch);
 	}
 
 	shm_init(&vbd->rrd.shm);
@@ -1200,13 +1265,16 @@ tapdisk_vbd_check_complete_requests(td_vbd_t *vbd)
 {
 	td_vbd_request_t *vreq, *tmp;
 	struct timeval now;
+	int kick = 0;
 
 	gettimeofday(&now, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	tapdisk_vbd_for_each_request(vreq, tmp, &vbd->failed_requests)
 		if (__tapdisk_vbd_request_timeout(vreq, &now))
-			tapdisk_vbd_complete_vbd_request(vbd, vreq);
+			kick |= tapdisk_vbd_complete_vbd_request(vbd, vreq);
 	pthread_mutex_unlock(&vbd->mutex);
+	if (kick)
+		tapdisk_vbd_kick(vbd, false);
 }
 
 static void
@@ -1340,16 +1408,19 @@ tapdisk_vbd_request_should_retry(td_vbd_t *vbd, td_vbd_request_t *vreq)
 	return 0;
 }
 
-static void
+static int
 tapdisk_vbd_complete_vbd_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 {
 	if (!vreq->submitting && !vreq->secs_pending) {
 		if (vreq->error &&
 		    tapdisk_vbd_request_should_retry(vbd, vreq))
 			tapdisk_vbd_move_request(vreq, &vbd->failed_requests);
-		else
+		else {
 			tapdisk_vbd_move_request(vreq, &vbd->completed_requests);
+			return tapdisk_vbd_batch_dec_nolock(vbd, NULL);
+		}
 	}
+	return 0;
 }
 
 static void
@@ -1367,7 +1438,7 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
 				  td_request_t treq, int res)
 {
 	td_image_t *image = treq.image;
-	int err;
+	int err, kick;
 
         long long interval;
 
@@ -1415,8 +1486,10 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
             vbd->vdi_stats.stats->write_total_ticks += interval;
         }
 
-	tapdisk_vbd_complete_vbd_request(vbd, vreq);
+	kick = tapdisk_vbd_complete_vbd_request(vbd, vreq);
 	pthread_mutex_unlock(&vbd->mutex);
+	if (kick)
+		tapdisk_vbd_kick(vbd, true);
 }
 
 static void
@@ -1425,6 +1498,7 @@ __tapdisk_vbd_reissue_td_request(td_vbd_t *vbd,
 {
 	td_image_t *parent;
 	td_vbd_request_t *vreq;
+	int kick = 0;
 
 	vreq = treq.vreq;
 	gettimeofday(&vreq->last_try, NULL);
@@ -1490,8 +1564,10 @@ done:
 	pthread_mutex_lock(&vbd->mutex);
 	vreq->submitting--;
 	if (!vreq->secs_pending)
-		tapdisk_vbd_complete_vbd_request(vbd, vreq);
+		kick = tapdisk_vbd_complete_vbd_request(vbd, vreq);
 	pthread_mutex_unlock(&vbd->mutex);
+	if (kick)
+		tapdisk_vbd_kick(vbd, false);
 }
 
 void
@@ -1654,7 +1730,7 @@ tapdisk_vbd_issue_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 	td_request_t treq;
 	bzero(&treq, sizeof(treq));
 	td_sector_t sec;
-	int i, err;
+	int i, err, kick = 0;
 
 	sec    = vreq->sec;
 	image  = tapdisk_vbd_first_image(vbd);
@@ -1749,9 +1825,11 @@ out:
 	vreq->submitting--;
 	if (!vreq->secs_pending) {
 		err = (err ? : vreq->error);
-		tapdisk_vbd_complete_vbd_request(vbd, vreq);
+		kick = tapdisk_vbd_complete_vbd_request(vbd, vreq);
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	if (kick)
+		tapdisk_vbd_kick(vbd, false);
 
 	return err;
 
@@ -1769,7 +1847,7 @@ tapdisk_vbd_request_completed(td_vbd_t *vbd, td_vbd_request_t *vreq)
 static int
 tapdisk_vbd_reissue_failed_requests(td_vbd_t *vbd)
 {
-	int err;
+	int err, kick = 0;
 	struct timeval now;
 	td_vbd_request_t *vreq, *tmp;
 
@@ -1782,7 +1860,7 @@ tapdisk_vbd_reissue_failed_requests(td_vbd_t *vbd)
 			continue;
 
 		if (td_flag_test(vbd->state, TD_VBD_SHUTDOWN_REQUESTED)) {
-			tapdisk_vbd_complete_vbd_request(vbd, vreq);
+			kick |= tapdisk_vbd_complete_vbd_request(vbd, vreq);
 			continue;
 		}
 
@@ -1812,6 +1890,8 @@ tapdisk_vbd_reissue_failed_requests(td_vbd_t *vbd)
 			break;
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	if (kick)
+		tapdisk_vbd_kick(vbd, false);
 
 	return 0;
 }

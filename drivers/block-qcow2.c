@@ -182,7 +182,6 @@ struct qcow2_state {
     uint64_t                  read_size;
     uint64_t                  writes;
     uint64_t                  write_size;
-    uint64_t                  kick;
     uint64_t                  schedule;
 #if DEBUGGING != 0
     struct io_stat            read_slat;
@@ -660,15 +659,10 @@ static inline void
 signal_completion(struct qcow2_request *r)
 {
 	struct qcow2_state *s = r->state;
-        td_vbd_t *vbd = r->treq.vreq->vbd;
 
         td_complete_request(r->treq, r->error);
         DBG(TLOG_DBG, "lsec: 0x%08"PRIx64", blk: 0x%04x, "
                 "err: %d\n", r->treq.sec, r->treq.secs, r->error);
-        if (r->error == 0) {
-                tapdisk_vbd_kick(vbd, true);
-                s->kick++;
-        }
         free_qcow2_request(s, r);
 
         s->returned++;
@@ -1171,12 +1165,12 @@ qcow2_debug(td_driver_t *driver)
 
     DBG(TLOG_WARN, "Qcow2: %s: queued %lu, completed %lu, returned %lu, "
             "reads %lu, read sz avg %f, "
-            "writes %lu, write sz avg %f, schedule %lu, kick %lu\n",
+            "writes %lu, write sz avg %f, schedule %lu\n",
             blk_name(s->conf.blk),
             s->queued, s->completed, s->returned,
             s->reads, (s->reads ? ((float)s->read_size / s->reads) : 0.0),
             s->writes, (s->writes ? ((float)s->write_size / s->writes) : 0.0),
-            s->schedule, s->kick);
+            s->schedule);
 
     print_latencies(s);
 #endif

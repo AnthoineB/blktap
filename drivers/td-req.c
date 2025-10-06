@@ -850,7 +850,8 @@ out:
  */
 static inline int
 tapdisk_xenblkif_queue_request(struct td_xenblkif * const blkif,
-        blkif_request_t *msg, struct td_xenblkif_req *tapreq)
+        blkif_request_t *msg, struct td_xenblkif_req *tapreq,
+        struct reqs_batch *batch)
 {
     int err;
     int queue_request;
@@ -880,6 +881,8 @@ tapdisk_xenblkif_queue_request(struct td_xenblkif * const blkif,
 			blkif->stats.errors.vbd++;
 			return err;
 		}
+	} else {
+		tapdisk_vbd_batch_dec(blkif->vbd, batch);
 	}
 
     return 0;
@@ -893,10 +896,13 @@ tapdisk_xenblkif_queue_requests(struct td_xenblkif * const blkif,
     int i;
     int err;
     int nr_errors = 0;
+    struct reqs_batch *batch;
 
     ASSERT(blkif);
     ASSERT(reqs);
     ASSERT(nr_reqs >= 0);
+
+    batch = tapdisk_vbd_batch_init(blkif->vbd, nr_reqs);
 
     for (i = 0; i < nr_reqs; i++) { /* for each request in the ring... */
         blkif_request_t *msg = reqs[i];
@@ -908,10 +914,11 @@ tapdisk_xenblkif_queue_requests(struct td_xenblkif * const blkif,
 
         ASSERT(tapreq);
 
-        err = tapdisk_xenblkif_queue_request(blkif, msg, tapreq);
+        err = tapdisk_xenblkif_queue_request(blkif, msg, tapreq, batch);
         if (err) {
             /* TODO log error */
             nr_errors++;
+            tapdisk_vbd_batch_dec(blkif->vbd, batch);
             tapdisk_xenblkif_complete_request(blkif, tapreq, err, 1, true);
         }
     }
