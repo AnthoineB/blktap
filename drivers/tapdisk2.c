@@ -155,7 +155,7 @@ main(int argc, char *argv[])
 	 * for the block-nbd driver. In the future we may want to start this as 
 	 * a response to a tap-ctl message
 	 */
-	tdnbd_fdreceiver_start();
+	//tdnbd_fdreceiver_start();
 
 	err = tapdisk_server_run();
 
@@ -164,7 +164,7 @@ out:
 		EPRINTF("Tapdisk exiting with error %d\n", err);
 	}
 	td_metrics_stop();
-	tdnbd_fdreceiver_stop();
+	//tdnbd_fdreceiver_stop();
 	tapdisk_control_close();
 	tapdisk_stop_logging();
 	return -err;

@@ -1014,10 +1014,12 @@ tapdisk_vbd_pause(td_vbd_t *vbd)
 
 	td_flag_set(vbd->state, TD_VBD_PAUSE_REQUESTED);
 
+#if 0
 	if (vbd->nbdserver)
 		tapdisk_nbdserver_pause(vbd->nbdserver, log);
 	if (vbd->nbdserver_new)
 		tapdisk_nbdserver_pause(vbd->nbdserver_new, log);
+#endif
 
 	list_for_each_entry(blkif, &vbd->rings, entry)
 		tapdisk_xenblkif_suspend(blkif);
@@ -1101,10 +1103,12 @@ resume_failed:
 	pthread_mutex_unlock(&vbd->mutex);
 	tapdisk_vbd_check_state(vbd);
 
+#if 0
 	if (vbd->nbdserver)
 		tapdisk_nbdserver_unpause(vbd->nbdserver);
 	if (vbd->nbdserver_new)
 		tapdisk_nbdserver_unpause(vbd->nbdserver_new);
+#endif
 
     list_for_each_entry(blkif, &vbd->rings, entry)
 		tapdisk_xenblkif_resume(blkif);
@@ -2005,6 +2009,7 @@ tapdisk_vbd_kick(td_vbd_t *vbd, bool scheduler_kick)
 int
 tapdisk_vbd_start_nbdservers(td_vbd_t *vbd)
 {
+#if 0
 	td_disk_info_t info;
 	int err;
 
@@ -2039,6 +2044,7 @@ tapdisk_vbd_start_nbdservers(td_vbd_t *vbd)
 		return err;
 	}
 
+#endif
 	return 0;
 }
 

@@ -192,7 +192,7 @@ const struct tap_disk *tapdisk_disk_drivers[] = {
 	[DISK_TYPE_LLPCACHE]    = &tapdisk_llpcache,
 	[DISK_TYPE_LLECACHE]    = &tapdisk_llecache,
 	[DISK_TYPE_VALVE]       = &tapdisk_valve,
-	[DISK_TYPE_NBD]         = &tapdisk_nbd,
+//	[DISK_TYPE_NBD]         = &tapdisk_nbd,
 	[DISK_TYPE_DUMMY]       = &tapdisk_dummy,
 	0,
 };

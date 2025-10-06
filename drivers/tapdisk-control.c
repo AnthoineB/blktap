@@ -892,10 +892,12 @@ tapdisk_control_close_image(struct tapdisk_ctl_conn *conn,
 	if (!list_empty(&vbd->failed_requests))
 		EPRINTF("closing VBD %d with failed requests\n", request->cookie);
 
+#if 0
 	if (vbd->nbdserver)
 		tapdisk_nbdserver_pause(vbd->nbdserver, true);
 	if (vbd->nbdserver_new)
 		tapdisk_nbdserver_pause(vbd->nbdserver_new, true);
+#endif
 
     err = 0;
     tapdisk_vbd_for_each_blkif(vbd, blkif, _blkif) {
@@ -957,6 +959,7 @@ tapdisk_control_close_image(struct tapdisk_ctl_conn *conn,
 	if (err)
 		goto out;
 
+#if 0
 	if (vbd->nbdserver) {
 		tapdisk_nbdserver_free(vbd->nbdserver);
 		vbd->nbdserver = NULL;
@@ -965,6 +968,7 @@ tapdisk_control_close_image(struct tapdisk_ctl_conn *conn,
 		tapdisk_nbdserver_free(vbd->nbdserver_new);
 		vbd->nbdserver_new = NULL;
 	}
+#endif
 
 	tapdisk_vbd_close_vdi(vbd);
 
