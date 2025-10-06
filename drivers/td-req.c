@@ -283,7 +283,8 @@ xenio_blkif_get_response(struct td_xenblkif* const blkif, const RING_IDX rp)
  */
 static int
 xenio_blkif_put_response(struct td_xenblkif * const blkif,
-        struct td_xenblkif_req *req, int const status, int const final)
+        struct td_xenblkif_req *req, int const status, int const final,
+        unsigned long long *stat_notify)
 {
     blkif_common_back_ring_t * const ring = &blkif->rings.common;
 
@@ -310,6 +311,8 @@ xenio_blkif_put_response(struct td_xenblkif * const blkif,
         RING_PUSH_RESPONSES_AND_CHECK_NOTIFY(ring, notify);
         if (notify) {
             int err = xenevtchn_notify(blkif->ctx->xce_handle, blkif->port);
+            if (stat_notify)
+                *stat_notify += 1;
             if (err < 0) {
                 err = -errno;
                 if (req) {
@@ -465,6 +468,7 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 {
 	int _err;
 	long long *max = NULL, *sum = NULL, *cnt = NULL;
+        unsigned long long *kick = NULL, *notify = NULL;
 	static int depth = 0;
 	bool processing_barrier_message;
 	uint64_t *ticks = NULL;
@@ -509,6 +513,8 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 				cnt = &blkif->stats.xenvbd->st_rd_cnt;
 				sum = &blkif->stats.xenvbd->st_rd_sum_usecs;
 				max = &blkif->stats.xenvbd->st_rd_max_usecs;
+				kick = &blkif->stats.xenvbd->kick;
+				notify = &blkif->stats.xenvbd->notify;
 			}
 			blkif->vbd_stats.stats->read_reqs_completed++;
 			ticks = &blkif->vbd_stats.stats->read_total_ticks;
@@ -537,7 +543,7 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 		else
 			_err = BLKIF_RSP_ERROR;
 
-		xenio_blkif_put_response(blkif, tapreq, _err, final);
+		xenio_blkif_put_response(blkif, tapreq, _err, final, notify);
 
 		if (likely(cnt)) {
 			struct timeval now;
@@ -550,6 +556,8 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 
 			*sum += interval;
 			*cnt += 1;
+                        if (final)
+                            *kick += 1;
 		}
 	}
 
@@ -924,7 +932,7 @@ tapdisk_xenblkif_queue_requests(struct td_xenblkif * const blkif,
 
     if (nr_errors && blkif) {
         pthread_mutex_lock(&blkif->mutex);
-        xenio_blkif_put_response(blkif, NULL, 0, 1);
+        xenio_blkif_put_response(blkif, NULL, 0, 1, NULL);
         pthread_mutex_unlock(&blkif->mutex);
     }
 }

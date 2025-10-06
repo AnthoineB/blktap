@@ -123,6 +123,9 @@ struct blkback_stats {
 	 * mem_mode: 0 - NORMAL_MEMORY_MODE; 1 - LOW_MEMORY_MODE;
 	 */
 	unsigned long long flags;
+
+	unsigned long long kick;
+	unsigned long long notify;
 } __attribute__ ((aligned (8)));
 
 #endif /* __BLKTAP_3_H__ */
