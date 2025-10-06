@@ -322,8 +322,10 @@ tapdisk_xenio_ctx_process_ring(struct td_xenblkif *blkif,
 
         n_reqs = xenio_blkif_get_requests(blkif, reqs, limit, final);
         ASSERT(n_reqs >= 0);
-        if (!n_reqs)
+        if (!n_reqs) {
+            ERROR("%s:%d\n", __func__, __LINE__);
             break;
+        }
 
         blkif->n_reqs_free -= n_reqs;
 		ASSERT(blkif->n_reqs_free <= blkif->ring_size);
@@ -354,6 +356,7 @@ tapdisk_xenio_ctx_process_ring(struct td_xenblkif *blkif,
 		 * and can be ignored.
 		 */
 		pthread_mutex_unlock(&blkif->mutex);
+                ERROR("%s:%d\n", __func__, __LINE__);
 		return 0;
     }
 
@@ -398,6 +401,7 @@ tapdisk_xenio_ctx_ring_event(event_id_t id __attribute__((unused)),
         return;
     }
 
+    ERROR("%s:%d\n", __func__, __LINE__);
     blkif->stats.kicks.in++;
     if (blkif->stats.xenvbd)
         blkif->stats.xenvbd->kick_in++;

@@ -45,7 +45,7 @@
 #include "tapdisk-log.h"
 #include "timeout-math.h"
 
-#define DBG(_f, _a...)               if (0) { tlog_syslog(TLOG_DBG, _f, ##_a); }
+#define DBG(_f, _a...)               tlog_syslog(TLOG_DBG, _f, ##_a);
 #define BUG_ON(_cond)                if (_cond) td_panic()
 
 #define SCHEDULER_MAX_TIMEOUT        600

@@ -567,7 +567,11 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 		else
 			_err = BLKIF_RSP_ERROR;
 
-		xenio_blkif_put_response(blkif, tapreq, _err, final, notify);
+		_err = xenio_blkif_put_response(blkif, tapreq, _err, final, notify);
+                if (_err) {
+                    RING_ERR(blkif, "req %lu: failed to put response "
+                            "%s\n", tapreq->msg.id, strerror(-_err));
+                }
 
 		if (likely(cnt)) {
 			struct timeval now;
@@ -575,6 +579,7 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 			gettimeofday(&now, NULL);
 			interval = timeval_to_us(&now) - timeval_to_us(&tapreq->ts);
 			*ticks += interval;
+                        //ASSERT(interval < 5000000);
 			if (interval > *max)
 				*max = interval;
 
@@ -978,7 +983,12 @@ tapdisk_xenblkif_queue_requests(struct td_xenblkif * const blkif,
 
     if (nr_errors && blkif) {
         pthread_mutex_lock(&blkif->mutex);
-        xenio_blkif_put_response(blkif, NULL, 0, 1, NULL);
+        ERR(blkif, "ERROR %d\n", nr_errors);
+        err = xenio_blkif_put_response(blkif, NULL, 0, 1, NULL);
+        if (err) {
+            RING_ERR(blkif, "req xxx: failed to put response2 "
+                    "%s\n", strerror(-err));
+        }
         pthread_mutex_unlock(&blkif->mutex);
     }
 }

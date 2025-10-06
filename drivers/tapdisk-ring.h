@@ -33,6 +33,7 @@
 
 #include <inttypes.h>
 
+#include "blktap-xenif.h"
 #include <xen/io/ring.h>
 
 typedef struct td_uring             td_uring_t;

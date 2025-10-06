@@ -1212,6 +1212,7 @@ tapdisk_vbd_check_complete_requests(td_vbd_t *vbd)
 static void
 tapdisk_vbd_check_requests_for_issue(td_vbd_t *vbd)
 {
+        DBG(TLOG_DBG, "%s:%d\n", __func__, __LINE__);
 	pthread_mutex_lock(&vbd->mutex);
 	if (!list_empty(&vbd->new_requests) ||
 	    !list_empty(&vbd->failed_requests)) {
@@ -1413,6 +1414,7 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
             vbd->vdi_stats.stats->write_reqs_completed++;
             vbd->vdi_stats.stats->write_sectors += treq.secs;
             vbd->vdi_stats.stats->write_total_ticks += interval;
+	    //ASSERT(interval < 5000000);
         }
 
 	tapdisk_vbd_complete_vbd_request(vbd, vreq);
@@ -1656,6 +1658,8 @@ tapdisk_vbd_issue_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 	td_sector_t sec;
 	int i, err;
 
+        DBG(TLOG_DBG, "%s:%d\n", __func__, __LINE__);
+
 	sec    = vreq->sec;
 	image  = tapdisk_vbd_first_image(vbd);
 
@@ -1834,6 +1838,7 @@ tapdisk_vbd_issue_new_requests(td_vbd_t *vbd)
 	int err;
 	td_vbd_request_t *vreq, *tmp;
 
+        DBG(TLOG_DBG, "%s:%d\n", __func__, __LINE__);
 	pthread_mutex_lock(&vbd->mutex);
 	tapdisk_vbd_for_each_request(vreq, tmp, &vbd->new_requests) {
 		pthread_mutex_unlock(&vbd->mutex);
@@ -1904,6 +1909,8 @@ tapdisk_vbd_issue_requests(td_vbd_t *vbd)
 {
 	int err;
 
+        DBG(TLOG_DBG, "%s:%d\n", __func__, __LINE__);
+
 	pthread_mutex_lock(&vbd->mutex);
 	if (td_flag_test(vbd->state, TD_VBD_DEAD)) {
 		pthread_mutex_unlock(&vbd->mutex);
@@ -1927,6 +1934,7 @@ tapdisk_vbd_issue_requests(td_vbd_t *vbd)
 	if (err)
 		return err;
 
+        DBG(TLOG_DBG, "%s:%d\n", __func__, __LINE__);
 	return tapdisk_vbd_issue_new_requests(vbd);
 }
 
