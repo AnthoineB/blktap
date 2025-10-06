@@ -246,11 +246,14 @@ scheduler_event_callback(event_t *event, char mode)
 	}
 
 	if (!event->masked) {
+#if 0
             if (event->cb == tapdisk_xenblkif_cb_chkrng) {
 	        DBG("%s:%d: tapdisk_xenblkif_cb_chkrng\n", __func__, __LINE__);
             } else if (event->cb == tapdisk_xenio_ctx_ring_event) {
 	        DBG("%s:%d: tapdisk_xenio_ctx_ring_event\n", __func__, __LINE__);
             }
+#endif
+	        DBG("%s:%d: %p %d\n", __func__, __LINE__, event->cb, event->id);
 		event->cb(event->id, mode, event->private);
         }
 }
@@ -460,7 +463,9 @@ scheduler_wait_for_events(scheduler_t *s)
         goto out;
     }
 
+        DBG("select returned %d\n", ret);
 	ret = scheduler_check_events(s, ret);
+        DBG("select check %d\n", ret);
 	BUG_ON(ret);
 
 	s->timeout     = TV_SECS(SCHEDULER_MAX_TIMEOUT);

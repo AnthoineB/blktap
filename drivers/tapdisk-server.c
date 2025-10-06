@@ -408,7 +408,6 @@ tapdisk_server_iterate(void)
 	if (ret < 0)
 		DBG(TLOG_WARN, "server wait returned %s\n", strerror(-ret));
 
-        DBG(TLOG_WARN, "server wait returned\n");
 	tapdisk_server_check_vbds();
 	do {
 		//tapdisk_server_submit_tiocbs();

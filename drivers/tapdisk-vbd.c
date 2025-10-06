@@ -1966,6 +1966,7 @@ tapdisk_vbd_kick(td_vbd_t *vbd, bool scheduler_kick)
 
 	vbd->kicked++;
 
+        DBG(TLOG_DBG, "%s:%d\n", __func__, __LINE__);
 	pthread_mutex_lock(&vbd->mutex);
 	list = &vbd->completed_requests;
 	while (!list_empty(list)) {
