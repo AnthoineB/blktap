@@ -45,6 +45,9 @@
 #include "tapdisk-log.h"
 #include "timeout-math.h"
 
+#include "td-ctx.h"
+#include "td-blkif.h"
+
 #define DBG(_f, _a...)               tlog_syslog(TLOG_DBG, _f, ##_a);
 #define BUG_ON(_cond)                if (_cond) td_panic()
 
@@ -242,8 +245,14 @@ scheduler_event_callback(event_t *event, char mode)
 		TV_ADD(now, event->timeout, event->deadline);
 	}
 
-	if (!event->masked)
+	if (!event->masked) {
+            if (event->cb == tapdisk_xenblkif_cb_chkrng) {
+	        DBG("%s:%d: tapdisk_xenblkif_cb_chkrng\n", __func__, __LINE__);
+            } else if (event->cb == tapdisk_xenio_ctx_ring_event) {
+	        DBG("%s:%d: tapdisk_xenio_ctx_ring_event\n", __func__, __LINE__);
+            }
 		event->cb(event->id, mode, event->private);
+        }
 }
 
 static int

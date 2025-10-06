@@ -353,6 +353,9 @@ tapdisk_xenblkif_sched_chkrng(const struct td_xenblkif *blkif);
 void
 tapdisk_xenblkif_unsched_chkrng(const struct td_xenblkif *blkif);
 
+void
+tapdisk_xenblkif_cb_chkrng(event_id_t, char, void *);
+
 /**
  * Tells whether a barrier request can be completed.
  */

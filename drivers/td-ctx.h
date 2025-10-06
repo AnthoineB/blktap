@@ -131,4 +131,6 @@ extern struct list_head _td_xenio_ctxs;
 			_blkif = NULL;									\
 	} while (0)
 
+void
+tapdisk_xenio_ctx_ring_event(event_id_t, char, void *);
 #endif /* __TD_CTX_H__ */

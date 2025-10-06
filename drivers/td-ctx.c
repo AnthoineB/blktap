@@ -386,7 +386,7 @@ tapdisk_xenio_ctx_process_ring(struct td_xenblkif *blkif,
  * many request descriptors as possible (limited by local buffer space) to the
  * td_blkif's local request buffer and queues them to the tapdisk queue.
  */
-static inline void
+void
 tapdisk_xenio_ctx_ring_event(event_id_t id __attribute__((unused)),
         char mode __attribute__((unused)), void *private)
 {

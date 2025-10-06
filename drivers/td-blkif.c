@@ -419,7 +419,7 @@ tapdisk_xenblkif_unsched_chkrng(const struct td_xenblkif *blkif)
 	ASSERT(!err);
 }
 
-static inline void
+void
 tapdisk_xenblkif_cb_chkrng(event_id_t id __attribute__((unused)),
         char mode __attribute__((unused)), void *private)
 {
