@@ -258,14 +258,15 @@ scheduler_event_callback(event_t *event, char mode)
 	}
 
 	if (!event->masked) {
-#if 0
+#if 1
             if (event->cb == tapdisk_xenblkif_cb_chkrng) {
 	        DBG("%s:%d: tapdisk_xenblkif_cb_chkrng\n", __func__, __LINE__);
             } else if (event->cb == tapdisk_xenio_ctx_ring_event) {
 	        DBG("%s:%d: tapdisk_xenio_ctx_ring_event\n", __func__, __LINE__);
             }
-#endif
+#else
 	        DBG("%s:%d: %p %d\n", __func__, __LINE__, event->cb, event->id);
+#endif
 		event->cb(event->id, mode, event->private);
         }
 }

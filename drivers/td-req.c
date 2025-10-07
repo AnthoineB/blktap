@@ -677,6 +677,7 @@ __tapdisk_xenblkif_request_cb(struct td_vbd_request * const vreq,
 
     tapreq = container_of(vreq, struct td_xenblkif_req, vreq);
 
+    ASSERT(!error);
     if (error) {
         gettimeofday(&lock, NULL);
         pthread_mutex_lock(&blkif->mutex);

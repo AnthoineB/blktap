@@ -662,6 +662,7 @@ signal_completion(struct qcow2_request *r)
 	struct qcow2_state *s = r->state;
         td_vbd_t *vbd = r->treq.vreq->vbd;
 
+        ASSERT(!r->error);
         td_complete_request(r->treq, r->error);
         DBG(TLOG_DBG, "lsec: 0x%08"PRIx64", blk: 0x%04x, "
                 "err: %d\n", r->treq.sec, r->treq.secs, r->error);
