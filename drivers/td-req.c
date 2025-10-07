@@ -58,6 +58,7 @@
 #define BLKIF_MSG_POISON 0xdeadbeef
 #endif
 
+#define DBG(_level, _f, _a...) tlog_write(_level, _f, ##_a)
 #define ERR(blkif, fmt, args...) \
     EPRINTF("%d/%d: "fmt, (blkif)->domid, (blkif)->devid, ##args);
 
@@ -74,11 +75,16 @@ td_xenblkif_bufcache_event(event_id_t id, char mode, void *private)
 {
     struct td_xenblkif *blkif = private;
 
+    struct timeval lock, unlock, diff;
+    gettimeofday(&lock, NULL);
     pthread_mutex_lock(&blkif->mutex);
     td_xenblkif_bufcache_free(blkif);
 
     td_xenblkif_bufcache_evt_unreg(blkif);
     pthread_mutex_unlock(&blkif->mutex);
+    gettimeofday(&unlock, NULL);
+    TV_SUB(unlock, lock, diff);
+    DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 }
 
 /**
@@ -477,13 +483,16 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 	static int depth = 0;
 	bool processing_barrier_message;
 	uint64_t *ticks = NULL;
+        struct timeval lock2, unlock, diff;
 
 	ASSERT(blkif);
 	ASSERT(tapreq);
 	ASSERT(depth >= 0);
 
-	if (lock)
+	if (lock) {
+                gettimeofday(&lock2, NULL);
 		pthread_mutex_lock(&blkif->mutex);
+        }
 	depth++;
 
 	processing_barrier_message =
@@ -629,14 +638,21 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 
 		RING_DEBUG(blkif, "destroying dead ring\n");
 		pthread_mutex_unlock(&blkif->mutex);
+                gettimeofday(&unlock, NULL);
+                TV_SUB(unlock, lock2, diff);
+                DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		tapdisk_xenblkif_destroy(blkif);
 		lock = 0; /* blkif with its mutex were destroyed above so don't try to unlock it */
 	}
 
 out:
 	depth--;
-	if (lock)
+	if (lock) {
 		pthread_mutex_unlock(&blkif->mutex);
+                gettimeofday(&unlock, NULL);
+                TV_SUB(unlock, lock2, diff);
+                DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
+        }
 }
 
 /**
@@ -654,6 +670,7 @@ __tapdisk_xenblkif_request_cb(struct td_vbd_request * const vreq,
 {
     struct td_xenblkif_req *tapreq;
     struct td_xenblkif * const blkif = token;
+    struct timeval lock, unlock, diff;
 
     ASSERT(vreq);
     ASSERT(blkif);
@@ -661,12 +678,16 @@ __tapdisk_xenblkif_request_cb(struct td_vbd_request * const vreq,
     tapreq = container_of(vreq, struct td_xenblkif_req, vreq);
 
     if (error) {
+        gettimeofday(&lock, NULL);
         pthread_mutex_lock(&blkif->mutex);
         if (likely(!blkif->dead)) {
             blkif->stats.errors.img++;
             blkif->vbd_stats.stats->io_errors++;
         }
         pthread_mutex_unlock(&blkif->mutex);
+        gettimeofday(&unlock, NULL);
+        TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
     }
 
     tapdisk_xenblkif_complete_request(blkif, tapreq, error, final, true);
@@ -809,6 +830,7 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
 {
     int err = 0;
     td_vbd_request_t *vreq;
+    struct timeval lock, unlock, diff;
 
     ASSERT(tapreq);
 
@@ -872,9 +894,13 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
     }
 
     if (likely(tapreq->msg.nr_segments)) {
+        gettimeofday(&lock, NULL);
         pthread_mutex_lock(&blkif->mutex);
         err = tapdisk_xenblkif_parse_request(blkif, tapreq);
         pthread_mutex_unlock(&blkif->mutex);
+        gettimeofday(&unlock, NULL);
+        TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
     /*
      * If we only got one request from the ring and that was a barrier one,
      * check whether the barrier requests completion conditions are satisfied
@@ -884,6 +910,7 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
      * request, tapdisk_xenblkif_complete_request() will schedule a ring check.
      */
     } else {
+        gettimeofday(&lock, NULL);
         pthread_mutex_lock(&blkif->mutex);
         if (tapdisk_xenblkif_barrier_should_complete(blkif)) {
             tapdisk_xenblkif_complete_request(blkif,
@@ -891,6 +918,9 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
             err = 0;
         }
         pthread_mutex_unlock(&blkif->mutex);
+        gettimeofday(&unlock, NULL);
+        TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
     }
 out:
     return err;
@@ -955,6 +985,7 @@ tapdisk_xenblkif_queue_requests(struct td_xenblkif * const blkif,
     int i;
     int err;
     int nr_errors = 0;
+    struct timeval lock, unlock, diff;
 
     ASSERT(blkif);
     ASSERT(reqs);
@@ -983,6 +1014,7 @@ tapdisk_xenblkif_queue_requests(struct td_xenblkif * const blkif,
        this check to avoid seg fault */
 
     if (nr_errors && blkif) {
+        gettimeofday(&lock, NULL);
         pthread_mutex_lock(&blkif->mutex);
         ERR(blkif, "ERROR %d\n", nr_errors);
         err = xenio_blkif_put_response(blkif, NULL, 0, 1, NULL);
@@ -991,6 +1023,9 @@ tapdisk_xenblkif_queue_requests(struct td_xenblkif * const blkif,
                     "%s\n", strerror(-err));
         }
         pthread_mutex_unlock(&blkif->mutex);
+        gettimeofday(&unlock, NULL);
+        TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
     }
 }
 

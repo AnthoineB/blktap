@@ -44,6 +44,7 @@
 #include "tapdisk-log.h"
 #include "timeout-math.h"
 
+#define DBG(_level, _f, _a...) tlog_write(_level, _f, ##_a)
 #define ERROR(_f, _a...)           tlog_syslog(TLOG_WARN, "td-ctx: " _f, ##_a)
 
 struct list_head _td_xenio_ctxs = LIST_HEAD_INIT(_td_xenio_ctxs);
@@ -295,11 +296,16 @@ tapdisk_xenio_ctx_process_ring(struct td_xenblkif *blkif,
     blkif_request_t **reqs;
     int limit;
 
+    struct timeval lock, unlock, diff;
+    gettimeofday(&lock, NULL);
     pthread_mutex_lock(&blkif->mutex);
     start = blkif->n_reqs_free;
 
     if (unlikely(blkif->barrier.msg)) {
         pthread_mutex_unlock(&blkif->mutex);
+        gettimeofday(&unlock, NULL);
+        TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
         return 0;
     }
 
@@ -356,6 +362,9 @@ tapdisk_xenio_ctx_process_ring(struct td_xenblkif *blkif,
 		 * and can be ignored.
 		 */
 		pthread_mutex_unlock(&blkif->mutex);
+                gettimeofday(&unlock, NULL);
+                TV_SUB(unlock, lock, diff);
+                DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
                 ERROR("%s:%d\n", __func__, __LINE__);
 		return 0;
     }
@@ -375,6 +384,9 @@ tapdisk_xenio_ctx_process_ring(struct td_xenblkif *blkif,
 	memcpy(reqs, &blkif->reqs_free[blkif->ring_size - start],
 			sizeof(blkif_request_t*) * n_reqs);
 	pthread_mutex_unlock(&blkif->mutex);
+        gettimeofday(&unlock, NULL);
+        TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	tapdisk_xenblkif_queue_requests(blkif, reqs, n_reqs);
 

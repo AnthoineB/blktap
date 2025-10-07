@@ -284,9 +284,14 @@ tapdisk_vbd_close_vdi(td_vbd_t *vbd)
 		vbd->retired = NULL;
 	}
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	td_flag_set(vbd->state, TD_VBD_CLOSED);
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	if (td_flag_test(vbd->driver_flags, TD_DRIVER_THREADED)) {
 		tapdisk_server_unregister_event(vbd->event);
@@ -766,6 +771,8 @@ tapdisk_vbd_queue_count(td_vbd_t *vbd, int *new,
 	f = 0;
 	c = 0;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	tapdisk_vbd_for_each_request(vreq, tvreq, &vbd->new_requests)
 		n++;
@@ -779,6 +786,9 @@ tapdisk_vbd_queue_count(td_vbd_t *vbd, int *new,
 	tapdisk_vbd_for_each_request(vreq, tvreq, &vbd->completed_requests)
 		c++;
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	*new       = n;
 	*pending   = p;
@@ -791,12 +801,20 @@ tapdisk_vbd_shutdown(td_vbd_t *vbd)
 {
 	int new, pending, failed, completed;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	if (!list_empty(&vbd->pending_requests)) {
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		return -EAGAIN;
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	tapdisk_vbd_queue_count(vbd, &new, &pending, &failed, &completed);
 
@@ -830,6 +848,8 @@ tapdisk_vbd_free(td_vbd_t *vbd)
 int
 tapdisk_vbd_close(td_vbd_t *vbd)
 {
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	/*
 	 * don't close if any requests are pending in the aio layer
@@ -848,11 +868,17 @@ tapdisk_vbd_close(td_vbd_t *vbd)
 		goto fail;
 
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 	return tapdisk_vbd_shutdown(vbd);
 
 fail:
 	td_flag_set(vbd->state, TD_VBD_SHUTDOWN_REQUESTED);
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 	DBG(TLOG_WARN, "%s: requests pending\n", vbd->name);
 	return -EAGAIN;
 }
@@ -885,18 +911,30 @@ tapdisk_vbd_debug(td_vbd_t *vbd)
 static void
 tapdisk_vbd_drop_log(td_vbd_t *vbd)
 {
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	if (td_flag_test(vbd->state, TD_VBD_LOG_DROPPED)) {
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		return;
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	tapdisk_vbd_debug(vbd);
 	tlog_precious(0);
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	td_flag_set(vbd->state, TD_VBD_LOG_DROPPED);
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 }
 
 int
@@ -922,10 +960,15 @@ int
 tapdisk_vbd_retry_needed(td_vbd_t *vbd)
 {
 	bool retry;
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	retry = !(list_empty(&vbd->failed_requests) &&
 		 list_empty(&vbd->new_requests));
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 	return retry;
 }
 
@@ -938,16 +981,24 @@ tapdisk_vbd_lock(td_vbd_t *vbd)
 int
 tapdisk_vbd_quiesce_queue(td_vbd_t *vbd)
 {
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	if (!list_empty(&vbd->pending_requests)) {
 		td_flag_set(vbd->state, TD_VBD_QUIESCE_REQUESTED);
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		return -EAGAIN;
 	}
 
 	td_flag_clear(vbd->state, TD_VBD_QUIESCE_REQUESTED);
 	td_flag_set(vbd->state, TD_VBD_QUIESCED);
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 	return 0;
 }
 
@@ -1034,6 +1085,8 @@ tapdisk_vbd_pause(td_vbd_t *vbd)
 	/* Don't guard this one as at this point the pause operation is complete */
 	INFO("pause completed\n");
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	if (!list_empty(&vbd->failed_requests))
 		INFO("warning: failed requests pending\n");
@@ -1041,6 +1094,9 @@ tapdisk_vbd_pause(td_vbd_t *vbd)
 	td_flag_clear(vbd->state, TD_VBD_PAUSE_REQUESTED);
 	td_flag_set(vbd->state, TD_VBD_PAUSED);
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	return 0;
 }
@@ -1053,13 +1109,21 @@ tapdisk_vbd_resume(td_vbd_t *vbd, const char *name)
 
 	DBG(TLOG_DBG, "resume requested\n");
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	if (!td_flag_test(vbd->state, TD_VBD_PAUSED)) {
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		EPRINTF("resume request for unpaused vbd %s\n", vbd->name);
 		return -EINVAL;
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	for (i = 0; i < TD_VBD_EIO_RETRIES; i++) {
 		err = tapdisk_vbd_open_vdi(vbd, name, vbd->flags | TD_OPEN_STRICT, -1);
@@ -1086,10 +1150,14 @@ tapdisk_vbd_resume(td_vbd_t *vbd, const char *name)
 		}
 	}
 resume_failed:
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	if (err) {
 		td_flag_set(vbd->state, TD_VBD_RESUME_FAILED);
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		tapdisk_vbd_close_vdi(vbd);
 		return err;
 	}
@@ -1101,6 +1169,9 @@ resume_failed:
 	td_flag_clear(vbd->state, TD_VBD_PAUSED);
 	td_flag_clear(vbd->state, TD_VBD_PAUSE_REQUESTED);
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+	DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 	tapdisk_vbd_check_state(vbd);
 
 #if 0
@@ -1205,26 +1276,39 @@ tapdisk_vbd_check_complete_requests(td_vbd_t *vbd)
 	td_vbd_request_t *vreq, *tmp;
 	struct timeval now;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	gettimeofday(&now, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	tapdisk_vbd_for_each_request(vreq, tmp, &vbd->failed_requests)
 		if (__tapdisk_vbd_request_timeout(vreq, &now))
 			tapdisk_vbd_complete_vbd_request(vbd, vreq);
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 }
 
 static void
 tapdisk_vbd_check_requests_for_issue(td_vbd_t *vbd)
 {
         DBG(TLOG_DBG, "%s:%d\n", __func__, __LINE__);
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	if (!list_empty(&vbd->new_requests) ||
 	    !list_empty(&vbd->failed_requests)) {
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		tapdisk_vbd_issue_requests(vbd);
 		return;
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 }
 
 void
@@ -1273,14 +1357,22 @@ tapdisk_vbd_check_progress(td_vbd_t *vbd)
 {
 	time_t diff;
 	struct timeval now, delta;
+	struct timeval lock, unlock, diff2;
 
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	if (list_empty(&vbd->pending_requests)) {
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff2);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff2.tv_sec, diff2.tv_usec);
 		watchdog_cleared(vbd);
 		return;
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff2);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff2.tv_sec, diff2.tv_usec);
 
 	gettimeofday(&now, NULL);
 	timersub(&now, &vbd->ts, &delta);
@@ -1288,6 +1380,7 @@ tapdisk_vbd_check_progress(td_vbd_t *vbd)
 
 	if (diff >= TD_VBD_WATCHDOG_TIMEOUT)
 	{
+		gettimeofday(&lock, NULL);
 		pthread_mutex_lock(&vbd->mutex);
 		if(tapdisk_vbd_queue_ready(vbd))
 		{
@@ -1297,10 +1390,17 @@ tapdisk_vbd_check_progress(td_vbd_t *vbd)
 				vbd->watchdog_warned = true;
 			}
 			pthread_mutex_unlock(&vbd->mutex);
+			gettimeofday(&unlock, NULL);
+			TV_SUB(unlock, lock, diff2);
+			DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff2.tv_sec, diff2.tv_usec);
 			tapdisk_vbd_drop_log(vbd);
+			gettimeofday(&lock, NULL);
 			pthread_mutex_lock(&vbd->mutex);
 		}
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff2);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff2.tv_sec, diff2.tv_usec);
 		return;
 	}
 
@@ -1373,10 +1473,12 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
 {
 	td_image_t *image = treq.image;
 	int err;
+	struct timeval lock, unlock, diff;
 
         long long interval;
 
 	err = (res <= 0 ? res : -res);
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	vbd->secs_pending  -= treq.secs;
 	vreq->secs_pending -= treq.secs;
@@ -1423,6 +1525,9 @@ __tapdisk_vbd_complete_td_request(td_vbd_t *vbd, td_vbd_request_t *vreq,
 
 	tapdisk_vbd_complete_vbd_request(vbd, vreq);
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 }
 
 static void
@@ -1431,13 +1536,18 @@ __tapdisk_vbd_reissue_td_request(td_vbd_t *vbd,
 {
 	td_image_t *parent;
 	td_vbd_request_t *vreq;
+	struct timeval lock, unlock, diff;
 
 	vreq = treq.vreq;
 	gettimeofday(&vreq->last_try, NULL);
 
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	vreq->submitting++;
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	if (tapdisk_vbd_is_last_image(vbd, image)) {
 		if (unlikely(treq.op == TD_OP_BLOCK_STATUS)) {
@@ -1493,11 +1603,15 @@ __tapdisk_vbd_reissue_td_request(td_vbd_t *vbd,
 	}
 
 done:
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	vreq->submitting--;
 	if (!vreq->secs_pending)
 		tapdisk_vbd_complete_vbd_request(vbd, vreq);
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 }
 
 void
@@ -1661,12 +1775,14 @@ tapdisk_vbd_issue_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 	bzero(&treq, sizeof(treq));
 	td_sector_t sec;
 	int i, err;
+	struct timeval lock, unlock, diff;
 
         DBG(TLOG_DBG, "%s:%d\n", __func__, __LINE__);
 
 	sec    = vreq->sec;
 	image  = tapdisk_vbd_first_image(vbd);
 
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	vreq->submitting = 1;
 
@@ -1677,6 +1793,9 @@ tapdisk_vbd_issue_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 
 	err = tapdisk_vbd_check_queue(vbd);
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 	if (err) {
 		goto fail;
 	}
@@ -1753,6 +1872,7 @@ tapdisk_vbd_issue_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 	err = 0;
 
 out:
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	vreq->submitting--;
 	if (!vreq->secs_pending) {
@@ -1760,6 +1880,9 @@ out:
 		tapdisk_vbd_complete_vbd_request(vbd, vreq);
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	return err;
 
@@ -1784,6 +1907,8 @@ tapdisk_vbd_reissue_failed_requests(td_vbd_t *vbd)
 	err = 0;
 	gettimeofday(&now, NULL);
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	tapdisk_vbd_for_each_request(vreq, tmp, &vbd->failed_requests) {
 		if (vreq->secs_pending)
@@ -1805,12 +1930,16 @@ tapdisk_vbd_reissue_failed_requests(td_vbd_t *vbd)
 		vreq->error      = 0;
 
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		DBG(TLOG_DBG, "retry #%d of req %s, "
 		    "sec 0x%08"PRIx64", iovcnt: %d\n", vreq->num_retries,
 		    vreq->name, vreq->sec, vreq->iovcnt);
 
 		err = tapdisk_vbd_issue_request(vbd, vreq);
 
+		gettimeofday(&lock, NULL);
 		pthread_mutex_lock(&vbd->mutex);
 		/*
 		 * if this request failed, but was not completed,
@@ -1820,6 +1949,9 @@ tapdisk_vbd_reissue_failed_requests(td_vbd_t *vbd)
 			break;
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	return 0;
 }
@@ -1843,10 +1975,16 @@ tapdisk_vbd_issue_new_requests(td_vbd_t *vbd)
 	td_vbd_request_t *vreq, *tmp;
 
         DBG(TLOG_DBG, "%s:%d\n", __func__, __LINE__);
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	tapdisk_vbd_for_each_request(vreq, tmp, &vbd->new_requests) {
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		err = tapdisk_vbd_issue_request(vbd, vreq);
+		gettimeofday(&lock, NULL);
 		pthread_mutex_lock(&vbd->mutex);
 		/*
 		 * if this request failed, but was not completed,
@@ -1854,12 +1992,18 @@ tapdisk_vbd_issue_new_requests(td_vbd_t *vbd)
 		 */
 		if (err && !tapdisk_vbd_request_completed(vbd, vreq)) {
 			pthread_mutex_unlock(&vbd->mutex);
+			gettimeofday(&unlock, NULL);
+			TV_SUB(unlock, lock, diff);
+			DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 			return err;
 		}
 
 		tapdisk_vbd_count_new_request(vbd, vreq);
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+	DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	return 0;
 }
@@ -1869,18 +2013,29 @@ tapdisk_vbd_recheck_state(td_vbd_t *vbd)
 {
 	int err = 0;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	if (list_empty(&vbd->new_requests)) {
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		return 0;
 	}
 
 	if (td_flag_test(vbd->state, TD_VBD_QUIESCED) ||
 	    td_flag_test(vbd->state, TD_VBD_QUIESCE_REQUESTED)) {
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		return 0;
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	err = tapdisk_vbd_issue_requests(vbd);
 
@@ -1893,6 +2048,8 @@ tapdisk_vbd_kill_requests(td_vbd_t *vbd)
 {
 	td_vbd_request_t *vreq, *tmp;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	tapdisk_vbd_for_each_request(vreq, tmp, &vbd->new_requests) {
 		vreq->error = -ESHUTDOWN;
@@ -1904,6 +2061,9 @@ tapdisk_vbd_kill_requests(td_vbd_t *vbd)
 		tapdisk_vbd_move_request(vreq, &vbd->completed_requests);
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	return 0;
 }
@@ -1915,9 +2075,14 @@ tapdisk_vbd_issue_requests(td_vbd_t *vbd)
 
         DBG(TLOG_DBG, "%s:%d\n", __func__, __LINE__);
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	if (td_flag_test(vbd->state, TD_VBD_DEAD)) {
 		pthread_mutex_unlock(&vbd->mutex);
+		gettimeofday(&unlock, NULL);
+		TV_SUB(unlock, lock, diff);
+		DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 		return tapdisk_vbd_kill_requests(vbd);
 	}
 
@@ -1926,13 +2091,22 @@ tapdisk_vbd_issue_requests(td_vbd_t *vbd)
 
 		if (td_flag_test(vbd->state, TD_VBD_RESUME_FAILED)) {
 			pthread_mutex_unlock(&vbd->mutex);
+			gettimeofday(&unlock, NULL);
+			TV_SUB(unlock, lock, diff);
+			DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 			return tapdisk_vbd_kill_requests(vbd);
                 } else {
 			pthread_mutex_unlock(&vbd->mutex);
+			gettimeofday(&unlock, NULL);
+			TV_SUB(unlock, lock, diff);
+			DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 			return -EAGAIN;
                 }
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	err = tapdisk_vbd_reissue_failed_requests(vbd);
 	if (err)
@@ -1948,11 +2122,16 @@ tapdisk_vbd_queue_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 	gettimeofday(&vreq->ts, NULL);
 	vreq->vbd = vbd;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&vbd->mutex);
 	list_add_tail(&vreq->next, &vbd->new_requests);
 	vreq->list_head = &vbd->new_requests;
 	vbd->received++;
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	return 0;
 }
@@ -1966,6 +2145,8 @@ tapdisk_vbd_kick(td_vbd_t *vbd, bool scheduler_kick)
 
 	vbd->kicked++;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
         DBG(TLOG_DBG, "%s:%d\n", __func__, __LINE__);
 	pthread_mutex_lock(&vbd->mutex);
 	list = &vbd->completed_requests;
@@ -1999,6 +2180,9 @@ tapdisk_vbd_kick(td_vbd_t *vbd, bool scheduler_kick)
 		vbd->returned++;
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG(TLOG_DBG, "%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	if (scheduler_kick && td_flag_test(vbd->driver_flags, TD_DRIVER_THREADED)) {
 		vbd->token++;

@@ -112,6 +112,8 @@ scheduler_prepare_events(scheduler_t *s)
 
 	gettimeofday(&now, NULL);
 
+	struct timeval lock, unlock, diff2;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event, next) {
 		if (event->masked || event->dead)
@@ -142,6 +144,9 @@ scheduler_prepare_events(scheduler_t *s)
 		}
 	}
 	pthread_mutex_unlock(&s->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff2);
+        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff2.tv_sec, diff2.tv_usec);
 
 	s->timeout = TV_MIN(s->timeout, s->max_timeout);
 }
@@ -151,6 +156,8 @@ scheduler_check_fd_events(scheduler_t *s, int nfds)
 {
 	event_t *event, *next;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event, next) {
 		if (!nfds)
@@ -181,6 +188,9 @@ scheduler_check_fd_events(scheduler_t *s, int nfds)
 		}
 	}
 	pthread_mutex_unlock(&s->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	return nfds;
 }
@@ -197,6 +207,8 @@ scheduler_check_timeouts(scheduler_t *s)
 
 	gettimeofday(&now, NULL);
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event, next) {
 		BUG_ON(event->pending && event->masked);
@@ -219,6 +231,9 @@ scheduler_check_timeouts(scheduler_t *s)
 		event->pending = SCHEDULER_POLL_TIMEOUT;
 	}
 	pthread_mutex_unlock(&s->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 }
 
 static int
@@ -261,6 +276,8 @@ scheduler_run_events(scheduler_t *s)
 	event_t *event, *next;
 	int n_dispatched = 0;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event, next) {
 		char pending;
@@ -272,13 +289,22 @@ scheduler_run_events(scheduler_t *s)
 		if (pending) {
 			event->pending = 0;
 			pthread_mutex_unlock(&s->mutex);
+                        gettimeofday(&unlock, NULL);
+                        TV_SUB(unlock, lock, diff);
+                        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 			/* NB. must clear before cb */
 			scheduler_event_callback(event, pending);
+                        gettimeofday(&lock, NULL);
+                        TV_SUB(lock, unlock, diff);
+                        DBG("%s:%d: cb delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 			pthread_mutex_lock(&s->mutex);
 			n_dispatched++;
 		}
 	}
 	pthread_mutex_unlock(&s->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	return n_dispatched;
 }
@@ -289,6 +315,7 @@ scheduler_get_event_uuid(scheduler_t *s) {
 	bool uuid_found = false;
 	event_id_t ret;
 	event_t *event, *next;
+	struct timeval lock, unlock, diff;
 
 	if (unlikely(s->uuid <= 0)) {
 		s->uuid = 1;
@@ -298,6 +325,7 @@ scheduler_get_event_uuid(scheduler_t *s) {
 	if(unlikely(s->uuid_overflow == 1)) {
 		do {
 			uuid_found = true;
+                        gettimeofday(&lock, NULL);
 			pthread_mutex_lock(&s->mutex);
 			scheduler_for_each_event(s, event, next) {
 				if(event->id == s->uuid) {
@@ -311,6 +339,9 @@ scheduler_get_event_uuid(scheduler_t *s) {
 				}
 			}
 			pthread_mutex_unlock(&s->mutex);
+                        gettimeofday(&unlock, NULL);
+                        TV_SUB(unlock, lock, diff);
+                        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 		} while(!uuid_found);
 	}
@@ -362,9 +393,14 @@ scheduler_register_event(scheduler_t *s, char mode, int fd,
 	event->id       = scheduler_get_event_uuid(s);
 	event->masked   = 0;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&s->mutex);
 	list_add_tail(&event->next, &s->events);
 	pthread_mutex_unlock(&s->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	return event->id;
 }
@@ -377,6 +413,8 @@ scheduler_unregister_event(scheduler_t *s, event_id_t id)
 	if (!id)
 		return;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event, next)
 		if (event->id == id) {
@@ -384,6 +422,9 @@ scheduler_unregister_event(scheduler_t *s, event_id_t id)
 			break;
 		}
 	pthread_mutex_unlock(&s->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 }
 
 void
@@ -394,6 +435,8 @@ scheduler_mask_event(scheduler_t *s, event_id_t id, int masked)
 	if (!id)
 		return;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event, next)
 		if (event->id == id) {
@@ -401,6 +444,9 @@ scheduler_mask_event(scheduler_t *s, event_id_t id, int masked)
 			break;
 		}
 	pthread_mutex_unlock(&s->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 }
 
 static void
@@ -408,6 +454,8 @@ scheduler_gc_events(scheduler_t *s)
 {
 	event_t *event, *next;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&s->mutex);
 	scheduler_for_each_event(s, event, next)
 		if (event->dead) {
@@ -415,6 +463,9 @@ scheduler_gc_events(scheduler_t *s)
 			free(event);
 		}
 	pthread_mutex_unlock(&s->mutex);
+	gettimeofday(&unlock, NULL);
+	TV_SUB(unlock, lock, diff);
+        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 }
 
 void
@@ -508,12 +559,17 @@ scheduler_event_set_timeout(scheduler_t *sched, event_id_t event_id, struct time
 	if (!event_id)
 		return -EINVAL;
 
+	struct timeval lock, unlock, diff;
+	gettimeofday(&lock, NULL);
 	pthread_mutex_lock(&sched->mutex);
         gettimeofday(&now, NULL);
 	scheduler_for_each_event(sched, event, next) {
 		if (event->id == event_id) {
 			if (!(event->mode & SCHEDULER_POLL_TIMEOUT)) {
 				pthread_mutex_unlock(&sched->mutex);
+                                gettimeofday(&unlock, NULL);
+                                TV_SUB(unlock, lock, diff);
+                                DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 				return -EINVAL;
 			}
 			event->timeout = timeo;
@@ -523,10 +579,16 @@ scheduler_event_set_timeout(scheduler_t *sched, event_id_t event_id, struct time
 				TV_ADD(now, event->timeout, event->deadline);
 			}
 			pthread_mutex_unlock(&sched->mutex);
+                        gettimeofday(&unlock, NULL);
+                        TV_SUB(unlock, lock, diff);
+                        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 			return 0;
 		}
 	}
 	pthread_mutex_unlock(&sched->mutex);
+        gettimeofday(&unlock, NULL);
+        TV_SUB(unlock, lock, diff);
+        DBG("%s:%d: lock delay %ld.%ld\n", __func__, __LINE__, diff.tv_sec, diff.tv_usec);
 
 	return -ENOENT;
 }
