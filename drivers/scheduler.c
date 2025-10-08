@@ -574,10 +574,13 @@ scheduler_event_set_timeout(scheduler_t *sched, event_id_t event_id, struct time
 				return -EINVAL;
 			}
 			event->timeout = timeo;
-			if (TV_IS_INF(event->timeout))
+			if (TV_IS_INF(event->timeout)) {
+                                DBG("%s:%d: New deadline -1\n", __func__, __LINE__);
 				event->deadline = TV_INF;
-			else {
+                        } else {
 				TV_ADD(now, event->timeout, event->deadline);
+                                DBG("%s:%d: New deadline %ld.%ld\n", __func__, __LINE__,
+                                        event->deadline.tv_sec, event->deadline.tv_usec);
 			}
 			pthread_mutex_unlock(&sched->mutex);
                         gettimeofday(&unlock, NULL);

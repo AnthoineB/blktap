@@ -617,8 +617,10 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 	 * intelligently.
 	*/
 	if (!blkif->barrier.msg) {
-		if (likely(!blkif->dead))
+		if (likely(!blkif->dead)) {
 			tapdisk_xenblkif_sched_chkrng(blkif);
+                        DBG(TLOG_DBG, "%s:%d: SCHED CHECK RING\n", __func__, __LINE__);
+                }
 	} else {
 		/*
 		 * If this is the last request, complete the barrier request.
