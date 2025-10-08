@@ -39,10 +39,12 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <libgen.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/eventfd.h>
 
 #include "debug.h"
 #include "libvhd.h"
@@ -59,6 +61,7 @@
 #include "tapdisk-nbdserver.h"
 #include "td-stats.h"
 #include "tapdisk-utils.h"
+#include "timeout-math.h"
 
 #define DBG(_level, _f, _a...) tlog_write(_level, _f, ##_a)
 #define ERR(_err, _f, _a...) tlog_error(_err, _f, ##_a)
@@ -284,6 +287,11 @@ tapdisk_vbd_close_vdi(td_vbd_t *vbd)
 	pthread_mutex_lock(&vbd->mutex);
 	td_flag_set(vbd->state, TD_VBD_CLOSED);
 	pthread_mutex_unlock(&vbd->mutex);
+
+	if (td_flag_test(vbd->driver_flags, TD_DRIVER_THREADED)) {
+		tapdisk_server_unregister_event(vbd->event);
+		close(vbd->efd);
+	}
 }
 
 static int
@@ -576,6 +584,18 @@ fail:
 	return err;
 }
 
+void
+tapdisk_vbd_event_cb(event_id_t id __attribute__((unused)),
+	char mode __attribute__((unused)), void *private)
+{
+	td_vbd_t *vbd = private;
+	uint64_t u;
+	ssize_t s;
+
+	s = read(vbd->efd, &u, sizeof(uint64_t));
+	ASSERT(s == sizeof(uint64_t));
+}
+
 int 
 tapdisk_vbd_open_vdi(td_vbd_t *vbd, const char *name, td_flag_t flags, int prt_devnum)
 {
@@ -603,6 +623,21 @@ tapdisk_vbd_open_vdi(td_vbd_t *vbd, const char *name, td_flag_t flags, int prt_d
 	err = tapdisk_image_open_chain(vbd->name, flags, prt_devnum, &vbd->encryption, &vbd->images);
 	if (err)
 		goto fail;
+
+	if (td_flag_test(tapdisk_vbd_first_image(vbd)->driver->ops->flags, TD_DRIVER_THREADED)) {
+		vbd->driver_flags = tapdisk_vbd_first_image(vbd)->driver->ops->flags;
+
+		vbd->efd = eventfd(1, 0);
+
+		vbd->event = tapdisk_server_register_event(
+				SCHEDULER_POLL_READ_FD, vbd->efd, TV_INF,
+				tapdisk_vbd_event_cb, vbd);
+		if (unlikely(vbd->event < 0)) {
+			err = vbd->event;
+			ERROR("Failed to register eventfd: %s\n", strerror(-err));
+			goto fail;
+		}
+	}
 
 	td_flag_clear(vbd->state, TD_VBD_CLOSED);
 	vbd->flags = flags;
@@ -659,6 +694,9 @@ fail:
 	if (vbd->name != tmp) {
 		free(vbd->name);
 		vbd->name = tmp;
+	}
+	if (vbd->efd != 0) {
+		close(vbd->efd);
 	}
 
 	if (!list_empty(&vbd->images))
@@ -1908,10 +1946,11 @@ tapdisk_vbd_queue_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 }
 
 void
-tapdisk_vbd_kick(td_vbd_t *vbd)
+tapdisk_vbd_kick(td_vbd_t *vbd, bool scheduler_kick)
 {
 	const struct list_head *list;
 	td_vbd_request_t *vreq, *prev, *next;
+	ssize_t s;
 
 	vbd->kicked++;
 
@@ -1947,6 +1986,12 @@ tapdisk_vbd_kick(td_vbd_t *vbd)
 		vbd->returned++;
 	}
 	pthread_mutex_unlock(&vbd->mutex);
+
+	if (scheduler_kick && td_flag_test(vbd->driver_flags, TD_DRIVER_THREADED)) {
+		vbd->token++;
+		s = write(vbd->efd, &vbd->token, sizeof(uint64_t));
+		ASSERT(s == sizeof(uint64_t));
+	}
 }
 
 int
