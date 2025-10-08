@@ -115,6 +115,8 @@ enum TD_OPS{
 #define TD_CREATE_SPARSE             0x00001
 #define TD_CREATE_MULTITYPE          0x00002
 
+#define TD_DRIVER_THREADED           0x00001
+
 #define td_flag_set(word, flag)      ((word) |= (flag))
 #define td_flag_clear(word, flag)    ((word) &= ~(flag))
 #define td_flag_test(word, flag)     ((word) & (flag))

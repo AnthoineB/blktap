@@ -280,7 +280,7 @@ tapdisk_server_kick_responses(void)
 	td_vbd_t *vbd, *tmp;
 
 	tapdisk_server_for_each_vbd(vbd, tmp)
-		tapdisk_vbd_kick(vbd);
+		tapdisk_vbd_kick(vbd, false);
 }
 
 static void

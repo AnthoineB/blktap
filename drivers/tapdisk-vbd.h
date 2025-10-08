@@ -167,6 +167,10 @@ struct td_vbd_handle {
 	struct td_vbd_encryption   encryption;
 
 	bool                       watchdog_warned;
+
+	td_flag_t                  driver_flags;
+	int			   efd;
+	event_id_t                 event;
 };
 
 #define tapdisk_vbd_for_each_request(vreq, tmp, list)	                \
@@ -223,7 +227,7 @@ int tapdisk_vbd_kill_queue(td_vbd_t *);
 int tapdisk_vbd_pause(td_vbd_t *);
 void tapdisk_vbd_squash_pause_logging(bool squash);
 int tapdisk_vbd_resume(td_vbd_t *, const char *);
-void tapdisk_vbd_kick(td_vbd_t *);
+void tapdisk_vbd_kick(td_vbd_t *, bool);
 void tapdisk_vbd_check_state(td_vbd_t *);
 void tapdisk_vbd_free(td_vbd_t *);
 int tapdisk_vbd_commit(td_vbd_t *, const char *);

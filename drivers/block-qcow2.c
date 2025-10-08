@@ -670,7 +670,7 @@ signal_completion(struct qcow2_request *r)
         DBG(TLOG_DBG, "lsec: 0x%08"PRIx64", blk: 0x%04x, "
                 "err: %d\n", r->treq.sec, r->treq.secs, r->error);
         if (r->error == 0) {
-                tapdisk_vbd_kick(vbd);
+                tapdisk_vbd_kick(vbd, true);
                 s->kick++;
         }
         free_qcow2_request(s, r);
@@ -1199,7 +1199,7 @@ qcow2_debug(td_driver_t *driver)
 
 struct tap_disk tapdisk_qcow = {
 	.disk_type          = "tapdisk_qcow2",
-	.flags              = 0,
+	.flags              = TD_DRIVER_THREADED,
 	.private_data_size  = sizeof(struct qcow2_state),
 	.td_open            = _qcow2_open,
 	.td_close           = _qcow2_close,
