@@ -259,4 +259,5 @@ void tapdisk_vbd_complete_block_status_request(td_request_t, int);
  * Tells whether the VBD contains at least one dead ring.
  */
 bool tapdisk_vbd_contains_dead_rings(td_vbd_t * vbd);
+void tapdisk_vbd_event_cb(event_id_t, char, void *);
 #endif

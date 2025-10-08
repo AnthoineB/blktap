@@ -47,6 +47,7 @@
 
 #include "td-ctx.h"
 #include "td-blkif.h"
+#include "tapdisk-vbd.h"
 
 #define DBG(_f, _a...)               if (0) tlog_syslog(TLOG_DBG, _f, ##_a);
 #define BUG_ON(_cond)                if (_cond) td_panic()
@@ -263,6 +264,8 @@ scheduler_event_callback(event_t *event, char mode)
 	        DBG("%s:%d: tapdisk_xenblkif_cb_chkrng\n", __func__, __LINE__);
             } else if (event->cb == tapdisk_xenio_ctx_ring_event) {
 	        DBG("%s:%d: tapdisk_xenio_ctx_ring_event\n", __func__, __LINE__);
+            } else if (event->cb == tapdisk_vbd_event_cb) {
+	        DBG("%s:%d: tapdisk_vbd_event_cb\n", __func__, __LINE__);
             }
 #else
 	        DBG("%s:%d: %p %d\n", __func__, __LINE__, event->cb, event->id);
