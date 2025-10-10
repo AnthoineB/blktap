@@ -1936,6 +1936,14 @@ tapdisk_vbd_reissue_failed_requests(td_vbd_t *vbd)
 		DBG(TLOG_DBG, "retry #%d of req %s, "
 		    "sec 0x%08"PRIx64", iovcnt: %d\n", vreq->num_retries,
 		    vreq->name, vreq->sec, vreq->iovcnt);
+                int i;
+                td_sector_t sec = vreq->sec;
+                for (i = 0; i < vreq->iovcnt; i++) {
+		    struct td_iovec *iov = &vreq->iov[i];
+                    DBG(TLOG_DBG, "%d: base : %p, sec 0x%lx, secs 0x%x",
+                        i, iov->base, sec, iov->secs);
+                    sec += iov->secs;
+                }
 
 		err = tapdisk_vbd_issue_request(vbd, vreq);
 
