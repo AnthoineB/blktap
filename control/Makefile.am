@@ -2,6 +2,7 @@
 AM_CFLAGS  = -Wall
 AM_CFLAGS += -Werror
 AM_CFLAGS += $(if $(GCOV),-fprofile-dir=/tmp/coverage/blktap/control -fprofile-arcs -ftest-coverage)
+AM_CFLAGS += -g
 
 AM_CPPFLAGS  = -D_GNU_SOURCE
 AM_CPPFLAGS += -DTAPCTL
@@ -28,8 +29,6 @@ libblktapctl_la_SOURCES += tap-ctl-open.c
 libblktapctl_la_SOURCES += tap-ctl-close.c
 libblktapctl_la_SOURCES += tap-ctl-pause.c
 libblktapctl_la_SOURCES += tap-ctl-unpause.c
-libblktapctl_la_SOURCES += tap-ctl-major.c
-libblktapctl_la_SOURCES += tap-ctl-check.c
 libblktapctl_la_SOURCES += tap-ctl-stats.c
 libblktapctl_la_SOURCES += tap-ctl-xen.c
 libblktapctl_la_SOURCES += tap-ctl-info.c
