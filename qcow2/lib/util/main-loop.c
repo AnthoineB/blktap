@@ -102,6 +102,11 @@ static int qemu_signal_init(Error **errp)
     sigaddset(&set, SIGIO);
     sigaddset(&set, SIGALRM);
     sigaddset(&set, SIGBUS);
+    sigaddset(&set, SIGINT);
+    sigaddset(&set, SIGXFSZ);
+    //sigaddset(&set, SIGUSR1); // SIG_IPI == SIGUSR1
+    sigaddset(&set, SIGUSR2);
+    sigaddset(&set, SIGHUP);
     /* SIGINT cannot be handled via signalfd, so that ^C can be used
      * to interrupt QEMU when it is being run under gdb.  SIGHUP and
      * SIGTERM are also handled asynchronously, even though it is not
@@ -110,6 +115,11 @@ static int qemu_signal_init(Error **errp)
     pthread_sigmask(SIG_BLOCK, &set, NULL);
 
     sigdelset(&set, SIG_IPI);
+    sigdelset(&set, SIGBUS);
+    sigdelset(&set, SIGINT);
+    sigdelset(&set, SIGXFSZ);
+    sigdelset(&set, SIGUSR2);
+    sigdelset(&set, SIGHUP);
     sigfd = qemu_signalfd(&set);
     if (sigfd == -1) {
         error_setg_errno(errp, errno, "failed to create signalfd");
