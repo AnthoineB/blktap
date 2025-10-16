@@ -135,8 +135,6 @@ struct td_vbd_handle {
 	struct list_head            failed_requests;
 	struct list_head            completed_requests;
 
-	td_vbd_request_t            request_list[MAX_REQUESTS]; /* XXX */
-
 	struct list_head            next;
 
 	uint16_t                    req_timeout; /* in seconds */
