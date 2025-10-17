@@ -39,7 +39,8 @@
 #include <limits.h>
 #include <time.h>
 #include <sys/ioctl.h>
-#include <sys/signal.h>
+#include <signal.h>
+#include <sys/signalfd.h>
 #ifdef HAVE_EVENTFD
 #include <sys/eventfd.h>
 #else
@@ -100,6 +101,8 @@ typedef struct tapdisk_server {
 	} cpumond_state;
 
 	event_id_t                   tlog_reopen_evid;
+	event_id_t                   signal_handler_evid;
+	int			     sigfd;
 } tapdisk_server_t;
 
 static tapdisk_server_t server;
@@ -387,6 +390,12 @@ tapdisk_server_close(void)
 	if (likely(server.tlog_reopen_evid >= 0))
 		tapdisk_server_unregister_event(server.tlog_reopen_evid);
 
+	if (likely(server.signal_handler_evid >= 0))
+		tapdisk_server_unregister_event(server.signal_handler_evid);
+
+	if (likely(server.sigfd > 0))
+		close(server.sigfd);
+
 	tapdisk_server_close_tlog();
 	tapdisk_server_close_aio();
 }
@@ -421,15 +430,25 @@ __tapdisk_server_run(void)
 }
 
 static void
-tapdisk_server_signal_handler(int signal)
+tapdisk_server_signal_handler(event_id_t id, char mode __attribute__((unused)), void *private)
 {
+	int signal;
+	ssize_t size;
+	struct signalfd_siginfo fdsi;
 	td_vbd_t *vbd, *tmp;
 	struct td_xenblkif *blkif;
 	static int xfsz_error_sent = 0;
 
+	size = read(server.sigfd, &fdsi, sizeof(fdsi));
+	if (size != sizeof(fdsi)) {
+		ERR(EFBIG, "failed to read signals");
+		return;
+	}
+
+	signal = fdsi.ssi_signo;
+
 	switch (signal) {
 	case SIGBUS:
-	case SIGINT:
 		tapdisk_server_for_each_vbd(vbd, tmp)
 			tapdisk_vbd_close(vbd);
 		break;
@@ -777,6 +796,7 @@ tapdisk_server_init(void)
 
 out:
 	server.tlog_reopen_evid = -1;
+	server.signal_handler_evid = -1;
 
 	return 0;
 }
@@ -828,17 +848,42 @@ int
 tapdisk_server_run()
 {
 	int err;
+	sigset_t set;
 
 	err = tapdisk_set_resource_limits();
 	if (err)
 		return err;
 
-	signal(SIGBUS, tapdisk_server_signal_handler);
-	signal(SIGINT, tapdisk_server_signal_handler);
-	signal(SIGUSR1, tapdisk_server_signal_handler);
-	signal(SIGUSR2, tapdisk_server_signal_handler);
-	signal(SIGHUP, tapdisk_server_signal_handler);
-	signal(SIGXFSZ, tapdisk_server_signal_handler);
+	sigemptyset(&set);
+	sigaddset(&set, SIGBUS);
+	sigaddset(&set, SIGUSR1);
+	sigaddset(&set, SIGUSR2);
+	sigaddset(&set, SIGHUP);
+	sigaddset(&set, SIGXFSZ);
+	server.sigfd = signalfd(-1, &set, 0);
+	if (server.sigfd == -1) {
+		err = errno;
+		EPRINTF("failed to create a new signalfd: %s\n",
+			strerror(-err));
+		goto out;
+	}
+
+	if (sigprocmask(SIG_BLOCK, &set, NULL) == -1) {
+		err = errno;
+		EPRINTF("failed to block signals we'd like to handle with signalfd: %s\n",
+			strerror(-err));
+		goto out;
+	}
+
+	err = tapdisk_server_register_event(SCHEDULER_POLL_READ_FD,
+			server.sigfd, TV_ZERO,
+			tapdisk_server_signal_handler, &server);
+	if (unlikely(err < 0)) {
+		EPRINTF("failed to register signal handler event: %s\n", strerror(-err));
+		goto out;
+	}
+
+	server.signal_handler_evid = err;
 
 	err = tapdisk_server_register_event(SCHEDULER_POLL_TIMEOUT, -1,	TV_INF,
 			tlog_reopen_cb,	NULL);
