@@ -125,6 +125,7 @@ struct td_nbdserver {
 	char                    sockpath[TAPDISK_NBDSERVER_MAX_PATH_LEN];
 
 	struct list_head        clients;
+	pthread_mutex_t         mutex;
 
 	stats_t                 nbd_stats;
 
@@ -137,6 +138,7 @@ struct td_nbdserver_client {
 	struct td_iovec        *iovecs;
 	int                     n_reqs_free;
 	td_nbdserver_req_t    **reqs_free;
+	pthread_mutex_t         mutex;
 
 	int                     client_fd;
 	int                     client_event_id;
