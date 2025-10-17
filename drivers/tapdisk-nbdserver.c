@@ -235,10 +235,13 @@ tapdisk_nbdserver_alloc_request(td_nbdserver_client_t *client)
 
 	ASSERT(client);
 
+	pthread_mutex_lock(&client->mutex);
 	if (likely(client->n_reqs_free))
 		req = client->reqs_free[--client->n_reqs_free];
+	pthread_mutex_unlock(&client->mutex);
 
 	pending = tapdisk_nbdserver_reqs_pending(client);
+	pthread_mutex_lock(&client->mutex);
 	if (pending > client->max_used_reqs)
 		client->max_used_reqs = pending;
 
@@ -246,7 +249,7 @@ tapdisk_nbdserver_alloc_request(td_nbdserver_client_t *client)
 		/* last free request, mask the events */
 		tapdisk_server_mask_event(client->client_event_id, 1);
 	}
-
+	pthread_mutex_unlock(&client->mutex);
 
 	return req;
 }
@@ -318,17 +321,22 @@ void
 tapdisk_nbdserver_free_request(td_nbdserver_client_t *client,
 			       td_nbdserver_req_t *req, bool free_client_if_dead)
 {
+	pthread_mutex_lock(&client->mutex);
 	tapdisk_nbdserver_set_free_request(client, req);
 
 	if (unlikely(client->n_reqs_free == (client->n_reqs / 4))) {
 		/* free requests, unmask the events */
 		tapdisk_server_mask_event(client->client_event_id, 0);
 	}
+	pthread_mutex_unlock(&client->mutex);
 
 	if (unlikely(free_client_if_dead &&
 		     client->dead &&
-		     !tapdisk_nbdserver_reqs_pending(client)))
+		     !tapdisk_nbdserver_reqs_pending(client))) {
+		pthread_mutex_lock(&client->server->mutex);
 		tapdisk_nbdserver_free_client(client);
+		pthread_mutex_lock(&client->server->mutex);
+	}
 }
 
 static void
@@ -800,6 +808,7 @@ tapdisk_nbdserver_alloc_client(td_nbdserver_t *server)
 				strerror(errno));
 		goto fail;
 	}
+	pthread_mutex_init(&client->mutex, NULL);
 
 	err = tapdisk_nbdserver_reqs_init(client, NBD_SERVER_NUM_REQS);
 	if (err < 0) {
@@ -810,8 +819,10 @@ tapdisk_nbdserver_alloc_client(td_nbdserver_t *server)
 	client->client_fd = -1;
 	client->client_event_id = -1;
 	client->server = server;
+	pthread_mutex_lock(&server->mutex);
 	INIT_LIST_HEAD(&client->clientlist);
 	list_add(&client->clientlist, &server->clients);
+	pthread_mutex_unlock(&server->mutex);
 
 	client->paused = 0;
 	client->dead = false;
@@ -820,8 +831,10 @@ tapdisk_nbdserver_alloc_client(td_nbdserver_t *server)
 	return client;
 
 fail:
-	if (client)
+	if (client) {
+		pthread_mutex_destroy(&client->mutex);
 		free(client);
+	}
 
 	return NULL;
 }
@@ -840,7 +853,7 @@ tapdisk_nbdserver_free_client(td_nbdserver_client_t *client)
 
 	if (likely(!tapdisk_nbdserver_reqs_pending(client))) {
 		list_del(&client->clientlist);
-		tapdisk_nbdserver_reqs_free(client);
+		pthread_mutex_destroy(&client->mutex);
 		free(client);
 	} else
 		client->dead = true;
@@ -1054,7 +1067,9 @@ tapdisk_nbdserver_handshake_cb(event_id_t id, char mode, void *data)
 	if (tapdisk_nbdserver_enable_client(client) < 0) {
 		ERR("Error enabling client");
 		tmp_fd = client->client_fd;
+		pthread_mutex_lock(&server->mutex);
 		tapdisk_nbdserver_free_client(client);
+		pthread_mutex_unlock(&server->mutex);
 		close(tmp_fd);
 	}
 
@@ -1136,7 +1151,9 @@ tapdisk_nbdserver_newclient_fd_old(td_nbdserver_t *server, int new_fd)
 	INFO("About to enable client on fd %d", client->client_fd);
 	if (tapdisk_nbdserver_enable_client(client) < 0) {
 		ERR("Error enabling client");
+		pthread_mutex_lock(&server->mutex);
 		tapdisk_nbdserver_free_client(client);
+		pthread_mutex_unlock(&server->mutex);
 		close(new_fd);
 	}
 }
@@ -1164,7 +1181,9 @@ tapdisk_nbdserver_newclient_fd_new_fixed(td_nbdserver_t *server, int new_fd)
 
 	if(tapdisk_nbdserver_new_protocol_handshake(client, new_fd) != 0) {
 		ERR("Error handshaking new client connection");
+		pthread_mutex_lock(&server->mutex);
 		tapdisk_nbdserver_free_client(client);
+		pthread_mutex_unlock(&server->mutex);
 		close(new_fd);
 		return;
 	}
@@ -1290,7 +1309,9 @@ tapdisk_nbdserver_clientcb(event_id_t id, char mode, void *data)
 		break;
 	case TAPDISK_NBD_CMD_DISC:
 		INFO("Received close message. Sending reconnect header");
+		pthread_mutex_lock(&server->mutex);
 		tapdisk_nbdserver_free_client(client);
+		pthread_mutex_unlock(&server->mutex);
 		INFO("About to send initial connection message");
 		tapdisk_nbdserver_newclient_fd(server, fd);
 		INFO("Sent initial connection message");
@@ -1338,7 +1359,9 @@ fail:
 	if (vreq)
 		tapdisk_nbd_server_free_vreq(client, vreq, false);
 	close(client->client_fd);
+	pthread_mutex_lock(&server->mutex);
 	tapdisk_nbdserver_free_client(client);
+	pthread_mutex_unlock(&server->mutex);
 	return;
 }
 
@@ -1431,7 +1454,10 @@ tapdisk_nbdserver_alloc(td_vbd_t *vbd, td_disk_info_t info, nbd_protocol_style_t
 	server->unix_listening_fd = -1;
 	server->unix_listening_event_id = -1;
 	server->style = style;
+	pthread_mutex_init(&server->mutex, NULL);
+	pthread_mutex_lock(&server->mutex);
 	INIT_LIST_HEAD(&server->clients);
+	pthread_mutex_unlock(&server->mutex);
 
 	switch (style) {
 		case TAPDISK_NBD_PROTOCOL_OLD:
@@ -1479,6 +1505,7 @@ fail:
 	if (server) {
 		if (server->fdreceiver)
 			td_fdreceiver_stop(server->fdreceiver);
+		pthread_mutex_destroy(&server->mutex);
 		free(server);
 	}
 
@@ -1494,12 +1521,14 @@ tapdisk_nbdserver_pause(td_nbdserver_t *server, bool log)
 		INFO("NBD server pause(%p)", server);
 	}
 
+	pthread_mutex_lock(&server->mutex);
 	list_for_each_entry_safe(pos, q, &server->clients, clientlist){
 		if (pos->paused != 1 && pos->client_event_id >= 0) {
 			tapdisk_nbdserver_disable_client(pos);
 			pos->paused = 1;
 		}
 	}
+	pthread_mutex_unlock(&server->mutex);
 
 	if (server->fdrecv_listening_event_id >= 0) {
 		tapdisk_server_unregister_event(server->fdrecv_listening_event_id);
@@ -1732,15 +1761,18 @@ tapdisk_nbdserver_unpause(td_nbdserver_t *server)
 			"unix_listening_fd=%d", server,	server->fdrecv_listening_fd,
 			server->unix_listening_fd);
 
+	pthread_mutex_lock(&server->mutex);
 	list_for_each_entry_safe(pos, q, &server->clients, clientlist){
 		if (pos->paused == 1) {
 			if((err = tapdisk_nbdserver_enable_client(pos)) < 0) {
+				pthread_mutex_unlock(&server->mutex);
 				ERR("Failed to enable nbd client after pause");
 				return err;
 			}
 			pos->paused = 0;
 		}
 	}
+	pthread_mutex_unlock(&server->mutex);
 
 	err = tapdisk_nbdserver_unpause_fdrecv(server);
 	if (err)
@@ -1761,8 +1793,10 @@ tapdisk_nbdserver_free(td_nbdserver_t *server)
 
 	INFO("NBD server free(%p)", server);
 
+	pthread_mutex_lock(&server->mutex);
 	list_for_each_entry_safe(pos, q, &server->clients, clientlist)
 		tapdisk_nbdserver_free_client(pos);
+	pthread_mutex_unlock(&server->mutex);
 
 	if (server->fdrecv_listening_event_id >= 0) {
 		tapdisk_server_unregister_event(server->fdrecv_listening_event_id);
@@ -1796,15 +1830,20 @@ tapdisk_nbdserver_free(td_nbdserver_t *server)
 	if (err)
 		ERR("failed to delete NBD metrics: %s\n", strerror(errno));
 
+	pthread_mutex_destroy(&server->mutex);
 	free(server);
 }
 
 int
 tapdisk_nbdserver_reqs_pending(td_nbdserver_client_t *client)
 {
+	int pending;
 	ASSERT(client);
 
-	return client->n_reqs - client->n_reqs_free;
+	pthread_mutex_lock(&client->mutex);
+	pending = client->n_reqs - client->n_reqs_free;
+	pthread_mutex_unlock(&client->mutex);
+	return pending;
 }
 
 bool
@@ -1815,8 +1854,12 @@ tapdisk_nbdserver_contains_client(td_nbdserver_t *server,
 
 	ASSERT(server);
 
+	pthread_mutex_lock(&server->mutex);
 	list_for_each_entry(_client, &server->clients, clientlist)
-		if (client == _client)
+		if (client == _client) {
+			pthread_mutex_unlock(&server->mutex);
 			return true;
+		}
+	pthread_mutex_unlock(&server->mutex);
 	return false;
 }
