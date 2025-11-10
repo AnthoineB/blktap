@@ -71,7 +71,7 @@ typedef enum {
 	TD_CMD_SNAPSHOT,
 /*	TD_CMD_COALESCE,       */
 	TD_CMD_QUERY,
-/* 	TD_CMD_RESIZE,         */
+	TD_CMD_RESIZE,
 	TD_CMD_SET,
 /*	TD_CMD_REPAIR,         */
 /*	TD_CMD_FILL,           */
@@ -90,7 +90,7 @@ struct command commands[TD_CMD_INVALID] = {
 	{ .id = TD_CMD_SNAPSHOT, .name = "snapshot", .needs_type = 1 },
 /*	{ .id = TD_CMD_COALESCE, .name = "coalesce", .needs_type = 1 },    */
 	{ .id =	TD_CMD_QUERY,    .name = "query",    .needs_type = 1 },
-/*	{ .id =	TD_CMD_RESIZE,   .name = "resize",   .needs_type = 1 },    */
+	{ .id =	TD_CMD_RESIZE,   .name = "resize",   .needs_type = 1 },
 	{ .id = TD_CMD_SET,      .name = "set",      .needs_type = 1 },
 /*	{ .id = TD_CMD_REPAIR,   .name = "repair",   .needs_type = 1 },    */
 /*	{ .id = TD_CMD_FILL,     .name = "fill",     .needs_type = 1 },    */
@@ -554,6 +554,106 @@ td_query(int type, int argc, char *argv[])
 }
 
 int
+td_resize(int type, int argc, char *argv[])
+{
+	ssize_t mb;
+	uint64_t size;
+	struct stat stats;
+	char *name, *buf;
+	int c, i, fd;
+
+	while ((c = getopt(argc, argv, "h")) != -1) {
+		switch(c) {
+		default:
+			fprintf(stderr, "Unknown option %c\n", (char)c);
+		case 'h':
+			goto usage;
+		}
+	}
+
+	if (optind != (argc - 2))
+		goto usage;
+
+	mb   = 1 << 20;
+	size = atoi(argv[optind++]);
+	size = size << 20;
+	name = argv[optind];
+
+	if (strnlen(name, MAX_NAME_LEN) == MAX_NAME_LEN) {
+		fprintf(stderr, "Device name too long\n");
+		return ENAMETOOLONG;
+	}
+
+	if (type == TD_TYPE_VHD) {
+		int cargc = 0;
+		char sbuf[32], *cargv[10];
+
+		size >>= 20;
+
+		memset(cargv, 0, sizeof(cargv));
+		snprintf(sbuf, sizeof(sbuf) - 1, "%"PRIu64, size);
+		cargv[cargc++] = "resize";
+		cargv[cargc++] = "-n";
+		cargv[cargc++] = name;
+		cargv[cargc++] = "-s";
+		cargv[cargc++] = sbuf;
+
+		return vhd_util_resize(cargc, cargv);
+	}
+
+	/* generic create */
+	buf = calloc(1, mb);
+	if (!buf)
+		return ENOMEM;
+
+	fd = open(name, O_WRONLY | O_DIRECT | O_TRUNC, 0644);
+	if (fd == -1) {
+		free(buf);
+		return errno;
+	}
+
+	if (fstat(fd, &stats) == -1) {
+		fprintf(stderr, "Cannot get stats of file %s\n", name);
+		close(fd);
+		free(buf);
+		return errno;
+	}
+
+	if (size < stats.st_size) {
+		fprintf(stderr, "Cannot shrink file, only grow is allowed\n");
+		close(fd);
+		free(buf);
+		return EIO;
+	}
+
+	if (lseek(fd, 0, SEEK_END) == (off_t)-1) {
+		fprintf(stderr, "Cannot seek file %s\n", name);
+		close(fd);
+		free(buf);
+		return errno;
+	}
+
+	size >>= 20;
+	size -= (stats.st_size >> 20);
+	for (i = 0; i < size; i++)
+		if (write(fd, buf, mb) != mb) {
+			close(fd);
+			free(buf);
+			return EIO;
+		}
+
+	close(fd);
+	free(buf);
+	return 0;
+
+ usage:
+	fprintf(stderr, "usage: td-util resize %s [-h help] "
+		"<SIZE(MB)> <FILENAME>\n",
+		td_disk_types[type]);
+	return EINVAL;
+}
+
+int
 td_set_field(int type, int argc, char *argv[])
 {
 	int c, cargc;
@@ -671,11 +771,11 @@ main(int argc, char *argv[])
 	case TD_CMD_QUERY:
 		ret = td_query(type, cargc, cargv);
 		break;
-/*
+
 	case TD_CMD_RESIZE:
 		ret = td_resize(type, cargc, cargv);
 		break;
-*/
+
 	case TD_CMD_SET:
 		ret = td_set_field(type, cargc, cargv);
 		break;
