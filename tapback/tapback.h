@@ -109,6 +109,7 @@ int pretty_time(char *buf, unsigned char buf_len);
 #define PHYS_DEV_KEY		"physical-device"
 #define PHYS_DEV_PATH_KEY	"physical-device-path"
 #define HOTPLUG_STATUS_KEY	"hotplug-status"
+#define RESIZE_DEVICE_KEY	"resize-device"
 #define MODE_KEY		"mode"
 #define POLLING_DURATION	"polling-duration"
 #define POLLING_IDLE_THRESHOLD	"polling-idle-threshold"

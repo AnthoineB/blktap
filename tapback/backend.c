@@ -716,6 +716,93 @@ out:
 }
 
 /**
+ *
+ * Returns 0 on success, a negative error code otherwise.
+ */
+static int
+resize_device_changed(vbd_t *device) {
+    unsigned int info;
+    int err = 0;
+    xs_transaction_t xst = XBT_NULL;
+    bool abort_transaction = false;
+
+    ASSERT(device);
+
+    INFO(device, "resize_device_changed\n");
+
+    if (!device->tap) {
+        WARN(device, "this device doesn't appear to exist. No tapdisk attached. Abort resize.\n");
+        goto out;
+    }
+
+    /*
+     * get the VBD parameters from the tapdisk
+     */
+    if ((err = tap_ctl_info(device->tap->pid, &device->sectors,
+                    &device->sector_size, &info,
+                    device->minor))) {
+        WARN(device, "error retrieving disk characteristics: %s\n",
+                strerror(-err));
+        goto out;
+    }
+
+    do {
+        if (!(xst = xs_transaction_start(device->backend->xs))) {
+            err = -errno;
+            WARN(device, "failed to start transaction: %s\n", strerror(err));
+            goto out;
+        }
+
+        abort_transaction = true;
+
+        err = tapback_device_printf(device, xst, "sectors", false, "%llu",
+                device->sectors);
+        if (unlikely(err)) {
+            WARN(device, "warning: failed to write sectors: %s\n",
+                    strerror(-err));
+            break;
+        }
+
+        err = tapback_device_printf(device, xst, "state", false, "%d",
+                device->state);
+        if (unlikely(err)) {
+            WARN(device, "warning: failed to write state: %s\n",
+                    strerror(-err));
+            break;
+        }
+
+        abort_transaction = false;
+        if (!xs_transaction_end(device->backend->xs, xst, 0)) {
+            err = -errno;
+            ASSERT(err);
+        }
+    } while (err == -EAGAIN);
+
+    if (abort_transaction) {
+        if (!xs_transaction_end(device->backend->xs, xst, 1)) {
+            int err2 = errno;
+            WARN(device, "failed to abort transaction: %s\n", strerror(err2));
+        }
+        goto out;
+    }
+
+    /*
+     * The front-end might have switched to state Connected before
+     * resize-device is written. Check it's state and connect if necessary.
+     *
+     * TODO blkback ignores connection errors, let's do the same until we
+     * know better.
+     */
+    err = -frontend_changed(device, device->frontend_state);
+    if (err)
+        WARN(device, "failed to switch state: %s (error ignored)\n",
+                strerror(-err));
+    err = 0;
+out:
+    return err;
+}
+
+/**
  * Attempts to reconnected the back-end to the fornt-end if possible (e.g.
  * after a tapback restart), or after the slave tapback has started.
  *
@@ -902,6 +989,8 @@ tapback_backend_probe_device(backend_t *backend,
             err = frontend(device);
 		else if (!strcmp(HOTPLUG_STATUS_KEY, comp))
 			err = hotplug_status_changed(device);
+        if (!strcmp(RESIZE_DEVICE_KEY, comp))
+            err = resize_device_changed(device);
         else
             DBG(device, "ignoring '%s'\n", comp);
     }
