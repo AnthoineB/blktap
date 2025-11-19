@@ -978,14 +978,25 @@ static inline void
 do_commit(struct qcow2_state *s, struct qcow2_request *req)
 {
     Error *local_err = NULL;
-    char *node_name;
+    char *node, *top_node, *base_node;
+    BlockDriverState *bs, *top_bs, *base_bs;
     int err = 0;
 
-    node_name = blk_bs(s->conf.blk)->node_name;
+    bs = blk_bs(s->conf.blk);
+    node = bs->node_name;
+    if (strcmp(bs->filename, req->top) == 0) {
+        top_bs = bs;
+    } else {
+        top_bs = bdrv_find_backing_image(bs, req->top);
+    }
+    top_node = top_bs->node_name;
+    base_bs = bdrv_backing_chain_next(top_bs);
+    base_node = base_bs->node_name;
 
-    DBG(TLOG_DBG, "Qcow2: block commit %s (node-name: '%s').\n", req->top, node_name);
+    DBG(TLOG_DBG, "Qcow2: block commit %s (node-name: '%s').\n", req->top, node);
+    DBG(TLOG_DBG, "Qcow2: block commit: top-node: '%s' on '%s' base-node).\n", top_node, base_node);
 
-    qmp_block_commit(COMMIT_JOB_ID, node_name, NULL, NULL, NULL, req->top, NULL,
+    qmp_block_commit(COMMIT_JOB_ID, node, base_node, NULL, top_node, NULL, NULL,
             false, false, false, 0, false, BLOCKDEV_ON_ERROR_REPORT,
             NULL, false, false, true, false, &local_err);
 
