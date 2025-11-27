@@ -220,7 +220,7 @@ connect_tap(vbd_t * const device)
      */
     if ((err = -tap_ctl_connect_xenblkif(device->tap->pid, device->domid,
                     device->devid, device->polling_duration, device->polling_idle_threshold,
-		    gref, order, port, proto, NULL,
+                    gref, order, port, proto, NULL, device->backend->indirect_segments,
                     device->minor))) {
         /*
          * This happens if the tapback dameon gets restarted while there are
@@ -298,6 +298,15 @@ connect_frontend(vbd_t *device) {
             WARN(device, "failed to write feature-barrier: %s\n",
 					strerror(-err));
             break;
+        }
+
+        if (device->backend->indirect_segments != 0) {
+            if ((err = tapback_device_printf(device, xst, "feature-max-indirect-segments",
+                            true, "%d", device->backend->indirect_segments))) {
+                WARN(device, "failed to write feature-max-indirect-segments: %s\n",
+                                            strerror(-err));
+                break;
+            }
         }
 
         if ((err = tapback_device_printf(device, xst, "sector-size", true,

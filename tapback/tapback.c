@@ -230,7 +230,8 @@ tapback_write_pid(const char *pidfile)
  */
 static inline backend_t *
 tapback_backend_create(const char *name, const char *pidfile,
-        const domid_t domid, const bool barrier)
+        const domid_t domid, const bool barrier,
+        const unsigned int indirect_segments)
 {
     int err;
     int len;
@@ -267,6 +268,7 @@ tapback_backend_create(const char *name, const char *pidfile,
 
 	backend->barrier = barrier;
 
+    backend->indirect_segments = indirect_segments;
     backend->path = NULL;
 
     INIT_LIST_HEAD(&backend->entry);
@@ -513,6 +515,7 @@ usage(FILE * const stream, const char * const prog)
 			"\t[-h|--help]\n"
             "\t[-v|--verbose]\n"
             "\t[-b|--nobarrier]\n"
+            "\t[-i|--indirect-segments NUM]\n"
             "\t[-n|--name]\n", prog);
 }
 
@@ -586,6 +589,7 @@ int main(int argc, char **argv)
 	backend_t *backend = NULL;
     domid_t opt_domid = 0;
 	bool opt_barrier = true;
+    unsigned int opt_indirect_segments = 16;
 
 	if (access("/dev/xen/gntdev", F_OK ) == -1) {
 		WARN(NULL, "grant device does not exist\n");
@@ -612,12 +616,12 @@ int main(int argc, char **argv)
             {"name", 0, NULL, 'n'},
             {"pidfile", 0, NULL, 'p'},
             {"domain", 0, NULL, 'x'},
-			{"nobarrier", 0, NULL, 'b'},
-
+            {"nobarrier", 0, NULL, 'b'},
+            {"indirect-segments", 0, NULL, 'i'},
         };
         int c;
 
-        c = getopt_long(argc, argv, "hdvn:p:x:b", longopts, NULL);
+        c = getopt_long(argc, argv, "hdvn:p:x:bi:", longopts, NULL);
         if (c < 0)
             break;
 
@@ -657,6 +661,19 @@ int main(int argc, char **argv)
 		case 'b':
 			opt_barrier = false;
 			break;
+        case 'i':
+            opt_indirect_segments = strtoul(optarg, &end, 0);
+            if (*end != 0 || end == optarg) {
+                WARN(NULL, "invalid indirect segments value %s\n", optarg);
+                err = EINVAL;
+                goto fail;
+            }
+            if (opt_indirect_segments > 512) {
+                WARN(NULL, "indirect segments value %d > 512\n", opt_indirect_segments);
+                err = EINVAL;
+                goto fail;
+            }
+            INFO(NULL, "only serving domain %d\n", opt_domid);
         case '?':
             goto usage;
         }
@@ -691,7 +708,7 @@ int main(int argc, char **argv)
     }
 
 	backend = tapback_backend_create(opt_name, opt_pidfile, opt_domid,
-			opt_barrier);
+			opt_barrier, opt_indirect_segments);
 	if (!backend) {
 		err = errno;
         WARN(NULL, "error creating back-end: %s\n", strerror(err));

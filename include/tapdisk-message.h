@@ -169,6 +169,11 @@ typedef struct tapdisk_message_blkif {
 	 * Idle CPU threshold above which polling is permitted.
 	 */
 	uint32_t poll_idle_threshold;
+
+        /**
+         * Maximum number of segments per page in indirect requests.
+         */
+        uint32_t indirect_max_segments;
 } tapdisk_message_blkif_t;
 
 /**

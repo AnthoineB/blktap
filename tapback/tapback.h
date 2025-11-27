@@ -211,6 +211,11 @@ typedef struct backend {
 	 * Tells whether we support write I/O barriers.
 	 */
 	bool barrier;
+
+	/**
+	 * Tells whether we support indirect segments and how much.
+	 */
+	uint32_t indirect_segments;
 } backend_t;
 
 /**
