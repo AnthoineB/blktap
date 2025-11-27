@@ -82,7 +82,6 @@ struct td_xenblkif_req {
      */
     struct td_iovec iov[BLKIF_MAX_BUFFER_SEGMENTS_PER_REQUEST];
 
-    grant_ref_t gref[BLKIF_MAX_BUFFER_SEGMENTS_PER_REQUEST];
     int prot;
 
 	struct gntdev_grant_copy_segment

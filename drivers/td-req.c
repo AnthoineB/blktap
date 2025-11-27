@@ -659,7 +659,6 @@ tapdisk_xenblkif_parse_request(struct td_xenblkif * const blkif,
 
     for (i = 0; i < req->msg.nr_segments; i++) {
         struct blkif_request_segment *seg = &req->msg.seg[i];
-        req->gref[i] = seg->gref;
 
         /*
          * Note that first and last may be equal, which means only one sector
