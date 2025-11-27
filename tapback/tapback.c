@@ -512,7 +512,7 @@ usage(FILE * const stream, const char * const prog)
             "\t[-d|--debug]\n"
 			"\t[-h|--help]\n"
             "\t[-v|--verbose]\n"
-			"\t[-b]--nobarrier]\n"
+            "\t[-b|--nobarrier]\n"
             "\t[-n|--name]\n", prog);
 }
 
