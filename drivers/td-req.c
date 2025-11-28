@@ -289,11 +289,9 @@ static inline struct blkif_request_segment *
 get_segment(struct td_xenblkif *blkif, struct td_xenblkif_req *req, uint32_t i)
 {
 	if (req->msg.operation == BLKIF_OP_INDIRECT) {
-		struct blkif_request_segment *seg;
-		seg = &((struct blkif_request_segment *)(req->vma + ((i / blkif->indirect_segments) << PAGE_SHIFT)))[i % blkif->indirect_segments];
+		req->indirect_segs[i] = ((struct blkif_request_segment *)(req->vma + ((i / blkif->indirect_segments) << PAGE_SHIFT)))[i % blkif->indirect_segments];
 
-		req->indirect_gref[i] = seg->gref;
-		return seg;
+		return &req->indirect_segs[i];
 	}
 	return &req->msg.seg[i];
 }

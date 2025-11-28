@@ -218,24 +218,30 @@ guest_indirect_copy2(struct td_xenblkif * const blkif,
     ASSERT(req->ind.nr_segments <= ARRAY_SIZE(req->gcopy_segs));
 
     for (i = 0; i < req->ind.nr_segments; i++) {
+        struct blkif_request_segment *blkif_seg = &req->indirect_segs[i];
         struct gntdev_grant_copy_segment *gcopy_seg = &req->gcopy_segs[i];
         if (blkif_indirect_rq_wr(&req->ind)) {
             /* copy from guest */
-            gcopy_seg->dest.virt = req->vma + (i << PAGE_SHIFT);
-            gcopy_seg->source.foreign.ref = req->indirect_gref[i];
-            gcopy_seg->source.foreign.offset = 0;
+            gcopy_seg->dest.virt = req->vma + (i << PAGE_SHIFT)
+                + (blkif_seg->first_sect << SECTOR_SHIFT);
+            gcopy_seg->source.foreign.ref = blkif_seg->gref;
+            gcopy_seg->source.foreign.offset = blkif_seg->first_sect << SECTOR_SHIFT;
             gcopy_seg->source.foreign.domid = blkif->domid;
             gcopy_seg->flags = GNTCOPY_source_gref;
         } else {
             /* copy to guest */
-            gcopy_seg->source.virt = req->vma + (i << PAGE_SHIFT);
-            gcopy_seg->dest.foreign.ref = req->indirect_gref[i];
-            gcopy_seg->dest.foreign.offset = 0;
+            gcopy_seg->source.virt = req->vma + (i << PAGE_SHIFT)
+                + (blkif_seg->first_sect << SECTOR_SHIFT);
+            gcopy_seg->dest.foreign.ref = blkif_seg->gref;
+            gcopy_seg->dest.foreign.offset = blkif_seg->first_sect << SECTOR_SHIFT;
             gcopy_seg->dest.foreign.domid = blkif->domid;
             gcopy_seg->flags = GNTCOPY_dest_gref;
         }
 
-        gcopy_seg->len = PAGE_SIZE;
+        gcopy_seg->len = (blkif_seg->last_sect
+                - blkif_seg->first_sect
+                + 1)
+            << SECTOR_SHIFT;
     }
     gcopy.count = req->ind.nr_segments;
     gcopy.segments = req->gcopy_segs;

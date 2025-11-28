@@ -86,7 +86,7 @@ struct td_xenblkif_req {
      */
     struct td_iovec iov[BLKIF_MAX_BUFFER_SEGMENTS_PER_REQUEST];
 
-    grant_ref_t indirect_gref[TD_MAX_INDIRECT_SEGMENTS * BLKIF_MAX_INDIRECT_PAGES_PER_REQUEST];
+    struct blkif_request_segment indirect_segs[TD_MAX_INDIRECT_SEGMENTS * BLKIF_MAX_INDIRECT_PAGES_PER_REQUEST];
 
     int prot;
 
