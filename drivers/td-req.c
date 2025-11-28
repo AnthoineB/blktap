@@ -762,18 +762,25 @@ tapdisk_xenblkif_parse_request(struct td_xenblkif * const blkif,
     vreq = &req->vreq;
     ASSERT(vreq);
 
-    req->vma = td_xenblkif_bufcache_get(blkif);
+    if (req->msg.operation == BLKIF_OP_INDIRECT)
+        req->vma = td_xenblkif_bigbufcache_get(blkif);
+    else
+        req->vma = td_xenblkif_bufcache_get(blkif);
     if (unlikely(!req->vma)) {
         err = errno;
         RING_ERR(blkif, "errno %d: invalid vma\n", err);
         goto out;
     }
 
+    err = guest_copy_indirect(blkif, req);
+    if (err)
+	goto out;
+
     err = build_iovs(blkif, req, vreq, &nr_sect);
     if (err)
 	goto out;
 
-    if (blkif_std_rq_wr(&req->msg)) {
+    if (blkif_rq_wr(req)) {
         err = guest_copy2(blkif, req);
         if (err) {
             RING_ERR(blkif, "req %lu: failed to copy from guest: %s\n",
@@ -897,11 +904,8 @@ writeop:
         goto out;
     }
 
-    if (tapreq->msg.operation == BLKIF_OP_INDIRECT) {
-        pthread_mutex_lock(&blkif->mutex);
-        err = tapdisk_xenblkif_parse_request_indirect(blkif, tapreq);
-        pthread_mutex_unlock(&blkif->mutex);
-    } else if (likely(tapreq->msg.nr_segments)) {
+    if (tapreq->msg.operation == BLKIF_OP_INDIRECT ||
+	    likely(tapreq->msg.nr_segments)) {
         pthread_mutex_lock(&blkif->mutex);
         err = tapdisk_xenblkif_parse_request(blkif, tapreq);
         pthread_mutex_unlock(&blkif->mutex);

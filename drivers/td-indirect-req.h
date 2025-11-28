@@ -46,10 +46,12 @@ void
 td_xenblkif_bigbufcache_put(struct td_xenblkif * const blkif, void *buf);
 void
 td_xenblkif_bigbufcache_free(struct td_xenblkif * const blkif);
+void *
+td_xenblkif_bigbufcache_get(struct td_xenblkif * const blkif);
 
 int
-tapdisk_xenblkif_parse_request_indirect(struct td_xenblkif * const blkif,
-					struct td_xenblkif_req * const req);
+guest_copy_indirect(struct td_xenblkif * const blkif,
+		    struct td_xenblkif_req * const req);
 
 /**
  * Tells whether the indirect request requires data to be read.

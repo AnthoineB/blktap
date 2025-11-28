@@ -71,7 +71,7 @@ td_xenblkif_bigbufcache_free(struct td_xenblkif * const blkif)
  *
  * @param blkif the block interface
  */
-static void *
+void *
 td_xenblkif_bigbufcache_get(struct td_xenblkif * const blkif)
 {
     void *buf;
@@ -142,17 +142,21 @@ blkif_indirect_rq_data(blkif_request_indirect_t const * const msg)
 }
 
 
-static int
+int
 guest_copy_indirect(struct td_xenblkif * const blkif,
-        struct td_xenblkif_req * const req) {
-
+		    struct td_xenblkif_req * const req) {
     int i = 0, indirect_pages;
     long err = 0;
     struct ioctl_gntdev_grant_copy gcopy;
 
+
     ASSERT(blkif);
     ASSERT(blkif->ctx);
     ASSERT(req);
+
+    if (req->msg.operation != BLKIF_OP_INDIRECT)
+        return 0;
+
     ASSERT(req->ind.nr_segments > 0);
     ASSERT(req->ind.nr_segments <= ARRAY_SIZE(req->gcopy_segs));
     ASSERT(blkif->indirect_segments > 0);
@@ -197,67 +201,6 @@ guest_copy_indirect(struct td_xenblkif * const blkif,
 	    goto out;
 	}
     }
-
-out:
-    return err;
-}
-
-
-int
-tapdisk_xenblkif_parse_request_indirect(struct td_xenblkif * const blkif,
-					struct td_xenblkif_req * const req)
-{
-    td_vbd_request_t *vreq;
-    int err = 0;
-    unsigned nr_sect = 0;
-
-    ASSERT(blkif);
-    ASSERT(req);
-
-    vreq = &req->vreq;
-    ASSERT(vreq);
-
-    req->vma = td_xenblkif_bigbufcache_get(blkif);
-    if (unlikely(!req->vma)) {
-        err = errno;
-        RING_ERR(blkif, "errno %d: invalid vma\n", err);
-        goto out;
-    }
-
-    err = guest_copy_indirect(blkif, req);
-
-    err = build_iovs(blkif, req, vreq, &nr_sect);
-    if (err)
-	goto out;
-
-    if (req->ind.indirect_op == BLKIF_OP_WRITE) {
-        err = guest_copy2(blkif, req);
-        if (err) {
-            RING_ERR(blkif, "req %lu: failed to copy from guest: %s\n",
-                    req->ind.id, strerror(-err));
-            goto out;
-        }
-		if (likely(blkif->stats.xenvbd))
-			blkif->stats.xenvbd->st_wr_sect += nr_sect;
-		if (likely(blkif->vbd_stats.stats))
-			blkif->vbd_stats.stats->write_sectors += nr_sect;
-    } else {
-		if (likely(blkif->stats.xenvbd))
-			blkif->stats.xenvbd->st_rd_sect += nr_sect;
-		if (likely(blkif->vbd_stats.stats))
-			blkif->vbd_stats.stats->read_sectors += nr_sect;
-    }
-
-    /*
-     * TODO Isn't this kind of expensive to do for each requests? Why does
-     * the tapdisk need this in the first place?
-     */
-    snprintf(req->name, sizeof(req->name), "xenvbd-%d-%d.%"SCNx64"",
-             blkif->domid, blkif->devid, req->ind.id);
-
-    vreq->name = req->name;
-    vreq->token = blkif;
-    vreq->cb = __tapdisk_xenblkif_request_cb;
 
 out:
     return err;
