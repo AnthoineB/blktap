@@ -377,7 +377,6 @@ guest_copy2(struct td_xenblkif * const blkif,
     for (i = 0; i < tapreq->msg.nr_segments; i++) {
         struct blkif_request_segment *blkif_seg = &tapreq->msg.seg[i];
         struct gntdev_grant_copy_segment *gcopy_seg = &tapreq->gcopy_segs[i];
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
         if (blkif_rq_wr(&tapreq->msg)) {
             /* copy from guest */
             gcopy_seg->dest.virt = tapreq->vma + (i << PAGE_SHIFT)
@@ -401,20 +400,6 @@ guest_copy2(struct td_xenblkif * const blkif,
                 + 1)
             << SECTOR_SHIFT;
     }
-#else
-        gcopy_seg->iov.iov_base = tapreq->vma + (i << PAGE_SHIFT)
-            + (blkif_seg->first_sect << SECTOR_SHIFT);
-        gcopy_seg->iov.iov_len = (blkif_seg->last_sect
-                - blkif_seg->first_sect
-                + 1)
-            << SECTOR_SHIFT;
-        gcopy_seg->ref = blkif_seg->gref;
-        gcopy_seg->offset = blkif_seg->first_sect << SECTOR_SHIFT;
-    }
-
-    gcopy.dir = blkif_rq_wr(&tapreq->msg);
-    gcopy.domid = blkif->domid;
-#endif
     gcopy.count = tapreq->msg.nr_segments;
 	gcopy.segments = tapreq->gcopy_segs;
 
