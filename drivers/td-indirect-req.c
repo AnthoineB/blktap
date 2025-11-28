@@ -202,78 +202,6 @@ out:
     return err;
 }
 
-int
-guest_indirect_copy2(struct td_xenblkif * const blkif,
-		     struct td_xenblkif_req * const req) {
-
-    int i = 0;
-    long err = 0;
-    struct ioctl_gntdev_grant_copy gcopy;
-
-    ASSERT(blkif);
-    ASSERT(blkif->ctx);
-    ASSERT(req);
-    ASSERT(blkif_indirect_rq_data(&req->ind));
-    ASSERT(req->ind.nr_segments > 0);
-    ASSERT(req->ind.nr_segments <= ARRAY_SIZE(req->gcopy_segs));
-
-    for (i = 0; i < req->ind.nr_segments; i++) {
-        struct blkif_request_segment *blkif_seg = &req->indirect_segs[i];
-        struct gntdev_grant_copy_segment *gcopy_seg = &req->gcopy_segs[i];
-        if (blkif_indirect_rq_wr(&req->ind)) {
-            /* copy from guest */
-            gcopy_seg->dest.virt = req->vma + (i << PAGE_SHIFT)
-                + (blkif_seg->first_sect << SECTOR_SHIFT);
-            gcopy_seg->source.foreign.ref = blkif_seg->gref;
-            gcopy_seg->source.foreign.offset = blkif_seg->first_sect << SECTOR_SHIFT;
-            gcopy_seg->source.foreign.domid = blkif->domid;
-            gcopy_seg->flags = GNTCOPY_source_gref;
-        } else {
-            /* copy to guest */
-            gcopy_seg->source.virt = req->vma + (i << PAGE_SHIFT)
-                + (blkif_seg->first_sect << SECTOR_SHIFT);
-            gcopy_seg->dest.foreign.ref = blkif_seg->gref;
-            gcopy_seg->dest.foreign.offset = blkif_seg->first_sect << SECTOR_SHIFT;
-            gcopy_seg->dest.foreign.domid = blkif->domid;
-            gcopy_seg->flags = GNTCOPY_dest_gref;
-        }
-
-        gcopy_seg->len = (blkif_seg->last_sect
-                - blkif_seg->first_sect
-                + 1)
-            << SECTOR_SHIFT;
-    }
-    gcopy.count = req->ind.nr_segments;
-    gcopy.segments = req->gcopy_segs;
-
-    err = -ioctl(blkif->ctx->gntdev_fd, IOCTL_GNTDEV_GRANT_COPY, &gcopy);
-    if (err) {
-        err = -errno;
-        RING_ERR(blkif, "failed to grant-copy request %"PRIu64" "
-                "(%d segments): %s\n", req->ind.id,
-                req->ind.nr_segments, strerror(-err));
-        goto out;
-    }
-
-    for (i = 0; i < req->ind.nr_segments; i++) {
-        struct gntdev_grant_copy_segment *gcopy_seg = &req->gcopy_segs[i];
-        if (gcopy_seg->status != GNTST_okay) {
-            /*
-             * TODO use gnttabop_error for reporting errors, defined in
-             * xen/extras/mini-os/include/gnttab.h (header not available to
-             * user space)
-             */
-            RING_ERR(blkif, "req %lu: failed to grant-copy segment %d: %d\n",
-                    req->ind.id, i, gcopy_seg->status);
-            err = -EIO;
-            goto out;
-        }
-    }
-
-out:
-    return err;
-}
-
 
 int
 tapdisk_xenblkif_parse_request_indirect(struct td_xenblkif * const blkif,
@@ -303,7 +231,7 @@ tapdisk_xenblkif_parse_request_indirect(struct td_xenblkif * const blkif,
 	goto out;
 
     if (req->ind.indirect_op == BLKIF_OP_WRITE) {
-        err = guest_indirect_copy2(blkif, req);
+        err = guest_copy2(blkif, req);
         if (err) {
             RING_ERR(blkif, "req %lu: failed to copy from guest: %s\n",
                     req->ind.id, strerror(-err));

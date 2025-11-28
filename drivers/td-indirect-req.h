@@ -51,10 +51,6 @@ int
 tapdisk_xenblkif_parse_request_indirect(struct td_xenblkif * const blkif,
 					struct td_xenblkif_req * const req);
 
-int
-guest_indirect_copy2(struct td_xenblkif * const blkif,
-		     struct td_xenblkif_req * const req);
-
 /**
  * Tells whether the indirect request requires data to be read.
  */
