@@ -42,7 +42,6 @@
 #include <stdbool.h>
 
 #include "xen_blkif.h"
-#include "td-req.h"
 #include "td-stats.h"
 #include "tapdisk-vbd.h"
 #include "tapdisk-utils.h"
@@ -51,6 +50,7 @@
 struct td_xenio_ctx;
 struct td_vbd_handle;
 struct td_xenblkif_stats;
+struct td_xenblkif_req;
 
 struct td_xenblkif {
 
@@ -173,6 +173,8 @@ struct td_xenblkif {
      */
     void **reqs_bufcache;
     unsigned n_reqs_bufcache_free;
+    void **reqs_bigbufcache;
+    unsigned n_reqs_bigbufcache_free;
     event_id_t reqs_bufcache_evtid;
 
 	bool dead;
@@ -201,6 +203,11 @@ struct td_xenblkif {
 	bool in_polling;
 	int poll_duration; /* microseconds; 0 means no polling. */
 	int poll_idle_threshold;
+
+        /**
+         * The maximum number of indirect segments per page set in xenbus.
+         */
+	unsigned int indirect_segments;
 };
 
 #define RING_DEBUG(blkif, fmt, args...)                                     \

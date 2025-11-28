@@ -103,6 +103,8 @@ libtapdisk_la_SOURCES += td-ctx.c
 libtapdisk_la_SOURCES += td-ctx.h
 libtapdisk_la_SOURCES += td-stats.c
 libtapdisk_la_SOURCES += td-stats.h
+libtapdisk_la_SOURCES += td-indirect-req.c
+libtapdisk_la_SOURCES += td-indirect-req.h
 
 libtapdisk_la_LIBADD  = ../vhd/lib/libvhd.la
 libtapdisk_la_LIBADD += ../qcow2/lib/libqcow2.la

@@ -36,6 +36,7 @@
 #include <sys/types.h>
 #include <xen/io/blkif.h>
 #include <xen/gntdev.h>
+#include "td-indirect-req.h"
 #include "td-blkif.h"
 
 #define TD_REQ_BUFFER_SIZE (BLKIF_MAX_BUFFER_SEGMENTS_PER_REQUEST << PAGE_SHIFT)
@@ -56,7 +57,10 @@ struct td_xenblkif_req {
      * only copy the descriptor and not the actual data, the guest is free
      * to modify the data and corrupt itself if it wants to.
      */
-    blkif_request_t msg;
+    union {
+        blkif_request_t msg;
+        blkif_request_indirect_t ind;
+    };
 
     /**
      * tapdisk's representation of the request.
@@ -82,10 +86,12 @@ struct td_xenblkif_req {
      */
     struct td_iovec iov[BLKIF_MAX_BUFFER_SEGMENTS_PER_REQUEST];
 
+    grant_ref_t indirect_gref[TD_MAX_INDIRECT_SEGMENTS * BLKIF_MAX_INDIRECT_PAGES_PER_REQUEST];
+
     int prot;
 
 	struct gntdev_grant_copy_segment
-		gcopy_segs[BLKIF_MAX_SEGMENTS_PER_REQUEST];
+		gcopy_segs[TD_MAX_INDIRECT_SEGMENTS * BLKIF_MAX_INDIRECT_PAGES_PER_REQUEST];
 };
 
 struct td_xenblkif;
@@ -120,5 +126,70 @@ tapdisk_xenblkif_reqs_free(struct td_xenblkif * const blkif);
 
 #define msg_to_tapreq(_req) \
 	container_of(_req, struct td_xenblkif_req, msg)
+
+/**
+ * Register the event to expire the request buffer cache.
+ *
+ * @param blkif the block interface
+ */
+void
+td_xenblkif_bufcache_evt_reg(struct td_xenblkif * const blkif);
+
+/**
+ * Unregister the event to expire the request buffer cache.
+ *
+ * @param blkif the block interface
+ */
+void
+td_xenblkif_bufcache_evt_unreg(struct td_xenblkif * const blkif);
+
+/**
+ * Request completion callback, executed when the tapdisk has finished
+ * processing the request.
+ *
+ * @param vreq the completed request
+ * @param error status of the request
+ * @param token token previously associated with this request
+ * @param final controls whether the other end should be notified
+ */
+void
+__tapdisk_xenblkif_request_cb(struct td_vbd_request * const vreq,
+        const int error, void * const token, const int final);
+
+/**
+ * Tells whether the common request requires data to be read.
+ */
+bool
+blkif_std_rq_rd(blkif_request_t const * const msg);
+
+/**
+ * Tells whether the common request requires data to be written.
+ */
+bool
+blkif_std_rq_wr(blkif_request_t const * const msg);
+
+/**
+ * Tells whether the common request requires data to transferred.
+ */
+bool
+blkif_std_rq_data(blkif_request_t const * const msg);
+
+/**
+ * Tells whether the request requires data to be read.
+ */
+bool
+blkif_rq_rd(struct td_xenblkif_req const * const req);
+
+/**
+ * Tells whether the request requires data to be written.
+ */
+bool
+blkif_rq_wr(struct td_xenblkif_req const * const req);
+
+/**
+ * Tells whether the request requires data to transferred.
+ */
+bool
+blkif_rq_data(struct td_xenblkif_req const * const req);
 
 #endif /* __TD_REQ_H__ */

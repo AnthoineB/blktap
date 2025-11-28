@@ -608,6 +608,8 @@ tapdisk_xenblkif_connect(domid_t domid, int devid, const grant_ref_t * grefs,
     if (unlikely(err))
         goto fail;
 
+    td_blkif->indirect_segments = 0;
+
     list_add_tail(&td_blkif->entry, &vbd->rings);
 	list_add_tail(&td_blkif->entry_ctx, &td_ctx->blkifs);
 

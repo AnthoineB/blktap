@@ -66,8 +66,6 @@
 
 static void
 td_xenblkif_bufcache_free(struct td_xenblkif * const blkif);
-static inline void
-td_xenblkif_bufcache_evt_unreg(struct td_xenblkif * const blkif);
 
 static void
 td_xenblkif_bufcache_event(event_id_t id, char mode, void *private)
@@ -76,17 +74,13 @@ td_xenblkif_bufcache_event(event_id_t id, char mode, void *private)
 
     pthread_mutex_lock(&blkif->mutex);
     td_xenblkif_bufcache_free(blkif);
+    td_xenblkif_bigbufcache_free(blkif);
 
     td_xenblkif_bufcache_evt_unreg(blkif);
     pthread_mutex_unlock(&blkif->mutex);
 }
 
-/**
- * Unregister the event to expire the request buffer cache.
- *
- * @param blkif the block interface
- */
-static inline void
+void
 td_xenblkif_bufcache_evt_unreg(struct td_xenblkif * const blkif)
 {
     if (blkif->reqs_bufcache_evtid > 0){
@@ -95,12 +89,7 @@ td_xenblkif_bufcache_evt_unreg(struct td_xenblkif * const blkif)
     blkif->reqs_bufcache_evtid = 0;
 }
 
-/**
- * Register the event to expire the request buffer cache.
- *
- * @param blkif the block interface
- */
-static inline void
+void
 td_xenblkif_bufcache_evt_reg(struct td_xenblkif * const blkif)
 {
     blkif->reqs_bufcache_evtid =
@@ -123,7 +112,7 @@ td_xenblkif_bufcache_free(struct td_xenblkif * const blkif)
 
     while (blkif->n_reqs_bufcache_free > TD_REQS_BUFCACHE_MIN){
         munmap(blkif->reqs_bufcache[--blkif->n_reqs_bufcache_free],
-               (size_t)BLKIF_MAX_BUFFER_SEGMENTS_PER_REQUEST << PAGE_SHIFT);
+               (size_t)TD_REQ_BUFFER_SIZE);
     }
 }
 
@@ -192,13 +181,14 @@ static void
 tapdisk_xenblkif_free_request(struct td_xenblkif * const blkif,
         struct td_xenblkif_req * const tapreq)
 {
-    int put_bufcache;
+    int put_bufcache, put_bigbufcache;
 
     ASSERT(blkif);
     ASSERT(tapreq);
     ASSERT(blkif->n_reqs_free < blkif->ring_size);
 
-    put_bufcache = tapreq->msg.nr_segments != 0;
+    put_bufcache = tapreq->msg.operation != BLKIF_OP_INDIRECT && tapreq->msg.nr_segments != 0;
+    put_bigbufcache = tapreq->msg.operation == BLKIF_OP_INDIRECT;
 
 #ifdef DEBUG
 	memset(&tapreq->msg, BLKIF_MSG_POISON, sizeof(tapreq->msg));
@@ -208,6 +198,8 @@ tapdisk_xenblkif_free_request(struct td_xenblkif * const blkif,
 
 	if (likely(put_bufcache))
 	    td_xenblkif_bufcache_put(blkif, tapreq->vma);
+	if (put_bigbufcache)
+	    td_xenblkif_bigbufcache_put(blkif, tapreq->vma);
 }
 
 /**
@@ -269,6 +261,22 @@ xenio_blkif_get_response(struct td_xenblkif* const blkif, const RING_IDX rp)
     return p;
 }
 
+static inline uint64_t
+get_rq_id(struct td_xenblkif_req *req)
+{
+	if (req->msg.operation == BLKIF_OP_INDIRECT)
+	    return req->ind.id;
+        return req->msg.id;
+}
+
+static inline uint32_t
+get_rq_operation(struct td_xenblkif_req *req)
+{
+	if (req->msg.operation == BLKIF_OP_INDIRECT)
+	    return req->ind.indirect_op;
+        return req->msg.operation;
+}
+
 /**
  * Puts a response in the ring.
  *
@@ -296,9 +304,9 @@ xenio_blkif_put_response(struct td_xenblkif * const blkif,
         ASSERT(status == BLKIF_RSP_EOPNOTSUPP || status == BLKIF_RSP_ERROR
                 || status == BLKIF_RSP_OKAY);
 
-        msg->id = req->msg.id;
+        msg->id = get_rq_id(req);
 
-        msg->operation = req->msg.operation;
+        msg->operation = get_rq_operation(req);
 
         msg->status = status;
 
@@ -314,7 +322,7 @@ xenio_blkif_put_response(struct td_xenblkif * const blkif,
                 err = -errno;
                 if (req) {
                     RING_ERR(blkif, "req %lu: failed to notify event channel: "
-                            "%s\n", req->msg.id, strerror(-err));
+                            "%s\n", get_rq_id(req), strerror(-err));
                 } else {
                     RING_ERR(blkif, "failed to notify event channel: %s\n",
                             strerror(-err));
@@ -331,8 +339,8 @@ xenio_blkif_put_response(struct td_xenblkif * const blkif,
 /**
  * Tells whether the request requires data to be read.
  */
-static inline bool
-blkif_rq_rd(blkif_request_t const * const msg)
+bool
+blkif_std_rq_rd(blkif_request_t const * const msg)
 {
 	return BLKIF_OP_READ == msg->operation;
 }
@@ -341,8 +349,8 @@ blkif_rq_rd(blkif_request_t const * const msg)
 /**
  * Tells whether the request requires data to be written.
  */
-static inline bool
-blkif_rq_wr(blkif_request_t const * const msg)
+bool
+blkif_std_rq_wr(blkif_request_t const * const msg)
 {
 	return BLKIF_OP_WRITE == msg->operation ||
 		(BLKIF_OP_WRITE_BARRIER == msg->operation && msg->nr_segments);
@@ -352,10 +360,46 @@ blkif_rq_wr(blkif_request_t const * const msg)
 /**
  * Tells whether the request requires data to transferred.
  */
-static inline bool
-blkif_rq_data(blkif_request_t const * const msg)
+bool
+blkif_std_rq_data(blkif_request_t const * const msg)
 {
-	return blkif_rq_rd(msg) || blkif_rq_wr(msg);
+	return blkif_std_rq_rd(msg) || blkif_std_rq_wr(msg);
+}
+
+
+/**
+ * Tells whether the request requires data to be read.
+ */
+bool
+blkif_rq_rd(struct td_xenblkif_req const * const req)
+{
+	if (req->msg.operation == BLKIF_OP_INDIRECT)
+		return blkif_indirect_rq_rd(&req->ind);
+	return blkif_std_rq_rd(&req->msg);
+}
+
+
+/**
+ * Tells whether the request requires data to be written.
+ */
+bool
+blkif_rq_wr(struct td_xenblkif_req const * const req)
+{
+	if (req->msg.operation == BLKIF_OP_INDIRECT)
+		return blkif_indirect_rq_wr(&req->ind);
+	return blkif_std_rq_wr(&req->msg);
+}
+
+
+/**
+ * Tells whether the request requires data to transferred.
+ */
+bool
+blkif_rq_data(struct td_xenblkif_req const * const req)
+{
+	if (req->msg.operation == BLKIF_OP_INDIRECT)
+		return blkif_indirect_rq_data(&req->ind);
+	return blkif_std_rq_data(&req->msg);
 }
 
 
@@ -370,14 +414,14 @@ guest_copy2(struct td_xenblkif * const blkif,
     ASSERT(blkif);
     ASSERT(blkif->ctx);
     ASSERT(req);
-    ASSERT(blkif_rq_data(&req->msg));
+    ASSERT(blkif_std_rq_data(&req->msg));
 	ASSERT(req->msg.nr_segments > 0);
 	ASSERT(req->msg.nr_segments <= ARRAY_SIZE(req->gcopy_segs));
 
     for (i = 0; i < req->msg.nr_segments; i++) {
         struct blkif_request_segment *blkif_seg = &req->msg.seg[i];
         struct gntdev_grant_copy_segment *gcopy_seg = &req->gcopy_segs[i];
-        if (blkif_rq_wr(&req->msg)) {
+        if (blkif_std_rq_wr(&req->msg)) {
             /* copy from guest */
             gcopy_seg->dest.virt = req->vma + (i << PAGE_SHIFT)
                 + (blkif_seg->first_sect << SECTOR_SHIFT);
@@ -429,6 +473,15 @@ guest_copy2(struct td_xenblkif * const blkif,
 
 out:
     return err;
+}
+
+
+static int
+guest_copy3(struct td_xenblkif * const blkif,
+            struct td_xenblkif_req * const req) {
+	if (req->msg.operation == BLKIF_OP_INDIRECT)
+		return guest_indirect_copy2(blkif, req);
+	return guest_copy2(blkif, req);
 }
 
 
@@ -485,7 +538,7 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 	}
 
 	if (likely(!blkif->dead)) {
-		if (blkif_rq_rd(&tapreq->msg)) {
+		if (blkif_rq_rd(tapreq)) {
 			/*
 			 * TODO stats should be collected after grant-copy for better
 			 * accuracy
@@ -498,14 +551,14 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 			blkif->vbd_stats.stats->read_reqs_completed++;
 			ticks = &blkif->vbd_stats.stats->read_total_ticks;
 			if (likely(!err)) {
-				_err = guest_copy2(blkif, tapreq);
+				_err = guest_copy3(blkif, tapreq);
 				if (unlikely(_err)) {
 					err = _err;
 					RING_ERR(blkif, "req %lu: failed to copy from/to guest: "
 							"%s\n", tapreq->msg.id, strerror(-err));
 				}
 			}
-		} else if (blkif_rq_wr(&tapreq->msg)) {
+		} else if (blkif_rq_wr(tapreq)) {
 			if (likely(blkif->stats.xenvbd)) {
 				cnt = &blkif->stats.xenvbd->st_wr_cnt;
 				sum = &blkif->stats.xenvbd->st_wr_sum_usecs;
@@ -584,16 +637,7 @@ out:
 		pthread_mutex_unlock(&blkif->mutex);
 }
 
-/**
- * Request completion callback, executed when the tapdisk has finished
- * processing the request.
- *
- * @param vreq the completed request
- * @param error status of the request
- * @param token token previously associated with this request
- * @param final controls whether the other end should be notified
- */
-static inline void
+void
 __tapdisk_xenblkif_request_cb(struct td_vbd_request * const vreq,
         const int error, void * const token, const int final)
 {
@@ -710,7 +754,7 @@ tapdisk_xenblkif_parse_request(struct td_xenblkif * const blkif,
     if (err)
 	goto out;
 
-    if (blkif_rq_wr(&req->msg)) {
+    if (blkif_std_rq_wr(&req->msg)) {
         err = guest_copy2(blkif, req);
         if (err) {
             RING_ERR(blkif, "req %lu: failed to copy from guest: %s\n",
@@ -771,6 +815,7 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
 	tapreq->vma = NULL;
     switch (tapreq->msg.operation) {
     case BLKIF_OP_READ:
+readop:
         if (likely(blkif->stats.xenvbd))
 			blkif->stats.xenvbd->st_rd_req++;
 	if (likely(blkif->vbd_stats.stats))
@@ -780,6 +825,7 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
         break;
     case BLKIF_OP_WRITE:
     case BLKIF_OP_WRITE_BARRIER:
+writeop:
         if (likely(blkif->stats.xenvbd))
 			blkif->stats.xenvbd->st_wr_req++;
 	if (likely(blkif->vbd_stats.stats))
@@ -787,6 +833,18 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
         tapreq->prot = PROT_READ;
         vreq->op = TD_OP_WRITE;
         break;
+    case BLKIF_OP_INDIRECT:
+        switch (tapreq->ind.indirect_op) {
+        case BLKIF_OP_READ:
+            goto readop;
+        case BLKIF_OP_WRITE:
+            goto writeop;
+        default:
+            RING_ERR(blkif, "req %lu: invalid indirect request type %d\n",
+                    tapreq->ind.id, tapreq->ind.indirect_op);
+            err = EOPNOTSUPP;
+            goto out;
+        }
     default:
         RING_ERR(blkif, "req %lu: invalid request type %d\n",
                 tapreq->msg.id, tapreq->msg.operation);
@@ -797,18 +855,34 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
     gettimeofday(&tapreq->ts, NULL);
 
     /*
+     * Check that the number of segments is sane in an indirect request.
+     */
+    if (unlikely(tapreq->msg.operation == BLKIF_OP_INDIRECT &&
+             tapreq->ind.nr_segments > TD_TOTAL_INDIRECT_SEGMENTS)) {
+        RING_ERR(blkif, "req %lu: bad number of segments in indirect request (%d)\n",
+                tapreq->ind.id, tapreq->ind.nr_segments);
+        err = EINVAL;
+        goto out;
+    }
+
+    /*
      * Check that the number of segments is sane.
      */
-    if (unlikely((tapreq->msg.nr_segments == 0 &&
+    if (unlikely(tapreq->msg.operation != BLKIF_OP_INDIRECT &&
+                ((tapreq->msg.nr_segments == 0 &&
                 tapreq->msg.operation != BLKIF_OP_WRITE_BARRIER) ||
-            tapreq->msg.nr_segments > BLKIF_MAX_BUFFER_SEGMENTS_PER_REQUEST)) {
+                tapreq->msg.nr_segments > BLKIF_MAX_BUFFER_SEGMENTS_PER_REQUEST))) {
         RING_ERR(blkif, "req %lu: bad number of segments in request (%d)\n",
                 tapreq->msg.id, tapreq->msg.nr_segments);
         err = EINVAL;
         goto out;
     }
 
-    if (likely(tapreq->msg.nr_segments)) {
+    if (tapreq->msg.operation == BLKIF_OP_INDIRECT) {
+        pthread_mutex_lock(&blkif->mutex);
+        err = tapdisk_xenblkif_parse_request_indirect(blkif, tapreq);
+        pthread_mutex_unlock(&blkif->mutex);
+    } else if (likely(tapreq->msg.nr_segments)) {
         pthread_mutex_lock(&blkif->mutex);
         err = tapdisk_xenblkif_parse_request(blkif, tapreq);
         pthread_mutex_unlock(&blkif->mutex);
@@ -833,6 +907,15 @@ out:
     return err;
 }
 
+static inline bool
+tapdisk_should_queue_request(struct td_xenblkif_req *tapreq)
+{
+    if (tapreq->msg.operation == BLKIF_OP_INDIRECT)
+	return true;
+    if (tapreq->msg.nr_segments != 0)
+	return true;
+    return false;
+}
 
 /**
  * Queues a ring request, after it prepares it, to the standard taodisk queue
@@ -858,7 +941,7 @@ tapdisk_xenblkif_queue_request(struct td_xenblkif * const blkif,
     ASSERT(msg);
     ASSERT(tapreq);
 
-    queue_request = tapreq->msg.nr_segments != 0;
+    queue_request = tapdisk_should_queue_request(tapreq);
 
     /*
      * Do not use tapreq after tapdisk_xenblkif_make_vbd_request
@@ -932,10 +1015,13 @@ tapdisk_xenblkif_reqs_free(struct td_xenblkif * const blkif)
     ASSERT(blkif);
 
     td_xenblkif_bufcache_free(blkif);
+    td_xenblkif_bigbufcache_free(blkif);
     td_xenblkif_bufcache_evt_unreg(blkif);
 
     free(blkif->reqs_bufcache);
+    free(blkif->reqs_bigbufcache);
     blkif->reqs_bufcache = NULL;
+    blkif->reqs_bigbufcache = NULL;
 
     free(blkif->reqs);
     blkif->reqs = NULL;
@@ -986,6 +1072,14 @@ tapdisk_xenblkif_reqs_init(struct td_xenblkif *td_blkif)
     }
     td_blkif->n_reqs_bufcache_free = 0;
     td_blkif->reqs_bufcache_evtid = 0;
+
+    // Allocate the big buffer cache
+    td_blkif->reqs_bigbufcache = malloc(sizeof(void*) * td_blkif->ring_size);
+    if (!td_blkif->reqs_bigbufcache) {
+        err = -errno;
+        goto fail;
+    }
+    td_blkif->n_reqs_bigbufcache_free = 0;
 
     // Populate cache with one buffer
     buf = td_xenblkif_bufcache_get(td_blkif);
