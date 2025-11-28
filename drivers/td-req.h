@@ -156,6 +156,21 @@ void
 __tapdisk_xenblkif_request_cb(struct td_vbd_request * const vreq,
         const int error, void * const token, const int final);
 
+/*
+ * Vectorises the request: creates the struct iovec (in req->iov) that
+ * describes each segment to be transferred. Also, merges consecutive
+ * segments.
+ *
+ * @param blkif the block interface corresponding to the VBD
+ * @param req the blkif request
+ * @param vreq the VBD request to fill
+ * @param nr_sectors the number of sectors of the request req
+ */
+int
+build_iovs(struct td_xenblkif * const blkif,
+	   struct td_xenblkif_req * const req,
+	   td_vbd_request_t *vreq,
+	   unsigned int * nr_sectors);
 /**
  * Tells whether the common request requires data to be read.
  */

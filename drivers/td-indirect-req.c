@@ -274,9 +274,6 @@ tapdisk_xenblkif_parse_request_indirect(struct td_xenblkif * const blkif,
 					struct td_xenblkif_req * const req)
 {
     td_vbd_request_t *vreq;
-    int i;
-    struct td_iovec *iov;
-    void *page, *next, *last;
     int err = 0;
     unsigned nr_sect = 0;
 
@@ -295,54 +292,9 @@ tapdisk_xenblkif_parse_request_indirect(struct td_xenblkif * const blkif,
 
     err = guest_copy_indirect(blkif, req);
 
-    /*
-     * Vectorises the request: creates the struct iovec (in tapreq->iov) that
-     * describes each segment to be transferred. Also, merges consecutive
-     * segments.
-     *
-     * In each loop, iov points to the previous scatter/gather element in
-     * order to reuse it if the current and previous segments are
-     * consecutive.
-     */
-    iov = req->iov - 1;
-    last = NULL;
-    page = req->vma;
-
-    for (i = 0; i < req->ind.nr_segments; i++) { /* for each segment */
-        struct blkif_request_segment *seg = &((struct blkif_request_segment *)(req->vma + ((i / blkif->indirect_segments) << PAGE_SHIFT)))[i % blkif->indirect_segments];
-        size_t size;
-
-        req->indirect_gref[i] = seg->gref;
-
-        /*
-         * Note that first and last may be equal, which means only one sector
-         * must be transferred.
-         */
-        if (seg->last_sect < seg->first_sect) {
-            RING_ERR(blkif, "req %lu: invalid sectors %d-%d\n",
-                    req->msg.id, seg->first_sect, seg->last_sect);
-            err = EINVAL;
-            goto out;
-        }
-
-        next = page + (seg->first_sect << SECTOR_SHIFT);
-        size = seg->last_sect - seg->first_sect + 1;
-
-        if (next != last) {
-            iov++;
-            iov->base = next;
-            iov->secs = size;
-        } else /* The "else" is true if fist_sect is 0. */
-            iov->secs += size;
-
-        last = iov->base + (iov->secs << SECTOR_SHIFT);
-        page += PAGE_SIZE;
-        nr_sect += size;
-    }
-
-    vreq->iov = req->iov;
-    vreq->iovcnt = iov - req->iov + 1;
-    vreq->sec = req->ind.sector_number;
+    err = build_iovs(blkif, req, vreq, &nr_sect);
+    if (err)
+	goto out;
 
     if (req->ind.indirect_op == BLKIF_OP_WRITE) {
         err = guest_indirect_copy2(blkif, req);

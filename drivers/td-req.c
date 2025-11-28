@@ -277,6 +277,35 @@ get_rq_operation(struct td_xenblkif_req *req)
         return req->msg.operation;
 }
 
+static inline uint32_t
+get_nr_segments(struct td_xenblkif_req *req)
+{
+	if (req->msg.operation == BLKIF_OP_INDIRECT)
+		return req->ind.nr_segments;
+	return req->msg.nr_segments;
+}
+
+static inline struct blkif_request_segment *
+get_segment(struct td_xenblkif *blkif, struct td_xenblkif_req *req, uint32_t i)
+{
+	if (req->msg.operation == BLKIF_OP_INDIRECT) {
+		struct blkif_request_segment *seg;
+		seg = &((struct blkif_request_segment *)(req->vma + ((i / blkif->indirect_segments) << PAGE_SHIFT)))[i % blkif->indirect_segments];
+
+		req->indirect_gref[i] = seg->gref;
+		return seg;
+	}
+	return &req->msg.seg[i];
+}
+
+static inline blkif_sector_t
+get_sector_number(struct td_xenblkif_req *req)
+{
+	if (req->msg.operation == BLKIF_OP_INDIRECT)
+		return req->ind.sector_number;
+	return req->msg.sector_number;
+}
+
 /**
  * Puts a response in the ring.
  *
@@ -662,23 +691,13 @@ __tapdisk_xenblkif_request_cb(struct td_vbd_request * const vreq,
 }
 
 
-/*
- * Vectorises the request: creates the struct iovec (in req->iov) that
- * describes each segment to be transferred. Also, merges consecutive
- * segments.
- *
- * @param blkif the block interface corresponding to the VBD
- * @param req the blkif request
- * @param vreq the VBD request to fill
- * @param nr_sectors the number of sectors of the request req
- */
-static inline int
+int
 build_iovs(struct td_xenblkif * const blkif,
 	   struct td_xenblkif_req * const req,
 	   td_vbd_request_t *vreq,
 	   unsigned int * nr_sectors)
 {
-    int i;
+    uint32_t i;
     struct td_iovec *iov;
     void *page, *next, *last;
 
@@ -692,8 +711,8 @@ build_iovs(struct td_xenblkif * const blkif,
      * order to reuse it if the current and previous segments are
      * consecutive.
      */
-    for (i = 0; i < req->msg.nr_segments; i++) { /* for each segment */
-        struct blkif_request_segment *seg = &req->msg.seg[i];
+    for (i = 0; i < get_nr_segments(req); i++) { /* for each segment */
+        struct blkif_request_segment *seg = get_segment(blkif, req, i);
         size_t size;
 
         /*
@@ -723,7 +742,7 @@ build_iovs(struct td_xenblkif * const blkif,
 
     vreq->iov = req->iov;
     vreq->iovcnt = iov - req->iov + 1;
-    vreq->sec = req->msg.sector_number;
+    vreq->sec = get_sector_number(req);
 
     return 0;
 }
