@@ -361,7 +361,7 @@ blkif_rq_data(blkif_request_t const * const msg)
 
 static int
 guest_copy2(struct td_xenblkif * const blkif,
-        struct td_xenblkif_req * const tapreq /* TODO rename to req */) {
+        struct td_xenblkif_req * const req) {
 
     int i = 0;
     long err = 0;
@@ -369,17 +369,17 @@ guest_copy2(struct td_xenblkif * const blkif,
 
     ASSERT(blkif);
     ASSERT(blkif->ctx);
-    ASSERT(tapreq);
-    ASSERT(blkif_rq_data(&tapreq->msg));
-	ASSERT(tapreq->msg.nr_segments > 0);
-	ASSERT(tapreq->msg.nr_segments <= ARRAY_SIZE(tapreq->gcopy_segs));
+    ASSERT(req);
+    ASSERT(blkif_rq_data(&req->msg));
+	ASSERT(req->msg.nr_segments > 0);
+	ASSERT(req->msg.nr_segments <= ARRAY_SIZE(req->gcopy_segs));
 
-    for (i = 0; i < tapreq->msg.nr_segments; i++) {
-        struct blkif_request_segment *blkif_seg = &tapreq->msg.seg[i];
-        struct gntdev_grant_copy_segment *gcopy_seg = &tapreq->gcopy_segs[i];
-        if (blkif_rq_wr(&tapreq->msg)) {
+    for (i = 0; i < req->msg.nr_segments; i++) {
+        struct blkif_request_segment *blkif_seg = &req->msg.seg[i];
+        struct gntdev_grant_copy_segment *gcopy_seg = &req->gcopy_segs[i];
+        if (blkif_rq_wr(&req->msg)) {
             /* copy from guest */
-            gcopy_seg->dest.virt = tapreq->vma + (i << PAGE_SHIFT)
+            gcopy_seg->dest.virt = req->vma + (i << PAGE_SHIFT)
                 + (blkif_seg->first_sect << SECTOR_SHIFT);
             gcopy_seg->source.foreign.ref = blkif_seg->gref;
             gcopy_seg->source.foreign.offset = blkif_seg->first_sect << SECTOR_SHIFT;
@@ -387,7 +387,7 @@ guest_copy2(struct td_xenblkif * const blkif,
             gcopy_seg->flags = GNTCOPY_source_gref;
         } else {
             /* copy to guest */
-            gcopy_seg->source.virt = tapreq->vma + (i << PAGE_SHIFT)
+            gcopy_seg->source.virt = req->vma + (i << PAGE_SHIFT)
                 + (blkif_seg->first_sect << SECTOR_SHIFT);
             gcopy_seg->dest.foreign.ref = blkif_seg->gref;
             gcopy_seg->dest.foreign.offset = blkif_seg->first_sect << SECTOR_SHIFT;
@@ -400,20 +400,20 @@ guest_copy2(struct td_xenblkif * const blkif,
                 + 1)
             << SECTOR_SHIFT;
     }
-    gcopy.count = tapreq->msg.nr_segments;
-	gcopy.segments = tapreq->gcopy_segs;
+    gcopy.count = req->msg.nr_segments;
+	gcopy.segments = req->gcopy_segs;
 
     err = -ioctl(blkif->ctx->gntdev_fd, IOCTL_GNTDEV_GRANT_COPY, &gcopy);
     if (err) {
         err = -errno;
         RING_ERR(blkif, "failed to grant-copy request %"PRIu64" "
-                "(%d segments): %s\n", tapreq->msg.id,
-                tapreq->msg.nr_segments, strerror(-err));
+                "(%d segments): %s\n", req->msg.id,
+                req->msg.nr_segments, strerror(-err));
         goto out;
     }
 
-	for (i = 0; i < tapreq->msg.nr_segments; i++) {
-		struct gntdev_grant_copy_segment *gcopy_seg = &tapreq->gcopy_segs[i];
+	for (i = 0; i < req->msg.nr_segments; i++) {
+		struct gntdev_grant_copy_segment *gcopy_seg = &req->gcopy_segs[i];
 		if (gcopy_seg->status != GNTST_okay) {
 			/*
 			 * TODO use gnttabop_error for reporting errors, defined in
@@ -421,7 +421,7 @@ guest_copy2(struct td_xenblkif * const blkif,
 			 * user space)
 			 */
 			RING_ERR(blkif, "req %lu: failed to grant-copy segment %d: %d\n",
-                    tapreq->msg.id, i, gcopy_seg->status);
+                    req->msg.id, i, gcopy_seg->status);
 			err = -EIO;
 			goto out;
 		}
