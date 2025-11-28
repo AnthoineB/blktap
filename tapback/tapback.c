@@ -50,9 +50,9 @@
 
 #include "config.h"
 #include "blktap3.h"
+#include "tapback.h"
 #include "stdio.h" /* TODO tap-ctl.h needs to include stdio.h */
 #include "tap-ctl.h"
-#include "tapback.h"
 #include <signal.h>
 
 const char tapback_name[] = "tapback";

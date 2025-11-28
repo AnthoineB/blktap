@@ -41,6 +41,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include "blktap-xenif.h"
+
 #include <xen/xen.h>
 #include <xen/io/xenbus.h>
 #include <xen/event_channel.h>
