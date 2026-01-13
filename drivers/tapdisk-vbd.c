@@ -286,12 +286,13 @@ tapdisk_vbd_close_vdi(td_vbd_t *vbd)
 
 	pthread_mutex_lock(&vbd->mutex);
 	td_flag_set(vbd->state, TD_VBD_CLOSED);
-	pthread_mutex_unlock(&vbd->mutex);
 
 	if (td_flag_test(vbd->driver_flags, TD_DRIVER_THREADED)) {
 		tapdisk_server_unregister_event(vbd->event);
 		close(vbd->efd);
+		vbd->efd = -1;
 	}
+	pthread_mutex_unlock(&vbd->mutex);
 }
 
 static int
@@ -592,8 +593,13 @@ tapdisk_vbd_event_cb(event_id_t id __attribute__((unused)),
 	uint64_t u;
 	ssize_t s;
 
+	pthread_mutex_lock(&vbd->mutex);
+	if (vbd->efd < 0)
+	    return;
+
 	s = read(vbd->efd, &u, sizeof(uint64_t));
 	ASSERT(s == sizeof(uint64_t));
+	pthread_mutex_unlock(&vbd->mutex);
 }
 
 int 
@@ -628,6 +634,11 @@ tapdisk_vbd_open_vdi(td_vbd_t *vbd, const char *name, td_flag_t flags, int prt_d
 		vbd->driver_flags = tapdisk_vbd_first_image(vbd)->driver->ops->flags;
 
 		vbd->efd = eventfd(1, 0);
+		if (vbd->efd == -1) {
+			err = errno;
+			ERROR("Failed to create eventfd: %s\n", strerror(-err));
+			goto fail;
+		}
 
 		vbd->event = tapdisk_server_register_event(
 				SCHEDULER_POLL_READ_FD, vbd->efd, TV_INF,
@@ -695,7 +706,7 @@ fail:
 		free(vbd->name);
 		vbd->name = tmp;
 	}
-	if (vbd->efd != 0) {
+	if (vbd->efd > 0) {
 		close(vbd->efd);
 	}
 
@@ -1987,13 +1998,17 @@ tapdisk_vbd_kick(td_vbd_t *vbd, bool scheduler_kick)
 		prev->cb(prev, prev->error, prev->token, 1);
 		vbd->returned++;
 	}
-	pthread_mutex_unlock(&vbd->mutex);
 
 	if (scheduler_kick && td_flag_test(vbd->driver_flags, TD_DRIVER_THREADED)) {
-		vbd->token++;
-		s = write(vbd->efd, &vbd->token, sizeof(uint64_t));
+		static uint64_t token = 1;
+
+		if (vbd->efd < 0)
+		    return;
+
+		s = write(vbd->efd, &token, sizeof(uint64_t));
 		ASSERT(s == sizeof(uint64_t));
 	}
+	pthread_mutex_unlock(&vbd->mutex);
 }
 
 int

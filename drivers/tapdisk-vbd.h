@@ -171,7 +171,6 @@ struct td_vbd_handle {
 	td_flag_t                  driver_flags;
 	int			   efd;
 	event_id_t                 event;
-	uint64_t                   token;
 };
 
 #define tapdisk_vbd_for_each_request(vreq, tmp, list)	                \
