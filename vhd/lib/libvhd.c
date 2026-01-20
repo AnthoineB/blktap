@@ -3300,6 +3300,13 @@ vhd_set_virt_size(vhd_context_t *ctx, uint64_t size)
 	return vhd_write_footer(ctx, &ctx->footer);
 }
 
+int
+vhd_set_timestamp_to_now(vhd_context_t *ctx)
+{
+    ctx->footer.timestamp = vhd_time(time(NULL));
+    return vhd_write_footer(ctx, &ctx->footer);
+}
+
 static int
 __vhd_create(const char *name, const char *parent, uint64_t bytes, int type,
 		uint64_t mbytes, vhd_flag_creat_t flags)

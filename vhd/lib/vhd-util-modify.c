@@ -78,7 +78,7 @@ vhd_util_modify(int argc, char **argv)
 {
 	char *name;
 	vhd_context_t vhd;
-	int err, c, size, parent, parent_raw, kill_data;
+	int err, c, size, parent, parent_raw, kill_data, time;
 	off64_t newsize = 0;
 	char *newparent = NULL;
 
@@ -87,9 +87,10 @@ vhd_util_modify(int argc, char **argv)
 	parent     = 0;
 	parent_raw = 0;
 	kill_data  = 0;
+	time = 0;
 
 	optind = 0;
-	while ((c = getopt(argc, argv, "n:s:p:mzh")) != -1) {
+	while ((c = getopt(argc, argv, "n:s:p:mzth")) != -1) {
 		switch (c) {
 		case 'n':
 			name = optarg;
@@ -112,6 +113,9 @@ vhd_util_modify(int argc, char **argv)
 			break;
 		case 'z':
 			kill_data = 1;
+			break;
+		case 't':
+			time = 1;
 			break;
 		case 'h':
 		default:
@@ -159,6 +163,14 @@ vhd_util_modify(int argc, char **argv)
 		TEST_FAIL_AT(FAIL_REPARENT_END);
 	}
 
+	if(time) {
+		err = vhd_set_timestamp_to_now(&vhd);
+		if (err) {
+			printf("Failed to update time to now: %d\n", err);
+			goto done;
+		}
+	}
+
 done:
 	vhd_close(&vhd);
 	return err;
@@ -166,7 +178,7 @@ done:
 usage:
 	printf("*** Dangerous operations, use with care ***\n");
 	printf("options: <-n name> [-p NEW_PARENT set parent [-m raw]] "
-			"[-s NEW_SIZE set size] [-z zero (kill data)] "
+			"[-s NEW_SIZE set size] [-z zero (kill data)] [-t reset time to now]"
 			"[-h help]\n");
 	return -EINVAL;
 }

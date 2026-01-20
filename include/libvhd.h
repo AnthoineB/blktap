@@ -332,6 +332,7 @@ int vhd_file_size_fixed(vhd_context_t *);
 int vhd_get_phys_size(vhd_context_t *, off64_t *);
 int vhd_set_phys_size(vhd_context_t *, off64_t);
 int vhd_set_virt_size(vhd_context_t *, uint64_t);
+int vhd_set_timestamp_to_now(vhd_context_t *);
 
 int vhd_bitmap_test(vhd_context_t *, char *, uint32_t);
 void vhd_bitmap_set(vhd_context_t *, char *, uint32_t);

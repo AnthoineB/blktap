@@ -1063,11 +1063,6 @@ vhd_util_resize_check_creator(const char *name)
 		return err;
 	}
 
-	if (!vhd_creator_tapdisk(&vhd)) {
-		printf("%s not created by xen; resize not supported\n", name);
-		err = -EINVAL;
-	}
-
 	vhd_close(&vhd);
 	return err;
 }
