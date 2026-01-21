@@ -118,6 +118,7 @@ void
 test_scheduler_set_max_timeout(void **state)
 {
   scheduler_t s;
+  scheduler_initialize(&s);
   s.max_timeout.tv_sec = 42;
   struct timeval timeout = {.tv_sec = 0 };
   scheduler_set_max_timeout(&s, timeout);
@@ -129,6 +130,7 @@ test_scheduler_set_max_timeout_lower(void **state)
 {
   // Setting a new lower value will stick
   scheduler_t s;
+  scheduler_initialize(&s);
   s.max_timeout.tv_sec = 430;
   struct timeval timeout = {.tv_sec = 360 };
   scheduler_set_max_timeout(&s, timeout);
@@ -140,6 +142,7 @@ test_scheduler_set_max_timeout_higher(void **state)
 {
   // Setting a new higher value will be ignored
   scheduler_t s;
+  scheduler_initialize(&s);
   s.max_timeout.tv_sec = 430;
   struct timeval timeout = {.tv_sec = 458 };
   scheduler_set_max_timeout(&s, timeout);
@@ -151,6 +154,7 @@ test_scheduler_set_max_timeout_negative(void **state)
 {
   // Setting a new negative value will be ignored
   scheduler_t s;
+  scheduler_initialize(&s);
   s.max_timeout.tv_sec = 458;
   struct timeval timeout = {.tv_sec = -2 };
   scheduler_set_max_timeout(&s, timeout);
@@ -162,6 +166,7 @@ test_scheduler_set_max_timeout_inf(void **state)
 {
   // Setting TV_INF will be ignored
   scheduler_t s;
+  scheduler_initialize(&s);
   s.max_timeout.tv_sec = 458;
   struct timeval timeout = TV_INF;
   scheduler_set_max_timeout(&s, timeout);
@@ -184,7 +189,9 @@ test_scheduler_register_event_null_callback(void **state)
   assert_int_equal(r, -EINVAL);
 
   scheduler_unregister_event(&s, r);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -203,7 +210,9 @@ test_scheduler_register_event_bad_mode(void **state)
   assert_int_equal(r, -EINVAL);
 
   scheduler_unregister_event(&s, r);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -234,7 +243,9 @@ test_scheduler_register_multiple_events(void **state)
 
   scheduler_unregister_event(&s, event_id1);
   scheduler_unregister_event(&s, event_id2);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -268,7 +279,9 @@ test_scheduler_register_event_populates_event(void **state)
   assert_int_equal(e->deadline.tv_usec, fake_gettimeofday.tv_usec + timeout.tv_usec);
 
   scheduler_unregister_event(&s, event_id1);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -290,7 +303,9 @@ test_scheduler_set_timeout_inf(void **state)
   assert_true(TV_IS_INF(e->timeout));
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -298,6 +313,7 @@ test_scheduler_set_timeout_invalid_event(void **state)
 {
   // Invalid event ID will return EINVAL
   scheduler_t sched;
+  scheduler_initialize(&sched);
   event_id_t event_id = 0;
   struct timeval timeo;
   const int r = scheduler_event_set_timeout(&sched, event_id, timeo);
@@ -323,7 +339,9 @@ test_scheduler_set_timeout_on_non_polled_event(void **state)
 
   close(fd);
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -344,7 +362,9 @@ test_scheduler_set_timeout_missing_event(void **state)
   assert_int_equal(r, -ENOENT);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -391,7 +411,9 @@ test_scheduler_set_timeout(void **state)
   scheduler_unregister_event(&s, id1);
   scheduler_unregister_event(&s, id2);
   scheduler_unregister_event(&s, id3);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -420,7 +442,9 @@ test_scheduler_set_timeout_inf_and_deadline(void **state)
   assert_true(TV_IS_INF(e->deadline));
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -443,7 +467,9 @@ test_scheduler_unregister_event_will_set_dead_field(void **state)
   assert_int_equal(e->dead, 1);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -466,7 +492,9 @@ test_scheduler_unregister_event_will_ignore_invalid_event(void **state)
   assert_int_not_equal(e->dead, 1);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -492,7 +520,9 @@ test_scheduler_mask_event_will_set_masked_field(void **state)
   assert_int_not_equal(e->masked, 1);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -515,7 +545,9 @@ test_scheduler_mask_event_will_accept_non_zero_value(void **state)
   assert_int_equal(e->masked, 1);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -538,7 +570,9 @@ test_scheduler_mask_event_will_ignore_invalid_event_id(void **state)
   assert_int_not_equal(e->masked, 1);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -547,10 +581,12 @@ test_scheduler_get_uuid(void **state)
   scheduler_t s;
   scheduler_initialize(&s);
 
+  pthread_mutex_lock(&s.mutex);
   s.uuid = 1;
   const event_id_t new_uuid = scheduler_get_event_uuid(&s);
   assert_int_equal(new_uuid, 1);
   assert_int_equal(s.uuid, 2);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -560,6 +596,7 @@ test_scheduler_get_uuid_overflow(void **state)
   scheduler_t s;
   scheduler_initialize(&s);
 
+  pthread_mutex_lock(&s.mutex);
   s.uuid = INT_MAX;
   const event_id_t new_uuid = scheduler_get_event_uuid(&s);
   assert_int_equal(new_uuid, INT_MAX);
@@ -568,6 +605,7 @@ test_scheduler_get_uuid_overflow(void **state)
   const event_id_t new_uuid2 = scheduler_get_event_uuid(&s);
   assert_int_equal(new_uuid2, 1);
   assert_int_equal(s.uuid, 2);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -592,6 +630,7 @@ test_scheduler_get_uuid_overflow_fragmented(void **state)
   // After an overflow the next UUID should be 2
   // because that is the next free event id
   s.uuid = INT_MIN;
+  pthread_mutex_lock(&s.mutex);
   const event_id_t new_uuid1 = scheduler_get_event_uuid(&s);
   assert_int_equal(new_uuid1, 2);
   // +---+---+---+---
@@ -600,6 +639,7 @@ test_scheduler_get_uuid_overflow_fragmented(void **state)
 
   // The next UUID after that will be 4 because 3 is already used.
   const event_id_t new_uuid2 = scheduler_get_event_uuid(&s);
+  pthread_mutex_unlock(&s.mutex);
   assert_int_equal(new_uuid2, 4);
   // +---+---+---+---+---
   // | 1 | 3 | 2 | 4 |...
@@ -607,7 +647,9 @@ test_scheduler_get_uuid_overflow_fragmented(void **state)
 
   scheduler_unregister_event(&s, id1);
   scheduler_unregister_event(&s, id2);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -645,7 +687,9 @@ test_scheduler_gc_will_remove_dead_events_from_list(void **state)
   // +---+  +---+
   // | 1 |->| 3 |
   // +---+  +---+
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
   assert_int_equal(event_queue_length(&s), 2);
 
   // event 1 is now linked to event 3
@@ -654,7 +698,9 @@ test_scheduler_gc_will_remove_dead_events_from_list(void **state)
   scheduler_unregister_event(&s, id1);
   scheduler_unregister_event(&s, id2);
   scheduler_unregister_event(&s, id3);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -693,7 +739,9 @@ test_scheduler_check_timeouts(void **state)
   e5->deadline.tv_sec = 3;              // 5: skip because timeout not reached
   e6->deadline.tv_sec = 1;              // 6: mark because timeout has passed
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_check_timeouts(&s);
+  pthread_mutex_unlock(&s.mutex);
   assert_int_not_equal(e1->pending, SCHEDULER_POLL_TIMEOUT); // unchanged
   assert_int_equal(e2->pending, SCHEDULER_POLL_TIMEOUT);     // unchanged
   assert_int_not_equal(e3->pending, SCHEDULER_POLL_TIMEOUT); // unchanged
@@ -707,7 +755,9 @@ test_scheduler_check_timeouts(void **state)
   scheduler_unregister_event(&s, id4);
   scheduler_unregister_event(&s, id5);
   scheduler_unregister_event(&s, id6);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -743,7 +793,9 @@ test_scheduler_callback(void **state)
   // Update current time to time_now2
   fake_gettimeofday = (struct timeval){ .tv_sec = time_now2 };
 
-  scheduler_event_callback(&s, event1, test_mode, false);
+  pthread_mutex_lock(&s.mutex);
+  scheduler_event_callback(&s, event1, test_mode);
+  pthread_mutex_unlock(&s.mutex);
 
   // Check callback has been called
   assert_int_equal(event_cb_spy.was_called, 1);
@@ -754,7 +806,9 @@ test_scheduler_callback(void **state)
   assert_int_equal(event1->deadline.tv_sec, to.tv_sec + time_now2);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -776,7 +830,9 @@ test_scheduler_callback_ignores_masked_events(void **state)
   event1->masked = true;
 
   const int test_mode = 1;
-  scheduler_event_callback(&s, event1, test_mode, false);
+  pthread_mutex_lock(&s.mutex);
+  scheduler_event_callback(&s, event1, test_mode);
+  pthread_mutex_unlock(&s.mutex);
 
   // Check callback has not been called
   assert_int_equal(event_cb_spy.was_called, 0);
@@ -784,7 +840,9 @@ test_scheduler_callback_ignores_masked_events(void **state)
   assert_int_not_equal(event_cb_spy.id, event1->id);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -805,13 +863,17 @@ test_scheduler_run_events_run_callback_if_pending(void **state)
   // Set event to pending
   event->pending = SCHEDULER_POLL_TIMEOUT;
 
+  pthread_mutex_lock(&s.mutex);
   const int n_dispatched = scheduler_run_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(n_dispatched, 1);
   assert_int_equal(event_cb_spy.was_called, 1);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -831,13 +893,17 @@ test_scheduler_run_events_no_callback_if_not_pending(void **state)
 
   event->pending = 0;
 
+  pthread_mutex_lock(&s.mutex);
   const int n_dispatched = scheduler_run_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(n_dispatched, 0);
   assert_int_equal(event_cb_spy.was_called, 0);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -858,7 +924,9 @@ test_scheduler_run_events_pending_mode_is_reset(void **state)
   // Set event to pending
   event->pending = SCHEDULER_POLL_TIMEOUT;
 
+  pthread_mutex_lock(&s.mutex);
   (void)scheduler_run_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   // The callback gets the original pending value
   assert_int_equal(event_cb_spy.mode, SCHEDULER_POLL_TIMEOUT);
@@ -867,7 +935,9 @@ test_scheduler_run_events_pending_mode_is_reset(void **state)
   assert_int_not_equal(event->pending, SCHEDULER_POLL_TIMEOUT);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -890,13 +960,17 @@ test_scheduler_run_events_ignore_event_if_dead(void **state)
 
   event->dead = true;
 
+  pthread_mutex_lock(&s.mutex);
   const int n_dispatched = scheduler_run_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(n_dispatched, 0);
   assert_int_equal(event_cb_spy.was_called, 0);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -906,7 +980,9 @@ test_scheduler_run_events_no_events(void **state)
   scheduler_t s;
   scheduler_initialize(&s);
 
+  pthread_mutex_lock(&s.mutex);
   const int n_dispatched = scheduler_run_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(n_dispatched, 0);
 }
@@ -917,7 +993,9 @@ test_scheduler_prepare_events_no_events(void **state)
   // scheduler_prepare_events no events no problem
   scheduler_t s;
   scheduler_initialize(&s);
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
   assert_int_equal(s.max_fd, -1);
 }
 
@@ -937,12 +1015,16 @@ test_scheduler_prepare_events_masked_event_ignored(void **state)
   // Mask the event here
   event->masked = true;
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(s.max_fd, -1);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -961,12 +1043,16 @@ test_scheduler_prepare_events_dead_event_ignored(void **state)
   // Unalive event here
   event->dead = true;
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(s.max_fd, -1);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -981,12 +1067,16 @@ test_scheduler_add_read_event(void **state)
   const struct timeval to = {};
   const int id = scheduler_register_event(&s, md, test_fd, to, &fake_event_cb, NULL);
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(s.max_fd, test_fd);
 
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1005,13 +1095,17 @@ test_scheduler_read_event_with_invalid_fd(void **state)
   // Invalid event
   event->fd = -2;
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(s.max_fd, -1);
 
   close(fd);
   scheduler_unregister_event(&s, event_id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1026,12 +1120,16 @@ test_scheduler_add_write_event(void **state)
   const struct timeval to = {};
   const int event_id = scheduler_register_event(&s, md, test_fd, to, &fake_event_cb, NULL);
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(s.max_fd, test_fd);
 
   scheduler_unregister_event(&s, event_id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1050,13 +1148,17 @@ test_scheduler_write_event_with_invalid_fd(void **state)
   // Invalid event
   event->fd = -2;
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(s.max_fd, -1);
 
   close(fd);
   scheduler_unregister_event(&s, event_id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1071,12 +1173,16 @@ test_scheduler_add_except_event(void **state)
   const struct timeval to = {};
   const int event_id = scheduler_register_event(&s, md, test_fd, to, &fake_event_cb, NULL);
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(s.max_fd, test_fd);
 
   scheduler_unregister_event(&s, event_id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1095,12 +1201,16 @@ test_scheduler_except_event_with_invalid_fd(void **state)
   // Invalid event
   event->fd = -2;
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(s.max_fd, -1);
   close(fd);
   scheduler_unregister_event(&s, event_id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1116,14 +1226,18 @@ test_scheduler_no_timeout_events_then_timeout_is_max(void **state)
   const struct timeval to = {};
   const int event_id = scheduler_register_event(&s, md, test_fd, to, &fake_event_cb, NULL);
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   const struct timeval expected_tv = TV_SECS(600);
   assert_int_equal(s.timeout.tv_sec, expected_tv.tv_sec);
 
   close(test_fd);
   scheduler_unregister_event(&s, event_id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1143,13 +1257,17 @@ test_scheduler_add_timeout_event(void **state)
   const struct timeval time_now = { .tv_sec = 2, .tv_usec = 0};
   fake_gettimeofday = time_now;
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   // New timeout value is time to the event deadline
   assert_int_equal(s.timeout.tv_sec, to.tv_sec - time_now.tv_sec);
 
   scheduler_unregister_event(&s, event_id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1171,14 +1289,18 @@ test_scheduler_multiple_timeout_events_use_lowest_timeout(void **state)
   const struct timeval time_now = { .tv_sec = 2, .tv_usec = 0};
   fake_gettimeofday = time_now;
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   // New timeout is based on the smaller event timeout value (to2).
   assert_int_equal(s.timeout.tv_sec, to2.tv_sec - time_now.tv_sec);
 
   scheduler_unregister_event(&s, id1);
   scheduler_unregister_event(&s, id2);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1198,13 +1320,17 @@ test_scheduler_timeout_event_is_instant_if_deadline_is_now(void **state)
   // Set the time now to the event timeout
   fake_gettimeofday = to;
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   // New timeout is zero because deadline has already been reached.
   assert_int_equal(s.timeout.tv_sec, 0);
 
   scheduler_unregister_event(&s, event_id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1226,14 +1352,18 @@ test_scheduler_multiple_timeout_events_dont_interfere(void **state)
   // Set the time now to the first event timeout
   fake_gettimeofday = to1;
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   // Event though event2 still has 10 seconds left event1 is 0 therefor timeout is 0
   assert_int_equal(s.timeout.tv_sec, 0);
 
   scheduler_unregister_event(&s, id1);
   scheduler_unregister_event(&s, id2);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1250,11 +1380,15 @@ test_scheduler_timeout_event_ignored_if_no_timeout(void **state)
   fake_gettimeofday = (struct timeval){ .tv_sec = 0, .tv_usec = 0};
   const int id = scheduler_register_event(&s, md, fd, to, &fake_event_cb, NULL);
 
+  pthread_mutex_lock(&s.mutex);
   scheduler_prepare_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 
   assert_int_equal(s.max_fd, -1);
   scheduler_unregister_event(&s, id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1302,7 +1436,9 @@ test_scheduler_run_single_read_fd(void **state)
 
   close(fd);
   scheduler_unregister_event(&s, event_id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 /*
@@ -1355,7 +1491,9 @@ test_scheduler_run_single_write_fd(void **state)
 
   close(fd);
   scheduler_unregister_event(&s, event_id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 #if 0
@@ -1428,7 +1566,9 @@ test_scheduler_run_single_dead_event(void **state)
 
   close(fd);
   scheduler_unregister_event(&s, event_id);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 /* Create two events with the same fd but different callbacks.
@@ -1484,7 +1624,9 @@ test_scheduler_run_duplicate_fds_are_handled_once(void **state)
   close(fd);
   scheduler_unregister_event(&s, event_id1);
   scheduler_unregister_event(&s, event_id2);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 /* Register two events with different fds but the same callback.
@@ -1525,7 +1667,9 @@ test_scheduler_run_with_duplicate_callbacks(void **state)
   close(fd2);
   scheduler_unregister_event(&s, event_id1);
   scheduler_unregister_event(&s, event_id2);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1587,7 +1731,9 @@ test_scheduler_run_read_and_write_fd(void **state)
   close(fd);
   scheduler_unregister_event(&s, event_id1);
   scheduler_unregister_event(&s, event_id2);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }
 
 void
@@ -1635,5 +1781,7 @@ test_scheduler_run_deleted_duplicate_event(void **state)
 
   scheduler_unregister_event(&s, event_id1);
   scheduler_unregister_event(&s, event_id2);
+  pthread_mutex_lock(&s.mutex);
   scheduler_gc_events(&s);
+  pthread_mutex_unlock(&s.mutex);
 }

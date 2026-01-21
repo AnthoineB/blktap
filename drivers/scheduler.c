@@ -267,7 +267,7 @@ scheduler_run_events(scheduler_t *s)
 	return n_dispatched;
 }
 
-event_id_t
+static event_id_t
 scheduler_get_event_uuid(scheduler_t *s) {
 
 	bool uuid_found = false;
