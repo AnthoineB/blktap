@@ -161,7 +161,7 @@ struct qcow2_state {
     AioContext                *ctx;
 
     /* Open thread */
-    pthread_t                 thread;
+    QemuThread                thread;
     pthread_mutex_t           lock;
     pthread_cond_t            cond;
     bool                      driver_opened;
@@ -525,7 +525,8 @@ _qcow2_open(td_driver_t *driver, const char *name,
 
     pthread_mutex_lock(&s->lock);
     s->driver_opened = true;
-    pthread_create(&s->thread, NULL, qcow2_open, s);
+    qemu_thread_create(&s->thread, "td-qcow2", qcow2_open, s,
+                       QEMU_THREAD_JOINABLE);
 
     pthread_cond_wait(&s->cond, &s->lock);
     err = s->open_status;
@@ -538,7 +539,6 @@ _qcow2_open(td_driver_t *driver, const char *name,
 static int
 _qcow2_close(td_driver_t *driver)
 {
-    void *res;
     int err;
     struct qcow2_state *s = (struct qcow2_state *)driver->data;
 
@@ -552,11 +552,8 @@ _qcow2_close(td_driver_t *driver)
 
     qemu_bh_schedule(s->bh);
 
-    err = pthread_join(s->thread, &res);
-    if (err) {
-        EPRINTF("failed to join thread %d\n", err);
-        return err;
-    }
+    // Ignore return, qcow2_open() always return NULL; or will abort
+    qemu_thread_join(&s->thread);
 
     err = pthread_cond_destroy(&s->commit_cond);
     if (err) {
