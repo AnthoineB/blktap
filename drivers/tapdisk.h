@@ -255,7 +255,7 @@ struct td_sector_count {
 };
 
 static inline void
-td_sector_count_add(td_sector_count_t *s, td_sector_t v, int write)
+td_sector_count_add(td_sector_count_t *s, td_sector_t v, bool write)
 {
 	if (write)
 		s->wr += v;

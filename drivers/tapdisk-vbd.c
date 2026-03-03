@@ -1835,16 +1835,17 @@ tapdisk_vbd_reissue_failed_requests(td_vbd_t *vbd)
 	return 0;
 }
 
-static void
-tapdisk_vbd_count_new_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
+static td_sector_t
+tapdisk_vbd_count_new_request(td_vbd_request_t *vreq)
 {
 	struct td_iovec *iov;
-	int write;
+	td_sector_t secs = 0;
 
-	write = vreq->op == TD_OP_WRITE;
-
-	for (iov = &vreq->iov[0]; iov < &vreq->iov[vreq->iovcnt]; iov++)
-		td_sector_count_add(&vbd->secs, iov->secs, write);
+	ASSERT(vreq->iov);
+	for (iov = &vreq->iov[0]; iov < &vreq->iov[vreq->iovcnt]; iov++) {
+		secs += iov->secs;
+	}
+	return secs;
 }
 
 static int
@@ -1855,9 +1856,13 @@ tapdisk_vbd_issue_new_requests(td_vbd_t *vbd)
 
 	pthread_mutex_lock(&vbd->mutex);
 	tapdisk_vbd_for_each_request(vreq, tmp, &vbd->new_requests) {
+		td_sector_t secs = tapdisk_vbd_count_new_request(vreq);
+		bool write = vreq->op == TD_OP_WRITE;
+
 		pthread_mutex_unlock(&vbd->mutex);
 		err = tapdisk_vbd_issue_request(vbd, vreq);
 		pthread_mutex_lock(&vbd->mutex);
+
 		/*
 		 * if this request failed, but was not completed,
 		 * we'll back off for a while.
@@ -1867,7 +1872,9 @@ tapdisk_vbd_issue_new_requests(td_vbd_t *vbd)
 			return err;
 		}
 
-		tapdisk_vbd_count_new_request(vbd, vreq);
+		/* XXX: split counting and add; vreq must NOT be accessed after issuing the
+		        request. */
+		td_sector_count_add(&vbd->secs, secs, write);
 	}
 	pthread_mutex_unlock(&vbd->mutex);
 
