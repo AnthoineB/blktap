@@ -1115,6 +1115,10 @@ qcow2_cancel_commit_job(td_driver_t *driver, bool wait)
 
 	free_qcow2_request(s, req);
 
+	/* Already canceled, so this is considered a success */
+	if (err == -ECANCELED)
+		err = 0;
+
 	return err;
 }
 
