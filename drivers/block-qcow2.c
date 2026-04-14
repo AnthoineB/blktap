@@ -971,7 +971,7 @@ do_commit(struct qcow2_state *s, struct qcow2_request *req)
 
 	qmp_block_commit(COMMIT_JOB_ID, node, base_node, NULL, top_node, NULL, NULL,
 		false, false, false, 0, false, BLOCKDEV_ON_ERROR_REPORT,
-		NULL, false, false, true, false, &local_err);
+		NULL, true, true, true, false, &local_err);
 
 	if (local_err) {
 		DPRINTF("qcow2_commit: error: %s\n", error_get_pretty(local_err));
@@ -1136,7 +1136,8 @@ do_cancel_commit_job(struct qcow2_state *s, struct qcow2_request *req)
 		goto signal;
 	}
 
-	if (bjob->job.status == JOB_STATUS_RUNNING) {
+	if (bjob->job.status == JOB_STATUS_RUNNING ||
+                bjob->job.status == JOB_STATUS_READY) {
 		if (req->sync == false) {
 			job_cancel_locked(&bjob->job, false);
 		} else {

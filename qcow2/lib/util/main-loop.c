@@ -210,12 +210,12 @@ int qemu_deinit_main_loop(void)
 
     src = iohandler_get_g_source();
     g_source_unref(src);
-    g_source_remove(g_source_get_id(src));
+    g_source_destroy(src);
     g_source_unref(src);
 
     src = aio_get_g_source(qemu_aio_context);
     g_source_unref(src);
-    g_source_remove(g_source_get_id(src));
+    g_source_destroy(src);
     g_source_unref(src);
 
     g_array_free(gpollfds, TRUE);
