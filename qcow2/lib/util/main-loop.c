@@ -232,8 +232,6 @@ int qemu_deinit_main_loop(void)
     iohandler_deinit();
     qemu_aio_context = NULL;
 
-    timerlistgroup_deinit(&main_loop_tlg);
-
     return 0;
 }
 
