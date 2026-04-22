@@ -125,7 +125,6 @@ typedef struct BlockZoneDescriptor {
     BlockZoneState state;
 } BlockZoneDescriptor;
 
-#if 0
 /*
  * Track write pointers of a zone in bytes.
  */
@@ -133,7 +132,6 @@ typedef struct BlockZoneWps {
     CoMutex colock;
     uint64_t wp[];
 } BlockZoneWps;
-#endif
 
 typedef struct BlockDriverInfo {
     /* in bytes, 0 if irrelevant */
