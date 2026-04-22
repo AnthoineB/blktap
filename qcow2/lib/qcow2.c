@@ -34,7 +34,7 @@
 //#include "qapi/qapi-events-block-core.h"
 #include "qapi/qmp/qdict.h"
 #include "qapi/qmp/qstring.h"
-//#include "trace.h"
+#include "trace.h"
 #include "qemu/option_int.h"
 #include "qemu/cutils.h"
 #include "qemu/bswap.h"
@@ -2330,10 +2330,10 @@ static coroutine_fn int qcow2_add_task(BlockDriverState *bs,
         .l2meta = l2meta,
     };
 
-    //trace_qcow2_add_task(qemu_coroutine_self(), bs, pool,
-    //                     func == qcow2_co_preadv_task_entry ? "read" : "write",
-    //                     subcluster_type, host_offset, offset, bytes,
-    //                     qiov, qiov_offset);
+    trace_qcow2_add_task(qemu_coroutine_self(), bs, pool,
+                         func == qcow2_co_preadv_task_entry ? "read" : "write",
+                         subcluster_type, host_offset, offset, bytes,
+                         qiov, qiov_offset);
 
     if (!pool) {
         return func(&task->task);
@@ -2601,7 +2601,7 @@ handle_alloc_space(BlockDriverState *bs, QCowL2Meta *l2meta)
             continue;
         }
 
-        //trace_qcow2_skip_cow(qemu_coroutine_self(), m->offset, m->nb_clusters);
+        trace_qcow2_skip_cow(qemu_coroutine_self(), m->offset, m->nb_clusters);
         m->skip_cow = true;
     }
     return 0;
@@ -2659,7 +2659,7 @@ int qcow2_co_pwritev_task(BlockDriverState *bs, uint64_t host_offset,
      */
     if (!merge_cow(offset, bytes, qiov, qiov_offset, l2meta)) {
         BLKDBG_CO_EVENT(bs->file, BLKDBG_WRITE_AIO);
-        //trace_qcow2_writev_data(qemu_coroutine_self(), host_offset);
+        trace_qcow2_writev_data(qemu_coroutine_self(), host_offset);
         ret = bdrv_co_pwritev_part(s->data_file, host_offset,
                                    bytes, qiov, qiov_offset, 0);
         if (ret < 0) {
@@ -2712,13 +2712,13 @@ qcow2_co_pwritev_part(BlockDriverState *bs, int64_t offset, int64_t bytes,
     QCowL2Meta *l2meta = NULL;
     AioTaskPool *aio = NULL;
 
-    //trace_qcow2_writev_start_req(qemu_coroutine_self(), offset, bytes);
+    trace_qcow2_writev_start_req(qemu_coroutine_self(), offset, bytes);
 
     while (bytes != 0 && aio_task_pool_status(aio) == 0) {
 
         l2meta = NULL;
 
-        //trace_qcow2_writev_start_part(qemu_coroutine_self());
+        trace_qcow2_writev_start_part(qemu_coroutine_self());
         offset_in_cluster = offset_into_cluster(s, offset);
         cur_bytes = MIN(bytes, INT_MAX);
         if (bs->encrypted) {
@@ -2757,7 +2757,7 @@ qcow2_co_pwritev_part(BlockDriverState *bs, int64_t offset, int64_t bytes,
         bytes -= cur_bytes;
         offset += cur_bytes;
         qiov_offset += cur_bytes;
-        //trace_qcow2_writev_done_part(qemu_coroutine_self(), cur_bytes);
+        trace_qcow2_writev_done_part(qemu_coroutine_self(), cur_bytes);
     }
     ret = 0;
 
@@ -2777,7 +2777,7 @@ fail_nometa:
         g_free(aio);
     }
 
-    //trace_qcow2_writev_done_req(qemu_coroutine_self(), ret);
+    trace_qcow2_writev_done_req(qemu_coroutine_self(), ret);
 
     return ret;
 }
@@ -4101,7 +4101,7 @@ qcow2_co_pwrite_zeroes(BlockDriverState *bs, int64_t offset, int64_t bytes,
     uint32_t tail = ROUND_UP(offset + bytes, s->subcluster_size) -
         (offset + bytes);
 
-    //trace_qcow2_pwrite_zeroes_start_req(qemu_coroutine_self(), offset, bytes);
+    trace_qcow2_pwrite_zeroes_start_req(qemu_coroutine_self(), offset, bytes);
     if (offset + bytes == bs->total_sectors * BDRV_SECTOR_SIZE) {
         tail = 0;
     }
@@ -4137,7 +4137,7 @@ qcow2_co_pwrite_zeroes(BlockDriverState *bs, int64_t offset, int64_t bytes,
         qemu_co_mutex_lock(&s->lock);
     }
 
-    //trace_qcow2_pwrite_zeroes(qemu_coroutine_self(), offset, bytes);
+    trace_qcow2_pwrite_zeroes(qemu_coroutine_self(), offset, bytes);
 
     /* Whatever is left can use real zero subclusters */
     ret = qcow2_subcluster_zeroize(bs, offset, bytes, flags);
@@ -4321,7 +4321,7 @@ fail:
 
     qemu_co_mutex_unlock(&s->lock);
 
-    //trace_qcow2_writev_done_req(qemu_coroutine_self(), ret);
+    trace_qcow2_writev_done_req(qemu_coroutine_self(), ret);
 
     return ret;
 }

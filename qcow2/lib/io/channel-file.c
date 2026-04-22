@@ -25,7 +25,7 @@
 #include "qapi/error.h"
 #include "qemu/module.h"
 #include "qemu/sockets.h"
-//#include "trace.h"
+#include "trace.h"
 
 QIOChannelFile *
 qio_channel_file_new_fd(int fd)
@@ -40,7 +40,7 @@ qio_channel_file_new_fd(int fd)
         qio_channel_set_feature(QIO_CHANNEL(ioc), QIO_CHANNEL_FEATURE_SEEKABLE);
     }
 
-    //trace_qio_channel_file_new_fd(ioc, fd);
+    trace_qio_channel_file_new_fd(ioc, fd);
 
     return ioc;
 }
@@ -82,7 +82,7 @@ qio_channel_file_new_path(const char *path,
         qio_channel_set_feature(QIO_CHANNEL(ioc), QIO_CHANNEL_FEATURE_SEEKABLE);
     }
 
-    //trace_qio_channel_file_new_path(ioc, path, flags, mode, ioc->fd);
+    trace_qio_channel_file_new_path(ioc, path, flags, mode, ioc->fd);
 
     return ioc;
 }

@@ -26,7 +26,7 @@
 #include "qapi/error.h"
 #include "authz/base.h"
 #include "tlscredspriv.h"
-//#include "trace.h"
+#include "trace.h"
 
 #ifdef CONFIG_GNUTLS
 
@@ -140,11 +140,9 @@ qcrypto_tls_session_new(QCryptoTLSCreds *creds,
     int ret;
 
     session = g_new0(QCryptoTLSSession, 1);
-#if 0
     trace_qcrypto_tls_session_new(
         session, creds, hostname ? hostname : "<none>",
         authzid ? authzid : "<none>", endpoint);
-#endif
 
     if (hostname) {
         session->hostname = g_strdup(hostname);
@@ -437,26 +435,26 @@ qcrypto_tls_session_check_credentials(QCryptoTLSSession *session,
 {
     if (object_dynamic_cast(OBJECT(session->creds),
                             TYPE_QCRYPTO_TLS_CREDS_ANON)) {
-        //trace_qcrypto_tls_session_check_creds(session, "nop");
+        trace_qcrypto_tls_session_check_creds(session, "nop");
         return 0;
     } else if (object_dynamic_cast(OBJECT(session->creds),
                             TYPE_QCRYPTO_TLS_CREDS_PSK)) {
-        //trace_qcrypto_tls_session_check_creds(session, "nop");
+        trace_qcrypto_tls_session_check_creds(session, "nop");
         return 0;
     } else if (object_dynamic_cast(OBJECT(session->creds),
                             TYPE_QCRYPTO_TLS_CREDS_X509)) {
         if (session->creds->verifyPeer) {
             int ret = qcrypto_tls_session_check_certificate(session,
                                                             errp);
-            //trace_qcrypto_tls_session_check_creds(session,
-            //                                      ret == 0 ? "pass" : "fail");
+            trace_qcrypto_tls_session_check_creds(session,
+                                                  ret == 0 ? "pass" : "fail");
             return ret;
         } else {
-            //trace_qcrypto_tls_session_check_creds(session, "skip");
+            trace_qcrypto_tls_session_check_creds(session, "skip");
             return 0;
         }
     } else {
-        //trace_qcrypto_tls_session_check_creds(session, "error");
+        trace_qcrypto_tls_session_check_creds(session, "error");
         error_setg(errp, "Unexpected credential type %s",
                    object_get_typename(OBJECT(session->creds)));
         return -1;

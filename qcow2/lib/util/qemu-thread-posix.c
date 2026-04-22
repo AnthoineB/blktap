@@ -235,9 +235,9 @@ qemu_cond_timedwait_ts(QemuCond *cond, QemuMutex *mutex, struct timespec *ts,
     int err;
 
     assert(cond->initialized);
-    //trace_qemu_mutex_unlock(mutex, file, line);
+    trace_qemu_mutex_unlock(mutex, file, line);
     err = pthread_cond_timedwait(&cond->cond, &mutex->lock, ts);
-    //trace_qemu_mutex_locked(mutex, file, line);
+    trace_qemu_mutex_locked(mutex, file, line);
     if (err && err != ETIMEDOUT) {
         error_exit(err, __func__);
     }

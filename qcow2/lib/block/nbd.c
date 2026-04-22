@@ -30,7 +30,7 @@
 
 #include "qemu/osdep.h"
 
-//#include "trace.h"
+#include "trace.h"
 #include "qemu/uri.h"
 #include "qemu/option.h"
 #include "qemu/cutils.h"
@@ -311,7 +311,7 @@ nbd_handle_updated_info(BlockDriverState *bs, Error **errp)
         }
     }
 
-    //trace_nbd_client_handshake_success(s->export);
+    trace_nbd_client_handshake_success(s->export);
 
     return 0;
 }
@@ -383,7 +383,7 @@ static void coroutine_fn GRAPH_RDLOCK nbd_reconnect_attempt(BDRVNBDState *s)
     assert(nbd_client_connecting(s));
     assert(s->in_flight == 1);
 
-    //trace_nbd_reconnect_attempt(s->bs->in_flight);
+    trace_nbd_reconnect_attempt(s->bs->in_flight);
 
     if (blocking && !s->reconnect_delay_timer) {
         /*
@@ -407,7 +407,7 @@ static void coroutine_fn GRAPH_RDLOCK nbd_reconnect_attempt(BDRVNBDState *s)
     qemu_mutex_unlock(&s->requests_lock);
     nbd_co_do_establish_connection(s->bs, blocking, NULL);
     //ret = nbd_co_do_establish_connection(s->bs, blocking, NULL);
-    //trace_nbd_reconnect_attempt_result(ret, s->bs->in_flight);
+    trace_nbd_reconnect_attempt_result(ret, s->bs->in_flight);
     qemu_mutex_lock(&s->requests_lock);
 
     /*
@@ -602,7 +602,7 @@ static int nbd_parse_offset_hole_payload(BDRVNBDState *s,
     }
     if (s->info.min_block &&
         !QEMU_IS_ALIGNED(hole_size, s->info.min_block)) {
-        //trace_nbd_structured_read_compliance("hole");
+        trace_nbd_structured_read_compliance("hole");
     }
 
     qemu_iovec_memset(qiov, offset - orig_offset, 0, hole_size);
@@ -672,7 +672,7 @@ static int nbd_parse_blockstatus_payload(BDRVNBDState *s,
      */
     if (s->info.min_block && !QEMU_IS_ALIGNED(extent->length,
                                               s->info.min_block)) {
-        //trace_nbd_parse_blockstatus_compliance("extent length is unaligned");
+        trace_nbd_parse_blockstatus_compliance("extent length is unaligned");
         if (extent->length > s->info.min_block) {
             extent->length = QEMU_ALIGN_DOWN(extent->length,
                                              s->info.min_block);
@@ -693,11 +693,11 @@ static int nbd_parse_blockstatus_payload(BDRVNBDState *s,
      * the length of our request.
      */
     if (count != wide || chunk->length > pay_len) {
-        //trace_nbd_parse_blockstatus_compliance("unexpected extent count");
+        trace_nbd_parse_blockstatus_compliance("unexpected extent count");
     }
     if (extent->length > orig_length) {
         extent->length = orig_length;
-        //trace_nbd_parse_blockstatus_compliance("extent length too large");
+        trace_nbd_parse_blockstatus_compliance("extent length too large");
     }
 
     /*
@@ -787,7 +787,7 @@ nbd_co_receive_offset_data_payload(BDRVNBDState *s, uint64_t orig_offset,
         return -EINVAL;
     }
     if (s->info.min_block && !QEMU_IS_ALIGNED(data_size, s->info.min_block)) {
-        //trace_nbd_structured_read_compliance("data");
+        trace_nbd_structured_read_compliance("data");
     }
 
     qemu_iovec_init(&sub_qiov, qiov->niov);
@@ -1162,7 +1162,7 @@ nbd_co_receive_blockstatus_reply(BDRVNBDState *s, uint64_t cookie,
         case NBD_REPLY_TYPE_BLOCK_STATUS:
             wide = chunk->type == NBD_REPLY_TYPE_BLOCK_STATUS_EXT;
             if ((s->info.mode >= NBD_MODE_EXTENDED) != wide) {
-                //trace_nbd_extended_headers_compliance("block_status");
+                trace_nbd_extended_headers_compliance("block_status");
             }
             if (received) {
                 nbd_channel_error(s, -EINVAL);
@@ -1229,13 +1229,11 @@ nbd_co_request(BlockDriverState *bs, NBDRequest *request,
         ret = nbd_co_receive_return_code(s, request->cookie,
                                          &request_ret, &local_err);
         if (local_err) {
-#if 0
             trace_nbd_co_request_fail(request->from, request->len,
                                       request->cookie, request->flags,
                                       request->type,
                                       nbd_cmd_lookup(request->type),
                                       ret, error_get_pretty(local_err));
-#endif
             error_free(local_err);
             local_err = NULL;
         }
@@ -1290,12 +1288,10 @@ nbd_client_co_preadv(BlockDriverState *bs, int64_t offset, int64_t bytes,
         ret = nbd_co_receive_cmdread_reply(s, request.cookie, offset, qiov,
                                            &request_ret, &local_err);
         if (local_err) {
-#if 0
             trace_nbd_co_request_fail(request.from, request.len, request.cookie,
                                       request.flags, request.type,
                                       nbd_cmd_lookup(request.type),
                                       ret, error_get_pretty(local_err));
-#endif
             error_free(local_err);
             local_err = NULL;
         }
@@ -1456,12 +1452,10 @@ static int coroutine_fn GRAPH_RDLOCK nbd_client_co_block_status(
                                                &extent, &request_ret,
                                                &local_err);
         if (local_err) {
-#if 0
             trace_nbd_co_request_fail(request.from, request.len, request.cookie,
                                       request.flags, request.type,
                                       nbd_cmd_lookup(request.type),
                                       ret, error_get_pretty(local_err));
-#endif
             error_free(local_err);
             local_err = NULL;
         }

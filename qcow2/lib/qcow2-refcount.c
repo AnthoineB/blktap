@@ -30,7 +30,7 @@
 #include "qemu/bswap.h"
 #include "qemu/cutils.h"
 #include "qemu/memalign.h"
-//#include "trace.h"
+#include "trace.h"
 
 static int64_t alloc_clusters_noref(BlockDriverState *bs, uint64_t size,
                                     uint64_t max);
@@ -745,7 +745,7 @@ void qcow2_process_discards(BlockDriverState *bs, int ret)
         if (ret >= 0) {
             int r2 = bdrv_pdiscard(bs->file, d->offset, d->bytes);
             if (r2 < 0) {
-                //trace_qcow2_process_discards_failed_region(d->offset, d->bytes, r2);
+                trace_qcow2_process_discards_failed_region(d->offset, d->bytes, r2);
             }
         }
 

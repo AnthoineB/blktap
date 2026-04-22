@@ -20,7 +20,7 @@
 #include "qemu/osdep.h"
 #include "qapi/error.h"
 #include "qemu/queue.h"
-//#include "trace.h"
+#include "trace.h"
 #include "nbd-internal.h"
 #include "qemu/cutils.h"
 
@@ -75,7 +75,7 @@ static int nbd_send_option_request(QIOChannel *ioc, uint32_t opt,
     if (len == -1) {
         req.length = len = strlen(data);
     }
-    //trace_nbd_send_option_request(opt, nbd_opt_lookup(opt), len);
+    trace_nbd_send_option_request(opt, nbd_opt_lookup(opt), len);
 
     stq_be_p(&req.magic, NBD_OPTS_MAGIC);
     stl_be_p(&req.option, opt);
@@ -124,11 +124,9 @@ static int nbd_receive_option_reply(QIOChannel *ioc, uint32_t opt,
     reply->type = be32_to_cpu(reply->type);
     reply->length = be32_to_cpu(reply->length);
 
-#if 0
     trace_nbd_receive_option_reply(reply->option, nbd_opt_lookup(reply->option),
                                    reply->type, nbd_rep_lookup(reply->type),
                                    reply->length);
-#endif
 
     if (reply->magic != NBD_REP_MAGIC) {
         error_setg(errp, "Unexpected option reply magic");
@@ -178,18 +176,14 @@ static int nbd_handle_reply_err(QIOChannel *ioc, NBDOptionReply *reply,
             goto err;
         }
         msg[reply->length] = '\0';
-#if 0
         trace_nbd_server_error_msg(reply->type,
                                    nbd_reply_type_lookup(reply->type), msg);
-#endif
     }
 
     if (reply->type == NBD_REP_ERR_UNSUP || !strict) {
-#if 0
         trace_nbd_reply_err_ignored(reply->option,
                                     nbd_opt_lookup(reply->option),
                                     reply->type, nbd_rep_lookup(reply->type));
-#endif
         return 0;
     }
 
@@ -325,7 +319,7 @@ static int nbd_receive_list(QIOChannel *ioc, char **name, char **description,
         local_desc[len] = '\0';
     }
 
-    //trace_nbd_receive_list(local_name, local_desc ?: "");
+    trace_nbd_receive_list(local_name, local_desc ?: "");
     *name = g_steal_pointer(&local_name);
     if (description) {
         *description = g_steal_pointer(&local_desc);
@@ -358,7 +352,7 @@ static int nbd_opt_info_or_go(QIOChannel *ioc, uint32_t opt,
     info->flags = 0;
 
     assert(opt == NBD_OPT_GO || opt == NBD_OPT_INFO);
-    //trace_nbd_opt_info_go_start(nbd_opt_lookup(opt), info->name);
+    trace_nbd_opt_info_go_start(nbd_opt_lookup(opt), info->name);
     buf = g_malloc(4 + len + 2 + 2 * info->request_sizes + 1);
     stl_be_p(buf, len);
     memcpy(buf + 4, info->name, len);
@@ -398,7 +392,7 @@ static int nbd_opt_info_or_go(QIOChannel *ioc, uint32_t opt,
                 error_setg(errp, "broken server omitted NBD_INFO_EXPORT");
                 return -1;
             }
-            //trace_nbd_opt_info_go_success(nbd_opt_lookup(opt));
+            trace_nbd_opt_info_go_success(nbd_opt_lookup(opt));
             return 1;
         }
         if (reply.type != NBD_REP_INFO) {
@@ -443,7 +437,7 @@ static int nbd_opt_info_or_go(QIOChannel *ioc, uint32_t opt,
                 nbd_send_opt_abort(ioc);
                 return -1;
             }
-            //trace_nbd_receive_negotiate_size_flags(info->size, info->flags);
+            trace_nbd_receive_negotiate_size_flags(info->size, info->flags);
             break;
 
         case NBD_INFO_BLOCK_SIZE:
@@ -489,8 +483,8 @@ static int nbd_opt_info_or_go(QIOChannel *ioc, uint32_t opt,
                 nbd_send_opt_abort(ioc);
                 return -1;
             }
-            //trace_nbd_opt_info_block_size(info->min_block, info->opt_block,
-            //                              info->max_block);
+            trace_nbd_opt_info_block_size(info->min_block, info->opt_block,
+                                          info->max_block);
             break;
 
         default:
@@ -498,7 +492,7 @@ static int nbd_opt_info_or_go(QIOChannel *ioc, uint32_t opt,
              * Not worth the bother to check if NBD_INFO_NAME or
              * NBD_INFO_DESCRIPTION exceed NBD_MAX_STRING_SIZE.
              */
-            //trace_nbd_opt_info_unknown(type, nbd_info_lookup(type));
+            trace_nbd_opt_info_unknown(type, nbd_info_lookup(type));
             if (nbd_drop(ioc, len, errp) < 0) {
                 error_prepend(errp, "Failed to read info payload: ");
                 nbd_send_opt_abort(ioc);
@@ -517,7 +511,7 @@ static int nbd_receive_query_exports(QIOChannel *ioc,
     bool list_empty = true;
     bool found_export = false;
 
-    //trace_nbd_receive_query_exports_start(wantname);
+    trace_nbd_receive_query_exports_start(wantname);
     if (nbd_send_option_request(ioc, NBD_OPT_LIST, 0, NULL, errp) < 0) {
         return -1;
     }
@@ -547,7 +541,7 @@ static int nbd_receive_query_exports(QIOChannel *ioc,
                 nbd_send_opt_abort(ioc);
                 return -1;
             }
-            //trace_nbd_receive_query_exports_success(wantname);
+            trace_nbd_receive_query_exports_success(wantname);
             return 0;
         }
         list_empty = false;
@@ -637,13 +631,13 @@ static QIOChannel *nbd_receive_starttls(QIOChannel *ioc,
         return NULL;
     }
 
-    //trace_nbd_receive_starttls_new_client();
+    trace_nbd_receive_starttls_new_client();
     tioc = qio_channel_tls_new_client(ioc, tlscreds, hostname, errp);
     if (!tioc) {
         return NULL;
     }
     qio_channel_set_name(QIO_CHANNEL(tioc), "nbd-client-tls");
-    //trace_nbd_receive_starttls_tls_handshake();
+    trace_nbd_receive_starttls_tls_handshake();
     qio_channel_tls_handshake(tioc,
                               nbd_client_tls_handshake,
                               &data,
@@ -695,7 +689,7 @@ static int nbd_send_meta_query(QIOChannel *ioc, uint32_t opt,
     }
     p = data = g_malloc(data_len);
 
-    //trace_nbd_opt_meta_request(nbd_opt_lookup(opt), query ?: "(all)", export);
+    trace_nbd_opt_meta_request(nbd_opt_lookup(opt), query ?: "(all)", export);
     stl_be_p(p, export_len);
     memcpy(p += sizeof(export_len), export, export_len);
     stl_be_p(p += export_len, queries);
@@ -773,7 +767,7 @@ static int nbd_receive_one_meta_context(QIOChannel *ioc,
         return -1;
     }
     local_name[reply.length] = '\0';
-    //trace_nbd_opt_meta_reply(nbd_opt_lookup(opt), local_name, local_id);
+    trace_nbd_opt_meta_reply(nbd_opt_lookup(opt), local_name, local_id);
 
     if (name) {
         *name = local_name;
@@ -911,7 +905,7 @@ static int nbd_start_negotiate(QIOChannel *ioc, QCryptoTLSCreds *tlscreds,
     ERRP_GUARD();
     uint64_t magic;
 
-    //trace_nbd_start_negotiate(tlscreds, hostname ? hostname : "<null>");
+    trace_nbd_start_negotiate(tlscreds, hostname ? hostname : "<null>");
 
     if (zeroes) {
         *zeroes = true;
@@ -927,7 +921,7 @@ static int nbd_start_negotiate(QIOChannel *ioc, QCryptoTLSCreds *tlscreds,
     if (nbd_read64(ioc, &magic, "initial magic", errp) < 0) {
         return -EINVAL;
     }
-    //trace_nbd_receive_negotiate_magic(magic);
+    trace_nbd_receive_negotiate_magic(magic);
 
     if (magic != NBD_INIT_MAGIC) {
         error_setg(errp, "Bad initial magic received: 0x%" PRIx64, magic);
@@ -937,7 +931,7 @@ static int nbd_start_negotiate(QIOChannel *ioc, QCryptoTLSCreds *tlscreds,
     if (nbd_read64(ioc, &magic, "server magic", errp) < 0) {
         return -EINVAL;
     }
-    //trace_nbd_receive_negotiate_magic(magic);
+    trace_nbd_receive_negotiate_magic(magic);
 
     if (magic == NBD_OPTS_MAGIC) {
         uint32_t clientflags = 0;
@@ -947,7 +941,7 @@ static int nbd_start_negotiate(QIOChannel *ioc, QCryptoTLSCreds *tlscreds,
         if (nbd_read16(ioc, &globalflags, "server flags", errp) < 0) {
             return -EINVAL;
         }
-        //trace_nbd_receive_negotiate_server_flags(globalflags);
+        trace_nbd_receive_negotiate_server_flags(globalflags);
         if (globalflags & NBD_FLAG_FIXED_NEWSTYLE) {
             fixedNewStyle = true;
             clientflags |= NBD_FLAG_C_FIXED_NEWSTYLE;
@@ -1053,7 +1047,7 @@ int nbd_receive_negotiate(QIOChannel *ioc, QCryptoTLSCreds *tlscreds,
     bool base_allocation = info->base_allocation;
 
     assert(info->name && strlen(info->name) <= NBD_MAX_STRING_SIZE);
-    //trace_nbd_receive_negotiate_name(info->name);
+    trace_nbd_receive_negotiate_name(info->name);
 
     result = nbd_start_negotiate(ioc, tlscreds, hostname, outioc,
                                  info->mode, &zeroes, errp);
@@ -1130,7 +1124,7 @@ int nbd_receive_negotiate(QIOChannel *ioc, QCryptoTLSCreds *tlscreds,
         g_assert_not_reached();
     }
 
-    //trace_nbd_receive_negotiate_size_flags(info->size, info->flags);
+    trace_nbd_receive_negotiate_size_flags(info->size, info->flags);
     if (zeroes && nbd_drop(ioc, 124, errp) < 0) {
         error_prepend(errp, "Failed to read reserved block: ");
         return -EINVAL;
@@ -1292,7 +1286,7 @@ int nbd_init(int fd, QIOChannelSocket *sioc, NBDExportInfo *info,
         return -E2BIG;
     }
 
-    //trace_nbd_init_set_socket();
+    trace_nbd_init_set_socket();
 
     if (ioctl(fd, NBD_SET_SOCK, (unsigned long) sioc->fd) < 0) {
         int serrno = errno;
@@ -1300,7 +1294,7 @@ int nbd_init(int fd, QIOChannelSocket *sioc, NBDExportInfo *info,
         return -serrno;
     }
 
-    //trace_nbd_init_set_block_size(sector_size);
+    trace_nbd_init_set_block_size(sector_size);
 
     if (ioctl(fd, NBD_SET_BLKSIZE, sector_size) < 0) {
         int serrno = errno;
@@ -1308,9 +1302,9 @@ int nbd_init(int fd, QIOChannelSocket *sioc, NBDExportInfo *info,
         return -serrno;
     }
 
-    //trace_nbd_init_set_size(sectors);
+    trace_nbd_init_set_size(sectors);
     if (info->size % sector_size) {
-        //trace_nbd_init_trailing_bytes(info->size % sector_size);
+        trace_nbd_init_trailing_bytes(info->size % sector_size);
     }
 
     if (ioctl(fd, NBD_SET_SIZE_BLOCKS, sectors) < 0) {
@@ -1322,7 +1316,7 @@ int nbd_init(int fd, QIOChannelSocket *sioc, NBDExportInfo *info,
     if (ioctl(fd, NBD_SET_FLAGS, (unsigned long) info->flags) < 0) {
         if (errno == ENOTTY) {
             int read_only = (info->flags & NBD_FLAG_READ_ONLY) != 0;
-            //trace_nbd_init_set_readonly();
+            trace_nbd_init_set_readonly();
 
             if (ioctl(fd, BLKROSET, (unsigned long) &read_only) < 0) {
                 int serrno = errno;
@@ -1336,7 +1330,7 @@ int nbd_init(int fd, QIOChannelSocket *sioc, NBDExportInfo *info,
         }
     }
 
-    //trace_nbd_init_finish();
+    trace_nbd_init_finish();
 
     return 0;
 }
@@ -1346,7 +1340,7 @@ int nbd_client(int fd)
     int ret;
     int serrno;
 
-    //trace_nbd_client_loop();
+    trace_nbd_client_loop();
 
     ret = ioctl(fd, NBD_DO_IT);
     if (ret < 0 && errno == EPIPE) {
@@ -1358,12 +1352,12 @@ int nbd_client(int fd)
     }
     serrno = errno;
 
-    //trace_nbd_client_loop_ret(ret, strerror(serrno));
+    trace_nbd_client_loop_ret(ret, strerror(serrno));
 
-    //trace_nbd_client_clear_queue();
+    trace_nbd_client_clear_queue();
     ioctl(fd, NBD_CLEAR_QUE);
 
-    //trace_nbd_client_clear_socket();
+    trace_nbd_client_clear_socket();
     ioctl(fd, NBD_CLEAR_SOCK);
 
     errno = serrno;
@@ -1385,11 +1379,9 @@ int nbd_send_request(QIOChannel *ioc, NBDRequest *request)
     uint8_t buf[NBD_EXTENDED_REQUEST_SIZE];
     size_t len;
 
-#if 0
     trace_nbd_send_request(request->from, request->len, request->cookie,
                            request->flags, request->type,
                            nbd_cmd_lookup(request->type));
-#endif
 
     stw_be_p(buf + 4, request->flags);
     stw_be_p(buf + 6, request->type);
@@ -1557,46 +1549,38 @@ int coroutine_fn nbd_receive_reply(BlockDriverState *bs, QIOChannel *ioc,
     switch (reply->magic) {
     case NBD_SIMPLE_REPLY_MAGIC:
         if (mode >= NBD_MODE_EXTENDED) {
-#if 0
             trace_nbd_receive_wrong_header(reply->magic,
                                            nbd_mode_lookup(mode));
-#endif
         }
         ret = nbd_receive_simple_reply(ioc, &reply->simple, errp);
         if (ret < 0) {
             return ret;
         }
-#if 0
         trace_nbd_receive_simple_reply(reply->simple.error,
                                        nbd_err_lookup(reply->simple.error),
                                        reply->cookie);
-#endif
         break;
     case NBD_STRUCTURED_REPLY_MAGIC:
     case NBD_EXTENDED_REPLY_MAGIC:
         expected = mode >= NBD_MODE_EXTENDED ? NBD_EXTENDED_REPLY_MAGIC
             : NBD_STRUCTURED_REPLY_MAGIC;
         if (reply->magic != expected) {
-#if 0
             trace_nbd_receive_wrong_header(reply->magic,
                                            nbd_mode_lookup(mode));
-#endif
         }
         ret = nbd_receive_reply_chunk_header(ioc, reply, errp);
         if (ret < 0) {
             return ret;
         }
         nbd_reply_type_lookup(reply->structured.type);
-#if 0
-        type = nbd_reply_type_lookup(reply->structured.type);
+        //type = nbd_reply_type_lookup(reply->structured.type);
         trace_nbd_receive_reply_chunk_header(reply->structured.flags,
                                              reply->structured.type, type,
                                              reply->structured.cookie,
                                              reply->structured.length);
-#endif
         break;
     default:
-        //trace_nbd_receive_wrong_header(reply->magic, nbd_mode_lookup(mode));
+        trace_nbd_receive_wrong_header(reply->magic, nbd_mode_lookup(mode));
         error_setg(errp, "invalid magic (got 0x%" PRIx32 ")", reply->magic);
         return -EINVAL;
     }

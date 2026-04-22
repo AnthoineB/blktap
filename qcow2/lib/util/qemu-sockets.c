@@ -30,7 +30,7 @@
 #include "qapi/qobject-input-visitor.h"
 #include "qapi/qobject-output-visitor.h"
 #include "qemu/cutils.h"
-//#include "trace.h"
+#include "trace.h"
 
 #ifndef AI_ADDRCONFIG
 # define AI_ADDRCONFIG 0
@@ -1214,7 +1214,7 @@ int socket_listen(SocketAddress *addr, int num, Error **errp)
 {
     int fd;
 
-    //trace_socket_listen(num);
+    trace_socket_listen(num);
     switch (addr->type) {
     case SOCKET_ADDRESS_TYPE_INET:
         fd = inet_listen_saddr(&addr->u.inet, 0, num, errp);

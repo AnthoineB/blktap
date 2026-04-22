@@ -25,7 +25,7 @@
 #include "qemu/id.h"
 #include "qemu/main-loop.h"
 #include "qemu/option.h"
-//#include "trace.h"
+#include "trace.h"
 //#include "migration/misc.h"
 
 /* Number of coroutines to reserve per attached device model */
@@ -289,7 +289,7 @@ static void blk_root_attach(BdrvChild *child)
     BlockBackend *blk = child->opaque;
     BlockBackendAioNotifier *notifier;
 
-    //trace_blk_root_attach(child, blk, child->bs);
+    trace_blk_root_attach(child, blk, child->bs);
 
     QLIST_FOREACH(notifier, &blk->aio_notifiers, list) {
         bdrv_add_aio_context_notifier(child->bs,
@@ -304,7 +304,7 @@ static void blk_root_detach(BdrvChild *child)
     BlockBackend *blk = child->opaque;
     BlockBackendAioNotifier *notifier;
 
-    //trace_blk_root_detach(child, blk, child->bs);
+    trace_blk_root_detach(child, blk, child->bs);
 
     QLIST_FOREACH(notifier, &blk->aio_notifiers, list) {
         bdrv_remove_aio_context_notifier(child->bs,
@@ -1355,7 +1355,7 @@ blk_co_do_preadv_part(BlockBackend *blk, int64_t offset, int64_t bytes,
 
     /* Call blk_bs() only after waiting, the graph may have changed */
     bs = blk_bs(blk);
-    //trace_blk_co_preadv(blk, bs, offset, bytes, flags);
+    trace_blk_co_preadv(blk, bs, offset, bytes, flags);
 
     ret = blk_check_byte_request(blk, offset, bytes);
     if (ret < 0) {
@@ -1432,7 +1432,7 @@ blk_co_do_pwritev_part(BlockBackend *blk, int64_t offset, int64_t bytes,
 
     /* Call blk_bs() only after waiting, the graph may have changed */
     bs = blk_bs(blk);
-    //trace_blk_co_pwritev(blk, bs, offset, bytes, flags);
+    trace_blk_co_pwritev(blk, bs, offset, bytes, flags);
 
     ret = blk_check_byte_request(blk, offset, bytes);
     if (ret < 0) {

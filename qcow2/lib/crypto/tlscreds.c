@@ -23,7 +23,7 @@
 #include "qapi/qapi-types-crypto.h"
 #include "qemu/module.h"
 #include "tlscredspriv.h"
-//#include "trace.h"
+#include "trace.h"
 
 #define DH_BITS 2048
 
@@ -36,7 +36,7 @@ qcrypto_tls_creds_get_dh_params_file(QCryptoTLSCreds *creds,
 {
     int ret;
 
-    //trace_qcrypto_tls_creds_load_dh(creds, filename ? filename : "<generated>");
+    trace_qcrypto_tls_creds_load_dh(creds, filename ? filename : "<generated>");
 
     if (filename == NULL) {
         ret = gnutls_dh_params_init(dh_params);
@@ -129,8 +129,8 @@ qcrypto_tls_creds_get_path(QCryptoTLSCreds *creds,
 
     ret = 0;
  cleanup:
-    //trace_qcrypto_tls_creds_get_path(creds, filename,
-    //                                 *cred ? *cred : "<none>");
+    trace_qcrypto_tls_creds_get_path(creds, filename,
+                                     *cred ? *cred : "<none>");
     return ret;
 }
 

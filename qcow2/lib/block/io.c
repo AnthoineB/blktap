@@ -23,7 +23,7 @@
  */
 
 #include "qemu/osdep.h"
-//#include "trace.h"
+#include "trace.h"
 #include "sysemu/block-backend.h"
 #include "block/aio-wait.h"
 #include "block/blockjob.h"
@@ -1211,8 +1211,8 @@ bdrv_co_do_copy_on_readv(BdrvChild *child, int64_t offset, int64_t bytes,
     bdrv_round_to_subclusters(bs, offset, bytes, &align_offset, &align_bytes);
     skip_bytes = offset - align_offset;
 
-    //trace_bdrv_co_do_copy_on_readv(bs, offset, bytes,
-    //                               align_offset, align_bytes);
+    trace_bdrv_co_do_copy_on_readv(bs, offset, bytes,
+                                   align_offset, align_bytes);
 
     while (align_bytes) {
         int64_t pnum;
@@ -1781,7 +1781,7 @@ int coroutine_fn bdrv_co_preadv_part(BdrvChild *child,
     int ret;
     IO_CODE();
 
-    //trace_bdrv_co_preadv_part(bs, offset, bytes, flags);
+    trace_bdrv_co_preadv_part(bs, offset, bytes, flags);
 
     if (!bdrv_co_is_inserted(bs)) {
         return -ENOMEDIUM;
@@ -2235,7 +2235,7 @@ int coroutine_fn bdrv_co_pwritev_part(BdrvChild *child,
     bool padded = false;
     IO_CODE();
 
-    //trace_bdrv_co_pwritev_part(child->bs, offset, bytes, flags);
+    trace_bdrv_co_pwritev_part(child->bs, offset, bytes, flags);
 
     if (!bdrv_co_is_inserted(bs)) {
         return -ENOMEDIUM;
@@ -2319,7 +2319,7 @@ int coroutine_fn bdrv_co_pwrite_zeroes(BdrvChild *child, int64_t offset,
                                        int64_t bytes, BdrvRequestFlags flags)
 {
     IO_CODE();
-    //trace_bdrv_co_pwrite_zeroes(child->bs, offset, bytes, flags);
+    trace_bdrv_co_pwrite_zeroes(child->bs, offset, bytes, flags);
     assert_bdrv_graph_readable();
 
     return bdrv_co_pwritev(child, offset, bytes, NULL,
@@ -3486,8 +3486,8 @@ int coroutine_fn bdrv_co_copy_range_from(BdrvChild *src, int64_t src_offset,
 {
     IO_CODE();
     assert_bdrv_graph_readable();
-    //trace_bdrv_co_copy_range_from(src, src_offset, dst, dst_offset, bytes,
-    //                              read_flags, write_flags);
+    trace_bdrv_co_copy_range_from(src, src_offset, dst, dst_offset, bytes,
+                                  read_flags, write_flags);
     return bdrv_co_copy_range_internal(src, src_offset, dst, dst_offset,
                                        bytes, read_flags, write_flags, true);
 }
@@ -3504,8 +3504,8 @@ int coroutine_fn bdrv_co_copy_range_to(BdrvChild *src, int64_t src_offset,
 {
     IO_CODE();
     assert_bdrv_graph_readable();
-    //trace_bdrv_co_copy_range_to(src, src_offset, dst, dst_offset, bytes,
-    //                            read_flags, write_flags);
+    trace_bdrv_co_copy_range_to(src, src_offset, dst, dst_offset, bytes,
+                                read_flags, write_flags);
     return bdrv_co_copy_range_internal(src, src_offset, dst, dst_offset,
                                        bytes, read_flags, write_flags, false);
 }

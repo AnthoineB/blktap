@@ -23,7 +23,7 @@
 #include "qapi/error.h"
 #include "qemu/thread.h"
 #include "qom/object.h"
-//#include "trace.h"
+#include "trace.h"
 
 struct QIOTaskThreadData {
     QIOTaskWorker worker;
@@ -65,7 +65,7 @@ QIOTask *qio_task_new(Object *source,
     qemu_mutex_init(&task->thread_lock);
     qemu_cond_init(&task->thread_cond);
 
-    //trace_qio_task_new(task, source, func, opaque);
+    trace_qio_task_new(task, source, func, opaque);
 
     return task;
 }
@@ -108,7 +108,7 @@ static gboolean qio_task_thread_result(gpointer opaque)
 {
     QIOTask *task = opaque;
 
-    //trace_qio_task_thread_result(task);
+    trace_qio_task_thread_result(task);
     qio_task_complete(task);
 
     return FALSE;
@@ -119,7 +119,7 @@ static gpointer qio_task_thread_worker(gpointer opaque)
 {
     QIOTask *task = opaque;
 
-    //trace_qio_task_thread_run(task);
+    trace_qio_task_thread_run(task);
 
     task->thread->worker(task, task->thread->opaque);
 
@@ -128,7 +128,7 @@ static gpointer qio_task_thread_worker(gpointer opaque)
      * thread. So we schedule an idle callback to report
      * the worker results
      */
-    //trace_qio_task_thread_exit(task);
+    trace_qio_task_thread_exit(task);
 
     qemu_mutex_lock(&task->thread_lock);
 
@@ -138,7 +138,7 @@ static gpointer qio_task_thread_worker(gpointer opaque)
     g_source_attach(task->thread->completion,
                     task->thread->context);
     g_source_unref(task->thread->completion);
-    //trace_qio_task_thread_source_attach(task, task->thread->completion);
+    trace_qio_task_thread_source_attach(task, task->thread->completion);
 
     qemu_cond_signal(&task->thread_cond);
     qemu_mutex_unlock(&task->thread_lock);
@@ -167,7 +167,7 @@ void qio_task_run_in_thread(QIOTask *task,
 
     task->thread = data;
 
-    //trace_qio_task_thread_start(task, worker, opaque);
+    trace_qio_task_thread_start(task, worker, opaque);
     qemu_thread_create(&thread,
                        "io-task-worker",
                        qio_task_thread_worker,
@@ -184,7 +184,7 @@ void qio_task_wait_thread(QIOTask *task)
         qemu_cond_wait(&task->thread_cond, &task->thread_lock);
     }
 
-    //trace_qio_task_thread_source_cancel(task, task->thread->completion);
+    trace_qio_task_thread_source_cancel(task, task->thread->completion);
     g_source_destroy(task->thread->completion);
     qemu_mutex_unlock(&task->thread_lock);
 
@@ -195,7 +195,7 @@ void qio_task_wait_thread(QIOTask *task)
 void qio_task_complete(QIOTask *task)
 {
     task->func(task, task->opaque);
-    //trace_qio_task_complete(task);
+    trace_qio_task_complete(task);
     qio_task_free(task);
 }
 

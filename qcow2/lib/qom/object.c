@@ -24,7 +24,7 @@
 //#include "qapi/forward-visitor.h"
 #include "qapi/qapi-builtin-visit.h"
 #include "qapi/qmp/qjson.h"
-//#include "trace.h"
+#include "trace.h"
 
 /* TODO: replace QObject with a simpler visitor to avoid a dependency
  * of the QOM core on QObject?  */
@@ -922,10 +922,8 @@ Object *object_dynamic_cast(Object *obj, const char *typename)
 Object *object_dynamic_cast_assert(Object *obj, const char *typename,
                                    const char *file, int line, const char *func)
 {
-#if 0
     trace_object_dynamic_cast_assert(obj ? obj->class->type->name : "(null)",
                                      typename, file, line, func);
-#endif
 
 #ifdef CONFIG_QOM_CAST_DEBUG
     int i;
@@ -1015,10 +1013,8 @@ ObjectClass *object_class_dynamic_cast_assert(ObjectClass *class,
 {
     ObjectClass *ret;
 
-#if 0
     trace_object_class_dynamic_cast_assert(class ? class->type->name : "(null)",
                                            typename, file, line, func);
-#endif
 
 #ifdef CONFIG_QOM_CAST_DEBUG
     int i;

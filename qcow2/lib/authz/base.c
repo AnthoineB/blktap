@@ -21,7 +21,7 @@
 #include "qemu/osdep.h"
 #include "authz/base.h"
 #include "qemu/module.h"
-//#include "trace.h"
+#include "trace.h"
 
 bool qauthz_is_allowed(QAuthZ *authz,
                        const char *identity,
@@ -31,7 +31,7 @@ bool qauthz_is_allowed(QAuthZ *authz,
     bool allowed;
 
     allowed = cls->is_allowed(authz, identity, errp);
-    //trace_qauthz_is_allowed(authz, identity, allowed);
+    trace_qauthz_is_allowed(authz, identity, allowed);
 
     return allowed;
 }

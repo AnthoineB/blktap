@@ -15,7 +15,7 @@
 #include "qemu/cutils.h"
 #include "qemu/coroutine.h"
 #include "qemu/range.h"
-//#include "trace.h"
+#include "trace.h"
 #include "block/blockjob_int.h"
 #include "block/block_int.h"
 #include "block/dirty-bitmap.h"
@@ -201,9 +201,7 @@ static void coroutine_fn mirror_iteration_done(MirrorOp *op, int ret)
     int64_t chunk_num;
     int i, nb_chunks;
 
-#if 0
     trace_mirror_iteration_done(s, op->offset, op->bytes, ret);
-#endif
 
     s->in_flight--;
     s->bytes_in_flight -= op->bytes;
@@ -377,9 +375,7 @@ static void coroutine_fn mirror_co_read(void *opaque)
     nb_chunks = DIV_ROUND_UP(op->bytes, s->granularity);
 
     while (s->buf_free_count < nb_chunks) {
-#if 0
         trace_mirror_yield_in_flight(s, op->offset, s->in_flight);
-#endif
         mirror_wait_for_free_in_flight_slot(s);
     }
 
@@ -400,9 +396,7 @@ static void coroutine_fn mirror_co_read(void *opaque)
     s->in_flight++;
     s->bytes_in_flight += op->bytes;
     op->is_in_flight = true;
-#if 0
     trace_mirror_one_iteration(s, op->offset, op->bytes);
-#endif
 
     WITH_GRAPH_RDLOCK_GUARD() {
         ret = bdrv_co_preadv(s->mirror_top_bs->backing, op->offset, op->bytes,
@@ -505,9 +499,7 @@ static void coroutine_fn GRAPH_UNLOCKED mirror_iteration(MirrorBlockJob *s)
     if (offset < 0) {
         bdrv_set_dirty_iter(s->dbi, 0);
         offset = bdrv_dirty_iter_next(s->dbi);
-#if 0
         trace_mirror_restart_iter(s, bdrv_get_dirty_count(s->dirty_bitmap));
-#endif
         assert(offset >= 0);
     }
     bdrv_dirty_bitmap_unlock(s->dirty_bitmap);
@@ -609,9 +601,7 @@ static void coroutine_fn GRAPH_UNLOCKED mirror_iteration(MirrorBlockJob *s)
         }
 
         while (s->in_flight >= MAX_IN_FLIGHT) {
-#if 0
             trace_mirror_yield_in_flight(s, offset, s->in_flight);
-#endif
             mirror_wait_for_free_in_flight_slot(s);
         }
 
@@ -877,10 +867,8 @@ static int coroutine_fn GRAPH_UNLOCKED mirror_dirty_init(MirrorBlockJob *s)
             }
 
             if (s->in_flight >= MAX_IN_FLIGHT) {
-#if 0
                 trace_mirror_yield(s, UINT64_MAX, s->buf_free_count,
                                    s->in_flight);
-#endif
                 mirror_wait_for_free_in_flight_slot(s);
                 continue;
             }
@@ -1083,9 +1071,7 @@ static int coroutine_fn mirror_run(Job *job, Error **errp)
             iostatus == BLOCK_DEVICE_IO_STATUS_OK) {
             if (s->in_flight >= MAX_IN_FLIGHT || s->buf_free_count == 0 ||
                 (cnt == 0 && s->in_flight > 0)) {
-#if 0
                 trace_mirror_yield(s, cnt, s->buf_free_count, s->in_flight);
-#endif
                 mirror_wait_for_free_in_flight_slot(s);
                 continue;
             } else if (cnt != 0) {
@@ -1095,9 +1081,7 @@ static int coroutine_fn mirror_run(Job *job, Error **errp)
 
         should_complete = false;
         if (s->in_flight == 0 && cnt == 0) {
-#if 0
             trace_mirror_before_flush(s);
-#endif
             if (!job_is_ready(&s->common.job)) {
                 if (mirror_flush(s) < 0) {
                     /* Go check s->ret.  */
@@ -1130,9 +1114,7 @@ static int coroutine_fn mirror_run(Job *job, Error **errp)
              * whether to switch to target check one last time if I/O has
              * come in the meanwhile, and if not flush the data to disk.
              */
-#if 0
             trace_mirror_before_drain(s, cnt);
-#endif
 
             s->in_drain = true;
             bdrv_drained_begin(bs);
@@ -1157,10 +1139,8 @@ static int coroutine_fn mirror_run(Job *job, Error **errp)
 
         if (job_is_ready(&s->common.job) && !should_complete) {
             if (s->in_flight == 0 && cnt == 0) {
-#if 0
                 trace_mirror_before_sleep(s, cnt, job_is_ready(&s->common.job),
                                           BLOCK_JOB_SLICE_TIME);
-#endif
                 job_sleep_ns(&s->common.job, BLOCK_JOB_SLICE_TIME);
             }
         } else {
@@ -1993,7 +1973,7 @@ static BlockJob *mirror_start_job(
 
     QTAILQ_INIT(&s->ops_in_flight);
 
-    //trace_mirror_start(bs, s, opaque);
+    trace_mirror_start(bs, s, opaque);
     job_start(&s->common.job);
 
     return &s->common;

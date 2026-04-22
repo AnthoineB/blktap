@@ -24,7 +24,7 @@
 #include "io/channel-socket.h"
 #include "io/channel-util.h"
 #include "io/channel-watch.h"
-//#include "trace.h"
+#include "trace.h"
 #include "qapi/clone-visitor.h"
 #ifdef CONFIG_LINUX
 #include <linux/errqueue.h>
@@ -73,7 +73,7 @@ qio_channel_socket_new(void)
     ioc->event = CreateEvent(NULL, FALSE, FALSE, NULL);
 #endif
 
-    //trace_qio_channel_socket_new(sioc);
+    trace_qio_channel_socket_new(sioc);
 
     return sioc;
 }
@@ -139,7 +139,7 @@ qio_channel_socket_new_fd(int fd,
         return NULL;
     }
 
-    //trace_qio_channel_socket_new_fd(ioc, fd);
+    trace_qio_channel_socket_new_fd(ioc, fd);
 
     return ioc;
 }
@@ -151,14 +151,14 @@ int qio_channel_socket_connect_sync(QIOChannelSocket *ioc,
 {
     int fd;
 
-    //trace_qio_channel_socket_connect_sync(ioc, addr);
+    trace_qio_channel_socket_connect_sync(ioc, addr);
     fd = socket_connect(addr, errp);
     if (fd < 0) {
-        //trace_qio_channel_socket_connect_fail(ioc);
+        trace_qio_channel_socket_connect_fail(ioc);
         return -1;
     }
 
-    //trace_qio_channel_socket_connect_complete(ioc, fd);
+    trace_qio_channel_socket_connect_complete(ioc, fd);
     if (qio_channel_socket_set_fd(ioc, fd, errp) < 0) {
         close(fd);
         return -1;
@@ -209,7 +209,7 @@ void qio_channel_socket_connect_async(QIOChannelSocket *ioc,
 
     /* socket_connect() does a non-blocking connect(), but it
      * still blocks in DNS lookups, so we must use a thread */
-    //trace_qio_channel_socket_connect_async(ioc, addr);
+    trace_qio_channel_socket_connect_async(ioc, addr);
     qio_task_run_in_thread(task,
                            qio_channel_socket_connect_worker,
                            addrCopy,
@@ -225,14 +225,14 @@ int qio_channel_socket_listen_sync(QIOChannelSocket *ioc,
 {
     int fd;
 
-    //trace_qio_channel_socket_listen_sync(ioc, addr, num);
+    trace_qio_channel_socket_listen_sync(ioc, addr, num);
     fd = socket_listen(addr, num, errp);
     if (fd < 0) {
-        //trace_qio_channel_socket_listen_fail(ioc);
+        trace_qio_channel_socket_listen_fail(ioc);
         return -1;
     }
 
-    //trace_qio_channel_socket_listen_complete(ioc, fd);
+    trace_qio_channel_socket_listen_complete(ioc, fd);
     if (qio_channel_socket_set_fd(ioc, fd, errp) < 0) {
         close(fd);
         return -1;
@@ -286,7 +286,7 @@ void qio_channel_socket_listen_async(QIOChannelSocket *ioc,
     data->num = num;
 
     /* socket_listen() blocks in DNS lookups, so we must use a thread */
-    //trace_qio_channel_socket_listen_async(ioc, addr, num);
+    trace_qio_channel_socket_listen_async(ioc, addr, num);
     qio_task_run_in_thread(task,
                            qio_channel_socket_listen_worker,
                            data,
@@ -302,14 +302,14 @@ int qio_channel_socket_dgram_sync(QIOChannelSocket *ioc,
 {
     int fd;
 
-    //trace_qio_channel_socket_dgram_sync(ioc, localAddr, remoteAddr);
+    trace_qio_channel_socket_dgram_sync(ioc, localAddr, remoteAddr);
     fd = socket_dgram(remoteAddr, localAddr, errp);
     if (fd < 0) {
-        //trace_qio_channel_socket_dgram_fail(ioc);
+        trace_qio_channel_socket_dgram_fail(ioc);
         return -1;
     }
 
-    //trace_qio_channel_socket_dgram_complete(ioc, fd);
+    trace_qio_channel_socket_dgram_complete(ioc, fd);
     if (qio_channel_socket_set_fd(ioc, fd, errp) < 0) {
         close(fd);
         return -1;
@@ -364,7 +364,7 @@ void qio_channel_socket_dgram_async(QIOChannelSocket *ioc,
     data->localAddr = QAPI_CLONE(SocketAddress, localAddr);
     data->remoteAddr = QAPI_CLONE(SocketAddress, remoteAddr);
 
-    //trace_qio_channel_socket_dgram_async(ioc, localAddr, remoteAddr);
+    trace_qio_channel_socket_dgram_async(ioc, localAddr, remoteAddr);
     qio_task_run_in_thread(task,
                            qio_channel_socket_dgram_worker,
                            data,
@@ -384,7 +384,7 @@ qio_channel_socket_accept(QIOChannelSocket *ioc,
     cioc->localAddrLen = sizeof(ioc->localAddr);
 
  retry:
-    //trace_qio_channel_socket_accept(ioc);
+    trace_qio_channel_socket_accept(ioc);
     cioc->fd = qemu_accept(ioc->fd, (struct sockaddr *)&cioc->remoteAddr,
                            &cioc->remoteAddrLen);
     if (cioc->fd < 0) {
@@ -392,7 +392,7 @@ qio_channel_socket_accept(QIOChannelSocket *ioc,
             goto retry;
         }
         error_setg_errno(errp, errno, "Unable to accept connection");
-        //trace_qio_channel_socket_accept_fail(ioc);
+        trace_qio_channel_socket_accept_fail(ioc);
         goto error;
     }
 
@@ -413,7 +413,7 @@ qio_channel_socket_accept(QIOChannelSocket *ioc,
     qio_channel_set_feature(QIO_CHANNEL(cioc),
                             QIO_CHANNEL_FEATURE_READ_MSG_PEEK);
 
-    //trace_qio_channel_socket_accept_complete(ioc, cioc, cioc->fd);
+    trace_qio_channel_socket_accept_complete(ioc, cioc, cioc->fd);
     return cioc;
 
  error:

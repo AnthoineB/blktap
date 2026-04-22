@@ -32,7 +32,7 @@
 #include "qemu/option.h"
 #include "qemu/units.h"
 #include "qemu/memalign.h"
-//#include "trace.h"
+#include "trace.h"
 #include "block/thread-pool.h"
 #include "qemu/iov.h"
 #include "block/raw-aio.h"
@@ -1633,7 +1633,7 @@ static int handle_aiocb_flush(void *opaque)
 
     ret = qemu_fdatasync(aiocb->aio_fildes);
     if (ret == -1) {
-        //trace_file_flush_fdatasync_failed(errno);
+        trace_file_flush_fdatasync_failed(errno);
 
         /* There is no clear definition of the semantics of a failing fsync(),
          * so we may have to assume the worst. The sad truth is that this
@@ -2176,9 +2176,9 @@ static int handle_aiocb_copy_range(void *opaque)
         ssize_t ret = copy_file_range(aiocb->aio_fildes, &in_off,
                                       aiocb->copy_range.aio_fd2, &out_off,
                                       bytes, 0);
-        //trace_file_copy_file_range(aiocb->bs, aiocb->aio_fildes, in_off,
-        //                           aiocb->copy_range.aio_fd2, out_off, bytes,
-        //                           0, ret);
+        trace_file_copy_file_range(aiocb->bs, aiocb->aio_fildes, in_off,
+                                   aiocb->copy_range.aio_fd2, out_off, bytes,
+                                   0, ret);
         if (ret == 0) {
             /* No progress (e.g. when beyond EOF), let the caller fall back to
              * buffer I/O. */
@@ -2554,8 +2554,8 @@ out:
             if (!BDRV_ZT_IS_CONV(*wp)) {
                 if (type & QEMU_AIO_ZONE_APPEND) {
                     *offset_ptr = *wp;
-                    //trace_zbd_zone_append_complete(bs, *offset_ptr
-                    //    >> BDRV_SECTOR_BITS);
+                    trace_zbd_zone_append_complete(bs, *offset_ptr
+                        >> BDRV_SECTOR_BITS);
                 }
                 /* Advance the wp if needed */
                 if (offset + bytes > *wp) {
@@ -3412,7 +3412,7 @@ static int coroutine_fn raw_co_zone_report(BlockDriverState *bs, int64_t offset,
         },
     };
 
-    //trace_zbd_zone_report(bs, *nr_zones, offset >> BDRV_SECTOR_BITS);
+    trace_zbd_zone_report(bs, *nr_zones, offset >> BDRV_SECTOR_BITS);
     return raw_thread_pool_submit(handle_aiocb_zone_report, &acb);
 }
 #endif
@@ -3488,7 +3488,7 @@ static int coroutine_fn raw_co_zone_mgmt(BlockDriverState *bs, BlockZoneOp op,
         },
     };
 
-    //trace_zbd_zone_mgmt(bs, op_name, offset >> BDRV_SECTOR_BITS,
+    trace_zbd_zone_mgmt(bs, op_name, offset >> BDRV_SECTOR_BITS,
     //                    len >> BDRV_SECTOR_BITS);
     ret = raw_thread_pool_submit(handle_aiocb_zone_mgmt, &acb);
     if (ret != 0) {
@@ -3547,7 +3547,7 @@ static int coroutine_fn raw_co_zone_append(BlockDriverState *bs,
         len += iov_len;
     }
 
-    //trace_zbd_zone_append(bs, *offset >> BDRV_SECTOR_BITS);
+    trace_zbd_zone_append(bs, *offset >> BDRV_SECTOR_BITS);
     return raw_co_prw(bs, offset, len, qiov, QEMU_AIO_ZONE_APPEND);
 }
 #endif
@@ -3970,7 +3970,7 @@ static char *FindEjectableOpticalMedia(io_iterator_t *mediaIterator)
 
         /* If a match was found, leave the loop */
         if (*mediaIterator != 0) {
-            //trace_file_FindEjectableOpticalMedia(matching_array[index]);
+            trace_file_FindEjectableOpticalMedia(matching_array[index]);
             mediaType = g_strdup(matching_array[index]);
             break;
         }
@@ -4030,7 +4030,7 @@ static bool setup_cdrom(char *bsd_path, Error **errp)
     if (partition_found == false) {
         error_setg(errp, "Failed to find a working partition on disc");
     } else {
-        //trace_file_setup_cdrom(test_partition);
+        trace_file_setup_cdrom(test_partition);
         pstrcpy(bsd_path, MAXPATHLEN, test_partition);
     }
     return partition_found;
@@ -4092,7 +4092,7 @@ static bool hdev_is_sg(BlockDriverState *bs)
 
     ret = ioctl(s->fd, SG_GET_SCSI_ID, &scsiid);
     if (ret >= 0) {
-        //trace_file_hdev_is_sg(scsiid.scsi_type, sg_version);
+        trace_file_hdev_is_sg(scsiid.scsi_type, sg_version);
         return true;
     }
 

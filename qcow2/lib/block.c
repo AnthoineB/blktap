@@ -24,7 +24,7 @@
  */
 
 #include "qemu/osdep.h"
-//#include "block/trace.h"
+#include "block/trace.h"
 #include "block/block_int.h"
 #include "block/blockjob.h"
 #include "block/dirty-bitmap.h"
@@ -1917,8 +1917,8 @@ static int bdrv_open_common(BlockDriverState *bs, BlockBackend *file,
         goto fail_opts;
     }
 
-    //trace_bdrv_open_common(bs, filename ?: "", bs->open_flags,
-    //                       drv->format_name);
+    trace_bdrv_open_common(bs, filename ?: "", bs->open_flags,
+                           drv->format_name);
 
     ro = bdrv_is_read_only(bs);
 
@@ -7105,7 +7105,7 @@ void coroutine_fn bdrv_co_lock_medium(BlockDriverState *bs, bool locked)
     BlockDriver *drv = bs->drv;
     IO_CODE();
     assert_bdrv_graph_readable();
-    //trace_bdrv_lock_medium(bs, locked);
+    trace_bdrv_lock_medium(bs, locked);
 
     if (drv && drv->bdrv_co_lock_medium) {
         drv->bdrv_co_lock_medium(bs, locked);

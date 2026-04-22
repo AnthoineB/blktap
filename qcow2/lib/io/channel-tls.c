@@ -22,7 +22,7 @@
 #include "qapi/error.h"
 #include "qemu/module.h"
 #include "io/channel-tls.h"
-//#include "trace.h"
+#include "trace.h"
 #include "qemu/atomic.h"
 
 
@@ -96,7 +96,7 @@ qio_channel_tls_new_server(QIOChannel *master,
         qio_channel_tls_read_handler,
         tioc);
 
-    //trace_qio_channel_tls_new_server(tioc, master, creds, aclname);
+    trace_qio_channel_tls_new_server(tioc, master, creds, aclname);
     return tioc;
 
  error:
@@ -139,7 +139,7 @@ qio_channel_tls_new_client(QIOChannel *master,
         qio_channel_tls_read_handler,
         tioc);
 
-    //trace_qio_channel_tls_new_client(tioc, master, creds, hostname);
+    trace_qio_channel_tls_new_client(tioc, master, creds, hostname);
     return tioc;
 
  error:
@@ -165,7 +165,7 @@ static void qio_channel_tls_handshake_task(QIOChannelTLS *ioc,
     QCryptoTLSSessionHandshakeStatus status;
 
     if (qcrypto_tls_session_handshake(ioc->session, &err) < 0) {
-        //trace_qio_channel_tls_handshake_fail(ioc);
+        trace_qio_channel_tls_handshake_fail(ioc);
         qio_task_set_error(task, err);
         qio_task_complete(task);
         return;
@@ -173,13 +173,13 @@ static void qio_channel_tls_handshake_task(QIOChannelTLS *ioc,
 
     status = qcrypto_tls_session_get_handshake_status(ioc->session);
     if (status == QCRYPTO_TLS_HANDSHAKE_COMPLETE) {
-        //trace_qio_channel_tls_handshake_complete(ioc);
+        trace_qio_channel_tls_handshake_complete(ioc);
         if (qcrypto_tls_session_check_credentials(ioc->session,
                                                   &err) < 0) {
-            //trace_qio_channel_tls_credentials_deny(ioc);
+            trace_qio_channel_tls_credentials_deny(ioc);
             qio_task_set_error(task, err);
         } else {
-            //trace_qio_channel_tls_credentials_allow(ioc);
+            trace_qio_channel_tls_credentials_allow(ioc);
         }
         qio_task_complete(task);
     } else {
@@ -199,7 +199,7 @@ static void qio_channel_tls_handshake_task(QIOChannelTLS *ioc,
             condition = G_IO_IN;
         }
 
-        //trace_qio_channel_tls_handshake_pending(ioc, status);
+        trace_qio_channel_tls_handshake_pending(ioc, status);
         ioc->hs_ioc_tag =
             qio_channel_add_watch_full(ioc->master,
                                        condition,
@@ -243,7 +243,7 @@ void qio_channel_tls_handshake(QIOChannelTLS *ioc,
     task = qio_task_new(OBJECT(ioc),
                         func, opaque, destroy);
 
-    //trace_qio_channel_tls_handshake_start(ioc);
+    trace_qio_channel_tls_handshake_start(ioc);
     qio_channel_tls_handshake_task(ioc, task, context);
 }
 
@@ -375,7 +375,7 @@ static int qio_channel_tls_close(QIOChannel *ioc,
     QIOChannelTLS *tioc = QIO_CHANNEL_TLS(ioc);
 
     if (tioc->hs_ioc_tag) {
-        //trace_qio_channel_tls_handshake_cancel(ioc);
+        trace_qio_channel_tls_handshake_cancel(ioc);
         g_clear_handle_id(&tioc->hs_ioc_tag, g_source_remove);
     }
 

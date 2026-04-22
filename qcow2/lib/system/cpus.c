@@ -45,7 +45,7 @@
 //#include "sysemu/whpx.h"
 //#include "hw/boards.h"
 //#include "hw/hw.h"
-//#include "trace.h"
+#include "trace.h"
 
 #ifdef CONFIG_LINUX
 

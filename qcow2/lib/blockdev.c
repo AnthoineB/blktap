@@ -56,7 +56,7 @@
 //#include "sysemu/sysemu.h"
 //#include "sysemu/iothread.h"
 #include "block/block_int.h"
-//#include "block/trace.h"
+#include "block/trace.h"
 //#include "sysemu/runstate.h"
 //#include "sysemu/replay.h"
 #include "qemu/cutils.h"

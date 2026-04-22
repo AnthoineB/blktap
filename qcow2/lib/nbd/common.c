@@ -17,7 +17,7 @@
  */
 
 #include "qemu/osdep.h"
-//#include "trace.h"
+#include "trace.h"
 #include "nbd-internal.h"
 
 /* Discard length bytes from channel.  Return -errno on failure and 0 on
@@ -237,7 +237,7 @@ int nbd_errno_to_system_errno(int err)
         ret = ESHUTDOWN;
         break;
     default:
-        //trace_nbd_unknown_error(err);
+        trace_nbd_unknown_error(err);
         /* fallthrough */
     case NBD_EINVAL:
         ret = EINVAL;
