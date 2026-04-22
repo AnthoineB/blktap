@@ -61,7 +61,7 @@ extern const disk_info_t     *tapdisk_disk_types[];
 extern const struct tap_disk *tapdisk_disk_drivers[];
 
 /* one single controller for all instances of disk type */
-#define DISK_TYPE_SINGLE_CONTROLLER (1<<0)
+/*#define DISK_TYPE_SINGLE_CONTROLLER (1<<0) - Deprecated */
 
 /* filter driver without physical image data */
 #define DISK_TYPE_FILTER            (1<<1)
