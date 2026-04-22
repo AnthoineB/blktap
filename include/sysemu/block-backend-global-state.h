@@ -117,7 +117,9 @@ int blk_load_vmstate(BlockBackend *blk, uint8_t *buf, int64_t pos, int size);
 int blk_probe_blocksizes(BlockBackend *blk, BlockSizes *bsz);
 int blk_probe_geometry(BlockBackend *blk, HDGeometry *geo);
 
-//void blk_set_io_limits(BlockBackend *blk, ThrottleConfig *cfg);
+#if 0
+void blk_set_io_limits(BlockBackend *blk, ThrottleConfig *cfg);
+#endif
 void blk_io_limits_disable(BlockBackend *blk);
 void blk_io_limits_enable(BlockBackend *blk, const char *group);
 void blk_io_limits_update_group(BlockBackend *blk, const char *group);

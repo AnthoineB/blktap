@@ -378,7 +378,9 @@ struct BusState {
     /* public: */
     DeviceState *parent;
     char *name;
-    //HotplugHandler *hotplug_handler;
+#if 0
+    HotplugHandler *hotplug_handler;
+#endif
     int max_index;
     bool realized;
     bool full;
@@ -393,10 +395,12 @@ struct BusState {
      * @sibling: next bus
      */
     BusStateEntry sibling;
+#if 0
     /**
      * @reset: ResettableState for the bus; handled by Resettable interface.
      */
-    //ResettableState reset;
+    ResettableState reset;
+#endif
 };
 
 /**
@@ -533,8 +537,10 @@ bool qdev_realize_and_unref(DeviceState *dev, BusState *bus, Error **errp);
 void qdev_unrealize(DeviceState *dev);
 void qdev_set_legacy_instance_id(DeviceState *dev, int alias_id,
                                  int required_for_version);
-//HotplugHandler *qdev_get_bus_hotplug_handler(DeviceState *dev);
-//HotplugHandler *qdev_get_machine_hotplug_handler(DeviceState *dev);
+#if 0
+HotplugHandler *qdev_get_bus_hotplug_handler(DeviceState *dev);
+HotplugHandler *qdev_get_machine_hotplug_handler(DeviceState *dev);
+#endif
 bool qdev_hotplug_allowed(DeviceState *dev, Error **errp);
 
 /**

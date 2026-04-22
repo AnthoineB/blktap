@@ -1009,7 +1009,6 @@ struct SnapshotInfo {
 void qapi_free_SnapshotInfo(SnapshotInfo *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(SnapshotInfo, qapi_free_SnapshotInfo)
 
-#if 0
 struct ImageInfoSpecificQCow2EncryptionBase {
     BlockdevQcow2EncryptionFormat format;
 };
@@ -1020,10 +1019,12 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(ImageInfoSpecificQCow2EncryptionBase, qapi_free_Im
 struct ImageInfoSpecificQCow2Encryption {
     /* Members inherited from ImageInfoSpecificQCow2EncryptionBase: */
     BlockdevQcow2EncryptionFormat format;
+#if 0
     /* Own members: */
     union { /* union tag is @format */
         QCryptoBlockInfoLUKS luks;
     } u;
+#endif
 };
 
 static inline ImageInfoSpecificQCow2EncryptionBase *qapi_ImageInfoSpecificQCow2Encryption_base(const ImageInfoSpecificQCow2Encryption *obj)
@@ -1033,7 +1034,6 @@ static inline ImageInfoSpecificQCow2EncryptionBase *qapi_ImageInfoSpecificQCow2E
 
 void qapi_free_ImageInfoSpecificQCow2Encryption(ImageInfoSpecificQCow2Encryption *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(ImageInfoSpecificQCow2Encryption, qapi_free_ImageInfoSpecificQCow2Encryption)
-#endif
 
 struct Qcow2BitmapInfoList {
     Qcow2BitmapInfoList *next;
@@ -2194,7 +2194,6 @@ struct BlockJobChangeOptionsMirror {
 void qapi_free_BlockJobChangeOptionsMirror(BlockJobChangeOptionsMirror *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockJobChangeOptionsMirror, qapi_free_BlockJobChangeOptionsMirror)
 
-#if 0
 struct q_obj_BlockJobChangeOptions_base {
     char *id;
     JobType type;
@@ -2210,7 +2209,6 @@ struct BlockJobChangeOptions {
 
 void qapi_free_BlockJobChangeOptions(BlockJobChangeOptions *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockJobChangeOptions, qapi_free_BlockJobChangeOptions)
-#endif
 
 struct BlockdevCacheOptions {
     bool has_direct;
@@ -2351,16 +2349,17 @@ struct Qcow2OverlapChecks {
 void qapi_free_Qcow2OverlapChecks(Qcow2OverlapChecks *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(Qcow2OverlapChecks, qapi_free_Qcow2OverlapChecks)
 
-#if 0
 struct q_obj_BlockdevQcowEncryption_base {
     BlockdevQcowEncryptionFormat format;
 };
 
 struct BlockdevQcowEncryption {
     BlockdevQcowEncryptionFormat format;
+#if 0
     union { /* union tag is @format */
         QCryptoBlockOptionsQCow aes;
     } u;
+#endif
 };
 
 void qapi_free_BlockdevQcowEncryption(BlockdevQcowEncryption *obj);
@@ -2388,15 +2387,16 @@ struct q_obj_BlockdevQcow2Encryption_base {
 
 struct BlockdevQcow2Encryption {
     BlockdevQcow2EncryptionFormat format;
+#if 0
     union { /* union tag is @format */
         QCryptoBlockOptionsQCow aes;
         QCryptoBlockOptionsLUKS luks;
     } u;
+#endif
 };
 
 void qapi_free_BlockdevQcow2Encryption(BlockdevQcow2Encryption *obj);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevQcow2Encryption, qapi_free_BlockdevQcow2Encryption)
-#endif
 
 struct BlockdevOptionsPreallocate {
     /* Members inherited from BlockdevOptionsGenericFormat: */
@@ -3126,22 +3126,22 @@ struct BlockdevOptions {
     BlockdevDetectZeroesOptions detect_zeroes;
     union { /* union tag is @driver */
 #if 0
-        //BlockdevOptionsBlkdebug blkdebug;
-        //BlockdevOptionsBlklogwrites blklogwrites;
-        //BlockdevOptionsBlkverify blkverify;
-        //BlockdevOptionsBlkreplay blkreplay;
-        //BlockdevOptionsGenericFormat bochs;
-        //BlockdevOptionsGenericFormat cloop;
-        //BlockdevOptionsGenericFormat compress;
-        //BlockdevOptionsCbw copy_before_write;
-        //BlockdevOptionsCor copy_on_read;
-        //BlockdevOptionsGenericFormat dmg;
+        BlockdevOptionsBlkdebug blkdebug;
+        BlockdevOptionsBlklogwrites blklogwrites;
+        BlockdevOptionsBlkverify blkverify;
+        BlockdevOptionsBlkreplay blkreplay;
+        BlockdevOptionsGenericFormat bochs;
+        BlockdevOptionsGenericFormat cloop;
+        BlockdevOptionsGenericFormat compress;
+        BlockdevOptionsCbw copy_before_write;
+        BlockdevOptionsCor copy_on_read;
+        BlockdevOptionsGenericFormat dmg;
 #endif
         BlockdevOptionsFile file;
 #if 0
-        //BlockdevOptionsCurlFtp ftp;
-        //BlockdevOptionsCurlFtps ftps;
-        //BlockdevOptionsGluster gluster;
+        BlockdevOptionsCurlFtp ftp;
+        BlockdevOptionsCurlFtps ftps;
+        BlockdevOptionsGluster gluster;
 #endif
 #if defined(HAVE_HOST_BLOCK_DEVICE)
         BlockdevOptionsFile host_cdrom;
@@ -3339,7 +3339,9 @@ struct BlockdevCreateOptionsQcow2 {
     char *backing_file;
     bool has_backing_fmt;
     BlockdevDriver backing_fmt;
-    //QCryptoBlockCreateOptions *encrypt;
+#if 0
+    QCryptoBlockCreateOptions *encrypt;
+#endif
     bool has_cluster_size;
     uint64_t cluster_size;
     bool has_preallocation;
@@ -3506,7 +3508,9 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(BlockdevAmendOptionsLUKS, qapi_free_BlockdevAmendO
 #endif
 
 struct BlockdevAmendOptionsQcow2 {
-    //QCryptoBlockAmendOptions *encrypt;
+#if 0
+    QCryptoBlockAmendOptions *encrypt;
+#endif
 };
 
 void qapi_free_BlockdevAmendOptionsQcow2(BlockdevAmendOptionsQcow2 *obj);
@@ -3519,7 +3523,9 @@ struct q_obj_BlockdevAmendOptions_base {
 struct BlockdevAmendOptions {
     BlockdevDriver driver;
     union { /* union tag is @driver */
-        //BlockdevAmendOptionsLUKS luks;
+#if 0
+        BlockdevAmendOptionsLUKS luks;
+#endif
         BlockdevAmendOptionsQcow2 qcow2;
     } u;
 };

@@ -97,7 +97,9 @@ typedef struct BlockDevOps {
  * friends so that BlockBackends can be kept in lists outside block-backend.c
  */
 typedef struct BlockBackendPublic {
-    //ThrottleGroupMember throttle_group_member;
+#if 0
+    ThrottleGroupMember throttle_group_member;
+#endif
 } BlockBackendPublic;
 
 #endif /* BLOCK_BACKEND_COMMON_H */

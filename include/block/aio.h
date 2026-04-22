@@ -696,7 +696,6 @@ void aio_context_destroy(AioContext *ctx);
 /* Used internally, do not call outside AioContext code */
 void aio_context_use_g_source(AioContext *ctx);
 
-#if 0
 /**
  * aio_context_set_poll_params:
  * @ctx: the aio context
@@ -726,5 +725,4 @@ void aio_context_set_aio_params(AioContext *ctx, int64_t max_batch);
  */
 void aio_context_set_thread_pool_params(AioContext *ctx, int64_t min,
                                         int64_t max, Error **errp);
-#endif
 #endif
