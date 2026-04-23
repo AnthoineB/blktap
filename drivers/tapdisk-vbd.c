@@ -1978,9 +1978,9 @@ tapdisk_vbd_kick(td_vbd_t *vbd, bool scheduler_kick)
 	td_vbd_request_t *vreq, *prev, *next;
 	ssize_t s;
 
+	pthread_mutex_lock(&vbd->mutex);
 	vbd->kicked++;
 
-	pthread_mutex_lock(&vbd->mutex);
 	list = &vbd->completed_requests;
 	while (!list_empty(list)) {
 
