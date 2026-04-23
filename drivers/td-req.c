@@ -562,7 +562,7 @@ tapdisk_xenblkif_complete_request(struct td_xenblkif * const blkif,
 		if (tapdisk_xenblkif_barrier_should_complete(blkif)) {
 			tapdisk_xenblkif_complete_request(blkif,
 					msg_to_tapreq(blkif->barrier.msg), 0, 1, false);
-                }
+		}
 	}
 
 	/*
