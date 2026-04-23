@@ -333,9 +333,10 @@ tapdisk_nbdserver_free_request(td_nbdserver_client_t *client,
 	if (unlikely(free_client_if_dead &&
 		     client->dead &&
 		     !tapdisk_nbdserver_reqs_pending(client))) {
-		pthread_mutex_lock(&client->server->mutex);
+		td_nbdserver_t *server = client->server;
+		pthread_mutex_lock(&server->mutex);
 		tapdisk_nbdserver_free_client(client);
-		pthread_mutex_unlock(&client->server->mutex);
+		pthread_mutex_unlock(&server->mutex);
 	}
 }
 
@@ -853,6 +854,7 @@ tapdisk_nbdserver_free_client(td_nbdserver_client_t *client)
 
 	if (likely(!tapdisk_nbdserver_reqs_pending(client))) {
 		list_del(&client->clientlist);
+		tapdisk_nbdserver_reqs_free(client);
 		pthread_mutex_destroy(&client->mutex);
 		free(client);
 	} else
