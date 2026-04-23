@@ -808,11 +808,11 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
     } else {
         pthread_mutex_lock(&blkif->mutex);
         if (tapdisk_xenblkif_barrier_should_complete(blkif)) {
+            pthread_mutex_unlock(&blkif->mutex);
             tapdisk_xenblkif_complete_request(blkif,
-                    msg_to_tapreq(blkif->barrier.msg), 0, 1, false);
+                    msg_to_tapreq(blkif->barrier.msg), 0, 1, true);
             err = 0;
         }
-        pthread_mutex_unlock(&blkif->mutex);
     }
 out:
     return err;
