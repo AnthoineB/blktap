@@ -619,7 +619,7 @@ __tapdisk_xenblkif_request_cb(struct td_vbd_request * const vreq,
 
 
 static inline int
-tapdisk_xenblkif_parse_request(struct td_xenblkif * const blkif,
+tapdisk_xenblkif_parse_request_locked(struct td_xenblkif * const blkif,
         struct td_xenblkif_req * const req)
 {
     td_vbd_request_t *vreq;
@@ -795,7 +795,7 @@ tapdisk_xenblkif_make_vbd_request(struct td_xenblkif * const blkif,
 
     if (likely(req->msg.nr_segments)) {
         pthread_mutex_lock(&blkif->mutex);
-        err = tapdisk_xenblkif_parse_request(blkif, req);
+        err = tapdisk_xenblkif_parse_request_locked(blkif, req);
         pthread_mutex_unlock(&blkif->mutex);
     /*
      * If we only got one request from the ring and that was a barrier one,
