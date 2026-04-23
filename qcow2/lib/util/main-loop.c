@@ -682,6 +682,10 @@ static void iohandler_init(void)
 static void iohandler_deinit(void)
 {
     if (iohandler_ctx) {
+        /*
+         * iohandler_ctx will be freed by the callback aio_ctx_finalize,
+         * but we need to set it to null to reallocate a new one in the future.
+         */
         iohandler_ctx = NULL;
     }
 }
