@@ -262,6 +262,7 @@ util/qemu-print.c
 util/qemu-sockets.c
 util/qemu-thread-common.h
 util/qemu-thread-posix.c
+util/qemu-timer-common.c
 util/qemu-timer.c
 util/qsp.c
 util/range.c
