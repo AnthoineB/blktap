@@ -101,7 +101,7 @@ tapdisk_blktap_alloc_request(td_blktap_t *tap)
 }
 
 static void
-tapdisk_blktap_free_request(td_blktap_t *tap, td_blktap_req_t *req)
+tapdisk_blktap_free_request_locked(td_blktap_t *tap, td_blktap_req_t *req)
 {
 	BUG_ON(tap->n_reqs_free >= tap->n_reqs);
 	tap->reqs_free[tap->n_reqs_free++] = req;
@@ -145,8 +145,10 @@ tapdisk_blktap_reqs_init(td_blktap_t *tap, int n_reqs)
 	tap->n_reqs      = n_reqs;
 	tap->n_reqs_free = 0;
 
+	pthread_mutex_lock(&tap->mutex);
 	for (i = 0; i < n_reqs; i++)
-		tapdisk_blktap_free_request(tap, &tap->reqs[i]);
+		tapdisk_blktap_free_request_locked(tap, &tap->reqs[i]);
+	pthread_mutex_unlock(&tap->mutex);
 
 	return 0;
 
@@ -186,7 +188,7 @@ tapdisk_blktap_error_status(td_blktap_t *tap, int error)
 }
 
 static void
-__tapdisk_blktap_push_response(td_blktap_t *tap, int final)
+__tapdisk_blktap_push_response_locked(td_blktap_t *tap, int final)
 {
 	tap->rsp_prod_pvt++;
 
@@ -213,7 +215,7 @@ tapdisk_blktap_fail_request(td_blktap_t *tap,
 	rsp->operation = msg->operation;
 	rsp->status    = tapdisk_blktap_error_status(tap, error);
 
-	__tapdisk_blktap_push_response(tap, 1);
+	__tapdisk_blktap_push_response_locked(tap, 1);
 	pthread_mutex_unlock(&tap->mutex);
 }
 
@@ -255,9 +257,9 @@ tapdisk_blktap_put_response(td_blktap_t *tap,
 	rsp->operation = op;
 	rsp->status    = tapdisk_blktap_error_status(tap, error);
 
-	tapdisk_blktap_free_request(tap, req);
+	tapdisk_blktap_free_request_locked(tap, req);
 
-	__tapdisk_blktap_push_response(tap, final);
+	__tapdisk_blktap_push_response_locked(tap, final);
 	pthread_mutex_unlock(&tap->mutex);
 }
 
@@ -400,7 +402,9 @@ tapdisk_blktap_get_requests(td_blktap_t *tap)
 		err = tapdisk_blktap_parse_request(tap, msg, req);
 		if (err) {
 			tapdisk_blktap_fail_request(tap, msg, err);
-			tapdisk_blktap_free_request(tap, req);
+	                pthread_mutex_lock(&tap->mutex);
+			tapdisk_blktap_free_request_locked(tap, req);
+	                pthread_mutex_unlock(&tap->mutex);
 			goto fail_ring;
 		}
 
