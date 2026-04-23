@@ -335,7 +335,7 @@ tapdisk_nbdserver_free_request(td_nbdserver_client_t *client,
 		     !tapdisk_nbdserver_reqs_pending(client))) {
 		pthread_mutex_lock(&client->server->mutex);
 		tapdisk_nbdserver_free_client(client);
-		pthread_mutex_lock(&client->server->mutex);
+		pthread_mutex_unlock(&client->server->mutex);
 	}
 }
 
