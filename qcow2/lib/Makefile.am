@@ -137,6 +137,7 @@ libqcow2_la_SOURCES += util/qemu-option.c
 libqcow2_la_SOURCES += util/qemu-print.c
 libqcow2_la_SOURCES += util/qemu-sockets.c
 libqcow2_la_SOURCES += util/qemu-thread-posix.c
+libqcow2_la_SOURCES += util/qemu-timer-common.c
 libqcow2_la_SOURCES += util/qemu-timer.c
 libqcow2_la_SOURCES += util/qsp.c
 libqcow2_la_SOURCES += util/range.c
