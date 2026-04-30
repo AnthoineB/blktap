@@ -169,7 +169,7 @@ struct td_vbd_handle {
 	bool                       watchdog_warned;
 
 	td_flag_t                  driver_flags;
-	int			   efd;
+	int                        efd;
 	event_id_t                 event;
 };
 
