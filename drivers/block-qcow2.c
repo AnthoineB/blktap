@@ -874,41 +874,34 @@ qcow2_queue_block_status(td_driver_t *driver, td_request_t treq)
 }
 
 static void
-qcow2_queue_read(td_driver_t *driver, td_request_t treq)
+qcow2_queue(td_driver_t *driver, td_request_t *treq, int op)
 {
 	struct qcow2_state *s = (struct qcow2_state *)driver->data;
 	int err;
 
 	DBG(TLOG_DBG, "%s: lsec: 0x%08"PRIx64", secs: 0x%04x (seg: %d)\n",
-		treq.image->name, treq.sec, treq.secs, treq.sidx);
+		treq->image->name, treq->sec, treq->secs, treq->sidx);
 
-	err = schedule_request(s, &treq, QCOW2_OP_READ);
+	err = schedule_request(s, treq, op);
 	if (err)
 		goto fail;
 
 	return;
 fail:
 	DBG(TLOG_DBG, "request failed\n");
-	td_complete_request(treq, err);
+	td_complete_request(*treq, err);
+}
+
+static void
+qcow2_queue_read(td_driver_t *driver, td_request_t treq)
+{
+	qcow2_queue(driver, &treq, QCOW2_OP_READ);
 }
 
 static void
 qcow2_queue_write(td_driver_t *driver, td_request_t treq)
 {
-	struct qcow2_state *s = (struct qcow2_state *)driver->data;
-	int err;
-
-	DBG(TLOG_DBG, "%s: lsec: 0x%08"PRIx64", secs: 0x%04x, (seg: %d)\n",
-		treq.image->name, treq.sec, treq.secs, treq.sidx);
-
-	err = schedule_request(s, &treq, QCOW2_OP_WRITE);
-	if (err)
-		goto fail;
-
-	return;
-fail:
-	DBG(TLOG_DBG, "request failed\n");
-	td_complete_request(treq, err);
+	qcow2_queue(driver, &treq, QCOW2_OP_WRITE);
 }
 
 int
