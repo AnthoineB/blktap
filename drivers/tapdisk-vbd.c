@@ -596,10 +596,11 @@ tapdisk_vbd_event_cb(event_id_t id __attribute__((unused)),
 
 	pthread_mutex_lock(&vbd->mutex);
 	if (vbd->efd < 0)
-	    return;
+	    goto unlock;
 
 	s = read(vbd->efd, &u, sizeof(uint64_t));
 	ASSERT(s == sizeof(uint64_t));
+unlock:
 	pthread_mutex_unlock(&vbd->mutex);
 }
 
