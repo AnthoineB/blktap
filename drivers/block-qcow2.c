@@ -589,9 +589,6 @@ qcow2_validate_parent(td_driver_t *child_driver,
 		return 0;
 	}
 
-
-	/* TODO: compare sizes */
-
 	return 0;
 }
 
