@@ -795,7 +795,9 @@ static void qcow2_complete(void *opaque, int ret)
 			break;
 
 		default:
-			ASSERT(0);
+			ERR(s, req->error, "%s: unknown op: %u",
+				req->treq.image->name, req->op);
+			ASSERT(0 && req->op);
 			break;
 	}
 }
