@@ -633,11 +633,12 @@ static inline void
 free_qcow2_request(struct qcow2_state *s, struct qcow2_request *req)
 {
 	memset(&req->treq, 0, sizeof(req->treq));
+
+	qemu_iovec_reset(&req->qiov);
+
 	pthread_mutex_lock(&s->lock);
 	s->vreq_free[s->vreq_free_count++] = req;
 	pthread_mutex_unlock(&s->lock);
-
-	qemu_iovec_reset(&req->qiov);
 }
 
 static inline void
