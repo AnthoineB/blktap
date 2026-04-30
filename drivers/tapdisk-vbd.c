@@ -2016,8 +2016,10 @@ tapdisk_vbd_kick(td_vbd_t *vbd, bool scheduler_kick)
 	if (scheduler_kick && td_flag_test(vbd->driver_flags, TD_DRIVER_THREADED)) {
 		static uint64_t token = 1;
 
-		if (vbd->efd < 0)
+		if (vbd->efd < 0) {
+		    pthread_mutex_unlock(&vbd->mutex);
 		    return;
+		}
 
 		s = write(vbd->efd, &token, sizeof(uint64_t));
 		ASSERT(s == sizeof(uint64_t));
