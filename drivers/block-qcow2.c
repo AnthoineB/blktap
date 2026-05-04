@@ -868,12 +868,6 @@ schedule_request(struct qcow2_state *s, td_request_t *treq, enum qcow2_ops op)
 }
 
 static void
-qcow2_queue_block_status(td_driver_t *driver, td_request_t treq)
-{
-	treq.status = TD_BLOCK_STATE_NONE;
-}
-
-static void
 qcow2_queue(td_driver_t *driver, td_request_t *treq, int op)
 {
 	struct qcow2_state *s = (struct qcow2_state *)driver->data;
@@ -1174,7 +1168,7 @@ struct tap_disk tapdisk_qcow = {
 	.td_open            = _qcow2_open,
 	.td_close           = _qcow2_close,
 	.td_queue_read      = qcow2_queue_read,
-	.td_queue_block_status = qcow2_queue_block_status,
+	.td_queue_block_status = NULL,
 	.td_queue_write     = qcow2_queue_write,
 	.td_get_parent_id   = qcow2_get_parent_id,
 	.td_validate_parent = qcow2_validate_parent,
