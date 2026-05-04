@@ -949,6 +949,10 @@ do_commit(struct qcow2_state *s, struct qcow2_request *req)
 	} else {
 		top_bs = bdrv_find_backing_image(bs, req->top);
 	}
+	if (top_bs == NULL) {
+		DPRINTF("qcow2_commit: top '%s' doesn't exist\n", req->top);
+		goto signal_commit;
+	}
 	top_node = top_bs->node_name;
 	base_bs = bdrv_backing_chain_next(top_bs);
 	base_node = base_bs->node_name;
