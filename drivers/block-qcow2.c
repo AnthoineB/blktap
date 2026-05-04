@@ -955,6 +955,10 @@ do_commit(struct qcow2_state *s, struct qcow2_request *req)
 	}
 	top_node = top_bs->node_name;
 	base_bs = bdrv_backing_chain_next(top_bs);
+	if (base_bs == NULL) {
+		DPRINTF("qcow2_commit: no base to commit in\n");
+		goto signal_commit;
+	}
 	base_node = base_bs->node_name;
 
 	DBG(TLOG_DBG, "Qcow2: block commit %s (node-name: '%s').\n", req->top, node);
@@ -970,6 +974,7 @@ do_commit(struct qcow2_state *s, struct qcow2_request *req)
 		err = -EINVAL;
 	}
 
+signal_commit:
 	pthread_mutex_lock(&s->commit_lock);
 	req->error = err;
 	pthread_cond_signal(&s->commit_cond);
