@@ -1002,8 +1002,6 @@ qcow2_query_commit_job(td_driver_t *driver, td_query_t *query)
 		query->total_progress = s->job_info.total_progress;
 	}
 
-	memset(&s->job_info, 0, sizeof(JobInfo));
-
 	err = req->error;
 	pthread_mutex_unlock(&s->commit_lock);
 
@@ -1020,8 +1018,8 @@ do_query_commit_job(struct qcow2_state *s, struct qcow2_request *req)
 	Error *local_err = NULL;
 	int err = 0;
 	BlockJob *bjob;
-	JobStatus status;
-	uint64_t current, total;
+	JobStatus status = JOB_STATUS_UNDEFINED;
+	uint64_t current = 0, total = 0;
 
 	job_lock();
 	bjob = block_job_get_locked(COMMIT_JOB_ID);
@@ -1057,14 +1055,12 @@ do_query_commit_job(struct qcow2_state *s, struct qcow2_request *req)
 
 	DPRINTF("Qcow2: commit job '%s'.\n", JobStatus_str(status));
 
+signal:
 	pthread_mutex_lock(&s->commit_lock);
 	s->job_info.status = status;
 	s->job_info.current_progress = current;
 	s->job_info.total_progress = total;
-	pthread_mutex_unlock(&s->commit_lock);
 
-signal:
-	pthread_mutex_lock(&s->commit_lock);
 	req->error = err;
 	pthread_cond_signal(&s->commit_cond);
 	pthread_mutex_unlock(&s->commit_lock);
