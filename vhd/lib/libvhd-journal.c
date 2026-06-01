@@ -39,7 +39,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "atomicio.h"
+#include "io-util.h"
 #include "libvhd-journal.h"
 
 #define VHD_JOURNAL_ENTRY_TYPE_FOOTER_P  1
@@ -84,7 +84,7 @@ vhd_journal_read(vhd_journal_t *j, void *buf, size_t size)
 
 	errno = 0;
 
-	ret = atomicio(read, j->jfd, buf, size);
+	ret = vhd_atomic_io(read, j->jfd, buf, size);
 	if (ret != size)
 		return (errno ? -errno : -EIO);
 
@@ -98,7 +98,7 @@ vhd_journal_write(vhd_journal_t *j, void *buf, size_t size)
 
 	errno = 0;
 
-	ret = atomicio(vwrite, j->jfd, buf, size);
+	ret = vhd_atomic_io((vhd_io_t)write, j->jfd, buf, size);
 	if (ret != size)
 		return (errno ? -errno : -EIO);
 

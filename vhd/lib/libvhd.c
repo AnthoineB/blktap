@@ -58,6 +58,7 @@
 #include "canonpath.h"
 #include "compiler.h"
 #include "util.h"
+#include "io-util.h"
 
 /* VHD uses an epoch of 12:00AM, Jan 1, 2000. This is the Unix timestamp for 
  * the start of the VHD epoch. */
@@ -2469,57 +2470,13 @@ namedup(char **dup, const char *name)
 	return 0;
 }
 
-#define vwrite (ssize_t (*)(int, void *, size_t))write
-#define vpwrite (ssize_t (*)(int, void *, size_t, off_t))pwrite
-
 static ssize_t
-vhd_atomic_pio(ssize_t (*f) (int, void *, size_t, off_t),
-	       int fd, void *_s, size_t n, off_t off)
-{
-	char *s = _s;
-	size_t pos = 0;
-	ssize_t res;
-	struct stat st;
-
-	memset(&st, 0, sizeof(st));
-
-	for (;;) {
-		res = (f) (fd, s + pos, n - pos, off + pos);
-		switch (res) {
-		case -1:
-			if (errno == EINTR || errno == EAGAIN)
-				continue;
-			else
-				return 0;
-			break;
-		case 0:
-			errno = EPIPE;
-			return pos;
-		}
-
-		if (pos + res == n)
-			return n;
-
-		if (!st.st_size)
-			if (fstat(fd, &st) == -1)
-				return -1;
-
-		if (off + pos + res == st.st_size)
-			return pos + res;
-
-		pos += (res & ~(VHD_SECTOR_SIZE - 1));
-	}
-
-	return -1;
-}
-
-static ssize_t
-vhd_atomic_io(ssize_t (*f) (int, void *, size_t), vhd_context_t *ctx, void *_s, size_t n)
+_vhd_atomic_io(vhd_io_t f, vhd_context_t *ctx, void *_s, size_t n)
 {
 	ssize_t res;
-	ssize_t (*pf) (int, void *, size_t, off_t);
+	vhd_pio_t pf;
 
-	pf = (f == read ? pread : vpwrite);
+	pf = (f == read ? (vhd_pio_t)pread : (vhd_pio_t)pwrite);
 	res = vhd_atomic_pio(pf, ctx->fd, _s, n, ctx->offset);
 
 	if (res > 0)
@@ -2558,7 +2515,7 @@ vhd_read(vhd_context_t *ctx, void *buf, size_t size)
 
 	errno = 0;
 
-	ret = vhd_atomic_io(read, ctx, buf, size);
+	ret = _vhd_atomic_io(read, ctx, buf, size);
 	if (ret == size)
 		return 0;
 
@@ -2575,7 +2532,7 @@ vhd_write(vhd_context_t *ctx, void *buf, size_t size)
 
 	errno = 0;
 
-	ret = vhd_atomic_io(vwrite, ctx, buf, size);
+	ret = _vhd_atomic_io((vhd_io_t)write, ctx, buf, size);
 	if (ret == size)
 		return 0;
 
@@ -2609,7 +2566,7 @@ vhd_pwrite(vhd_context_t *ctx, void *buf, size_t size, off64_t offset)
 
 	errno = 0;
 
-	ret = vhd_atomic_pio(vpwrite, ctx->fd, buf, size, offset);
+	ret = vhd_atomic_pio((vhd_pio_t)pwrite, ctx->fd, buf, size, offset);
 	if (ret == size)
 		return 0;
 

@@ -31,12 +31,12 @@ libvhd_la_SOURCES += vhd-util-snapshot.c
 libvhd_la_SOURCES += vhd-util-scan.c
 libvhd_la_SOURCES += vhd-util-check.c
 libvhd_la_SOURCES += vhd-util-key.c
+libvhd_la_SOURCES += io-util.c
+libvhd_la_SOURCES += io-util.h
 libvhd_la_SOURCES += relative-path.c
 libvhd_la_SOURCES += relative-path.h
 libvhd_la_SOURCES += canonpath.c
 libvhd_la_SOURCES += canonpath.h
-libvhd_la_SOURCES += atomicio.c
-libvhd_la_SOURCES += atomicio.h
 libvhd_la_SOURCES += xattr.c
 libvhd_la_SOURCES += xattr.h
 

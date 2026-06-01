@@ -40,12 +40,7 @@ blktap/
    |      |-- aio_getevents.c
    |
    |--include/
-   |      |-- list.h 
-   |
-   |--vhd/
-       |--lib/
-           |-- atomicio.c
-           |-- atomicio.h
+          |-- list.h
    
 
 Please refer to the individual source file headers for how a particular
