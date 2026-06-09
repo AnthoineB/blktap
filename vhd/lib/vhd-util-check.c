@@ -145,7 +145,7 @@ pct(uint64_t num, uint64_t den)
 static inline char *
 name(const char *path)
 {
-	char *p = strrchr(path, '/');
+	const char *p = strrchr(path, '/');
 	if (p && (p - path) == strlen(path))
 		p = strrchr(--p, '/');
 	return (char *)(p ? ++p : path);

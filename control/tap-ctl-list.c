@@ -72,7 +72,7 @@ _tap_list_free(tap_list_t *tl)
 int
 _parse_params(const char *params, char **type, char **path)
 {
-	char *ptr;
+	const char *ptr;
 	size_t len;
 
 	ptr = strchr(params, ':');

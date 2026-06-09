@@ -478,7 +478,8 @@ vhd_util_scan_extract_volume_name(char *dst, const char *src, size_t size)
 		return -EINVAL;
 	}
 
-	char copy[VHD_MAX_NAME_LEN], *name, *s, *c;
+	char copy[VHD_MAX_NAME_LEN], *c;
+	const char *name, *s;
 
 	name = strrchr(src, '/');
 	if (!name)

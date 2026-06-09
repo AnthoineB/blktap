@@ -212,7 +212,8 @@ tapdisk_disktype_find(const char *name)
 int
 tapdisk_disktype_parse_params(const char *params, const char **_path)
 {
-	char name[DISK_TYPE_NAME_MAX], *ptr;
+	char name[DISK_TYPE_NAME_MAX];
+	const char *ptr;
 	size_t len;
 	int type;
 
