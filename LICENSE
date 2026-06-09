@@ -37,10 +37,7 @@ The files licensed under other/different licenses are:
 blktap/
    |-- autogen.sh
    |-- drivers/
-   |      |-- aio_getevents.c
-   |
-   |--include/
-          |-- list.h
+          |-- aio_getevents.c
    
 
 Please refer to the individual source file headers for how a particular
