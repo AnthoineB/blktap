@@ -254,8 +254,8 @@ vhdi_path_expand(const char *src, vhdi_path_t *dest, int *err)
 		return NULL;
 	}
 
-	len = strnlen(absolute_path, VHD_MAX_NAME_LEN - 1);
-	if (len == VHD_MAX_NAME_LEN - 1) {
+	len = strnlen(absolute_path, VHD_MAX_NAME_LEN);
+	if (len == VHD_MAX_NAME_LEN) {
 		free(absolute_path);
 		*err = -ENAMETOOLONG;
 		return NULL;
@@ -697,8 +697,8 @@ vhdi_copy_path_to(vhdi_path_t *path, const char *src, const char *dest, size_t d
 		goto out;
 	}
 
-	len = strnlen(relative_path, VHD_MAX_NAME_LEN - 1);
-	if (len == VHD_MAX_NAME_LEN - 1) {
+	len = strnlen(relative_path, VHD_MAX_NAME_LEN);
+	if (len == VHD_MAX_NAME_LEN) {
 		err = -ENAMETOOLONG;
 		goto out;
 	}
@@ -1145,8 +1145,8 @@ vhdi_file_table_add(const char *name, const char *file, vhdi_file_id_t *_fid)
 	fid   = 0;
 	*_fid = 0;
 
-        len = strnlen(file, VHD_MAX_NAME_LEN - 1);
-	if (len == VHD_MAX_NAME_LEN - 1)
+        len = strnlen(file, VHD_MAX_NAME_LEN);
+	if (len == VHD_MAX_NAME_LEN)
 		return -ENAMETOOLONG;
 
 	err = vhdi_file_table_next_fid(name, file, &fid);

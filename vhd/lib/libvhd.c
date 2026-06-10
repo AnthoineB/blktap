@@ -3251,7 +3251,7 @@ __vhd_create(const char *name, const char *parent, uint64_t bytes, int type,
 		return -EINVAL;
 	}
 
-	if (strnlen(name, VHD_MAX_NAME_LEN - 1) == VHD_MAX_NAME_LEN - 1)
+	if (strnlen(name, VHD_MAX_NAME_LEN) == VHD_MAX_NAME_LEN)
 		return -ENAMETOOLONG;
 
 	if (bytes && mbytes && mbytes < bytes)
