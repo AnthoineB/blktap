@@ -26,14 +26,13 @@
 /*
  * Strncpy variant that guarantees to terminate the string
  */
-static inline char *
+static inline void
 safe_strncpy(char *dest, const char *src, size_t n)
 {
-	char *pdest;
-	pdest = strncpy(dest, src, n - 1);
-	if (n > 0)
+	if (n > 0) {
+		strncpy(dest, src, n - 1);
 		dest[n - 1] = '\0';
-	return pdest;
+	}
 }
 
 #endif /* __TAPDISK_UTIL_H__ */
