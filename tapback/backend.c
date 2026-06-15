@@ -20,8 +20,11 @@
  * modified.
  */
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 
+#include "compiler.h"
 #include "tapback.h"
 #include "xenstore.h"
 #include <xen/io/blkif.h>

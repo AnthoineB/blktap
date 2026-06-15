@@ -1,0 +1,1 @@
+option('GCOV', type : 'boolean', value : false, description : 'test build')
