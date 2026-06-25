@@ -45,7 +45,7 @@ Blktap and VHD development files.
 %autosetup -p1 -S git
 
 %build
-sh autogen.sh
+autoreconf -fi "$@"
 %configure
 %{?cov_wrap} make %{?coverage:GCOV=true}
 
