@@ -55,7 +55,6 @@ tap_ctl_free(const int minor)
 		err = -errno;
 		goto out;
 	}
-	err = 0;
 
 	/* Non-Blocking lock to check it's not in use */
 	mfd = open(path, O_RDONLY);

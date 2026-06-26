@@ -929,8 +929,6 @@ main(int argc, char *argv[])
 
 	signal(SIGPIPE, SIG_IGN);
 
-	ret = 0;
-
 	if (argc < 2)
 		help();
 
