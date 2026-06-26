@@ -491,7 +491,7 @@ tdnbd_reader_cb(event_id_t eb, char mode, void *data)
 		ERROR("Unhandled request response: %d",
 				ntohl(prv->curr_reply_req->nreq.type));
 		do_disable = 1;
-		return;
+		break;
 	} 
 
 	/* remove the state */
