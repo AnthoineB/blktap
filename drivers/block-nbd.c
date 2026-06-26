@@ -872,8 +872,8 @@ tdnbd_open(td_driver_t* driver, const char* name,
 		safe_strncpy(prv->remote_un.sun_path, name, sizeof(prv->remote_un.sun_path));
 		len = strlen(prv->remote_un.sun_path)
 			+ sizeof(prv->remote_un.sun_family);
-		if ((rc = connect(prv->socket, (struct sockaddr*)&prv->remote_un, len)
-					== -1)) {
+		if (connect(prv->socket, (struct sockaddr*)&prv->remote_un, len)
+					== -1) {
 			ERROR("failed to connect to %s: %s\n", name, strerror(errno));
 			return -1;
 		}

@@ -699,7 +699,6 @@ vhd_index_queue_read(td_driver_t *driver, td_request_t treq)
 		int err;
 		td_request_t clone;
 
-		err   = 0;
 		clone = treq;
 
 		switch (vhd_index_read_cache(index, clone.sec)) {

@@ -173,7 +173,7 @@ tapdisk_vbd_validate_chain(td_vbd_t *vbd)
 static int
 vbd_stats_destroy(td_vbd_t *vbd) {
 
-    int err = 0;
+    int err;
 
     ASSERT(vbd);
 
@@ -202,8 +202,6 @@ vbd_stats_create(td_vbd_t *vbd) {
         err = errno;
         if (unlikely(err != EEXIST))
     		goto out;
-        else
-            err = 0;
     }
 
     /*
@@ -220,7 +218,6 @@ vbd_stats_create(td_vbd_t *vbd) {
         EPRINTF("failed to create metric file: %s\n", strerror(err));
         goto out;
     }
-    err = 0;
 
     vbd->rrd.shm.size = PAGE_SIZE;
     err = shm_create(&vbd->rrd.shm);
@@ -616,7 +613,6 @@ tapdisk_vbd_open_vdi(td_vbd_t *vbd, const char *name, td_flag_t flags, int prt_d
 			if (vbd->nbd_mirror_failed != 1)
 				goto fail;
 			INFO("Ignoring failed NBD secondary attach\n");
-			err = 0;
 		}
 	}
 
@@ -1641,7 +1637,6 @@ tapdisk_vbd_reissue_failed_requests(td_vbd_t *vbd)
 	struct timeval now;
 	td_vbd_request_t *vreq, *tmp;
 
-	err = 0;
 	gettimeofday(&now, NULL);
 
 	tapdisk_vbd_for_each_request(vreq, tmp, &vbd->failed_requests) {

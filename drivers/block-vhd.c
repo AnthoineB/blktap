@@ -2001,7 +2001,6 @@ vhd_queue_block_status(td_driver_t *driver, td_request_t treq)
 		int err;
 		td_request_t clone;
 
-		err   = 0;
 		clone = treq;
 
 		switch (read_bitmap_cache(s, clone.sec, VHD_OP_BLOCK_STATUS)) {
@@ -2068,7 +2067,6 @@ vhd_queue_read(td_driver_t *driver, td_request_t treq)
 		int err;
 		td_request_t clone;
 
-		err   = 0;
 		clone = treq;
 
 		switch (read_bitmap_cache(s, clone.sec, VHD_OP_DATA_READ)) {
@@ -2142,8 +2140,6 @@ vhd_queue_write(td_driver_t *driver, td_request_t treq)
 		uint8_t flags;
 		td_request_t clone;
 
-		err   = 0;
-		flags = 0;
 		clone = treq;
 
 		switch (read_bitmap_cache(s, clone.sec, VHD_OP_DATA_WRITE)) {

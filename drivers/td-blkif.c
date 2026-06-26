@@ -128,7 +128,6 @@ tapdisk_xenblkif_stats_create(struct td_xenblkif *blkif)
                     blkif->xenvbd_stats.root, strerror(err));
     		goto out;
         }
-        err = 0;
     }
 
     len = asprintf(&blkif->xenvbd_stats.io_ring.path, "%s/io_ring~",
@@ -230,7 +229,6 @@ tapdisk_xenblkif_destroy(struct td_xenblkif * blkif)
 						"(error ignored)\n",
 						blkif->rings.common.sring, blkif->ring_n_pages,
 						strerror(err));
-				err = 0;
 			}
 		}
 

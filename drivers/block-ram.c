@@ -182,7 +182,6 @@ int tdram_open (td_driver_t *driver, const char *name,
 		ret = read(prv->fd, p, driver->info.sector_size);
 		if (ret != driver->info.sector_size) {
 			DPRINTF("ret = %d, errno = %d\n", ret, errno);
-			ret = 0 - errno;
 			break;
 		} else {
 			count += ret;

@@ -104,7 +104,6 @@ int tdaio_open(td_driver_t *driver, const char *name,
 	int i, fd, ret, o_flags;
 	struct tdaio_state *prv;
 
-	ret = 0;
 	prv = (struct tdaio_state *)driver->data;
 
 	DPRINTF("block-aio open('%s')", name);
