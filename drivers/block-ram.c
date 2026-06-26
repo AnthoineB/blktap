@@ -160,6 +160,9 @@ int tdram_open (td_driver_t *driver, const char *name,
         prv->fd = fd;
 
 	ret = get_image_info(fd, &driver->info);
+	if (ret) {
+		return ret;
+	}
 	size = MAX_RAMDISK_SIZE;
 
 	if (driver->info.size > size) {
