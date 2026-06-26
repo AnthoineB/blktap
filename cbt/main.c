@@ -30,8 +30,6 @@ main(int argc, char *argv[])
 	struct command *cmd;
 	int cargc, i, cnt, ret;
 
-	ret = 0;
-
 	if (argc < 2) {
 		help();
 		exit(EINVAL);

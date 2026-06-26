@@ -293,8 +293,6 @@ cbt_util_set(int argc, char **argv)
 	child		= NULL;
 	buf			= NULL;
 	size		= 0;
-	bmsize		= 0; 
-	old_bmsize 	= 0;
 
 	if (!argc || !argv)
 		goto usage;
