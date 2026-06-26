@@ -318,8 +318,6 @@ tapback_backend_create(const char *name, const char *pidfile,
         }
     }
 
-    err = 0;
-
     backend->ctrl_sock = -1;
 
     if (!(backend->xs = xs_daemon_open())) {
@@ -347,7 +345,6 @@ tapback_backend_create(const char *name, const char *pidfile,
 		}
 	}
 	backend->domid = err;
-	err = 0;
 
     /*
      * Watch the back-end.
@@ -386,7 +383,6 @@ tapback_backend_create(const char *name, const char *pidfile,
         WARN(NULL, "failed to snprintf: %s\n", strerror(err));
         goto out;
     }
-    err = 0;
 
     err = unlink(backend->local.sun_path);
     if (err && errno != ENOENT) {
@@ -622,7 +618,7 @@ int main(int argc, char **argv)
     } while (1);
 
     if (!opt_debug) {
-        if ((err = daemon(0, 0))) {
+        if (daemon(0, 0)) {
             err = -errno;
             goto fail;
         }
@@ -636,7 +632,7 @@ int main(int argc, char **argv)
     setlogmask(LOG_UPTO(log_level));
 
     if (!opt_debug) {
-        if ((err = daemon(0, 0))) {
+        if (daemon(0, 0)) {
             err = -errno;
             goto fail;
         }

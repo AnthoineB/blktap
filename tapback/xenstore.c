@@ -43,7 +43,6 @@ tapback_xs_vread(struct xs_handle * const xs, xs_transaction_t xst,
     ASSERT(path);
 
     data = xs_read(xs, xst, path, &len);
-	err = errno;
     free(path);
 
     if (!data)
@@ -147,7 +146,6 @@ tapback_device_printf(vbd_t * const device, xs_transaction_t xst,
     va_list ap;
     int err = 0;
     char *path = NULL, *val = NULL;
-    bool nerr = false;
 
     ASSERT(device);
     ASSERT(key);
@@ -168,7 +166,7 @@ tapback_device_printf(vbd_t * const device, xs_transaction_t xst,
         goto fail;
     }
 
-    if (!(nerr = xs_write(device->backend->xs, xst, path, val, strlen(val)))) {
+    if (!xs_write(device->backend->xs, xst, path, val, strlen(val))) {
         err = -errno;
         goto fail;
     }
@@ -179,8 +177,8 @@ tapback_device_printf(vbd_t * const device, xs_transaction_t xst,
 			{device->domid, XS_PERM_READ}
         };
 
-        if (!(nerr = xs_set_permissions(device->backend->xs, xst, path, perms,
-                        ARRAY_SIZE(perms)))) {
+        if (!xs_set_permissions(device->backend->xs, xst, path, perms,
+                        ARRAY_SIZE(perms))) {
             err = -errno;
             goto fail;
         }

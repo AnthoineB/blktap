@@ -753,7 +753,6 @@ reconnect(vbd_t *device) {
     if (err) {
         if (err == -ENOENT) {
             DBG(device, "no physical device yet\n");
-            err = 0;
         } else {
             WARN(device, "failed to retrieve physical device information: "
                     "%s\n", strerror(-err));
@@ -765,7 +764,6 @@ reconnect(vbd_t *device) {
     if (err) {
         if (err == -ENOENT) {
             DBG(device, "udev scripts haven't yet run\n");
-            err = 0;
         } else {
             WARN(device, "failed to retrieve hotplug information: %s\n",
                     strerror(-err));
@@ -1134,7 +1132,6 @@ tapback_backend_handle_backend_watch(backend_t *backend,
         exists = false;
     else
         exists = true;
-    err = 0;
 
     /*
      * Master tapback: check if there's tapback for this domain. If there isn't
@@ -1145,6 +1142,7 @@ tapback_backend_handle_backend_watch(backend_t *backend,
         struct backend_slave *slave = tapback_find_slave(backend, domid),
                              **_slave = NULL;
 
+        err = 0;
         if (!exists && slave) {
             DBG(NULL, "de-register slave[%d]\n", slave->master.pid);
             /*
@@ -1217,7 +1215,6 @@ tapback_backend_handle_backend_watch(backend_t *backend,
                 abort();
             }
         }
-        err = 0;
     } else {
         char *device = NULL;
 
