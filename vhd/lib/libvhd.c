@@ -1522,7 +1522,6 @@ vhd_w2u_encode_location(char *name, char **out, int *outlen)
 	size_t ibl, obl;
 	char *uri, *urip, *uri_utf16, *uri_utf16p, *tmp;
 
-	err     = 0;
 	*out    = NULL;
 	*outlen = 0;
 	cd      = (iconv_t) -1;
@@ -3486,7 +3485,6 @@ __raw_read_link(char *filename,
 	uint64_t size;
 	void *data;
 
-	err = 0;
 	errno = 0;
 	fd = open_optional_odirect(filename, O_RDONLY | O_DIRECT | O_LARGEFILE);
 	if (fd == -1) {

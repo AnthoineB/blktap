@@ -104,7 +104,6 @@ vhd_io_allocate_blocks_fast(vhd_context_t *ctx, const uint32_t from_extent,
 	if (err)
 		return err;
 
-	gap   = 0;
 	max >>= VHD_SECTOR_SHIFT;
 
 	/* data region of segment should begin on page boundary */

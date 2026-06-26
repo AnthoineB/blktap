@@ -894,10 +894,6 @@ vhd_dynamic_grow(vhd_journal_t *journal, uint64_t secs)
 
 	vhd         = &journal->vhd;
 
-	size_needed = 0;
-	bat_needed  = 0;
-	map_needed  = 0;
-
 	/* number of vhd blocks to add */
 	blocks      = secs_to_blocks_up(vhd, secs);
 

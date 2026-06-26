@@ -751,7 +751,6 @@ vhd_util_read(int argc, char **argv)
 	uint64_t bat, bitmap, tbitmap, ebitmap, batmap, tbatmap, data, lsec, count, read;
 	uint64_t bread;
 
-	err     = 0;
 	hex     = 0;
 	cache   = 0;
 	headers = 0;

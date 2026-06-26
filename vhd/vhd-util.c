@@ -112,8 +112,6 @@ main(int argc, char *argv[])
 		fprintf(stderr, "setrlimit failed: %d\n", errno);
 #endif
 
-	ret = 0;
-
 	if (argc < 2)
 		help();
 

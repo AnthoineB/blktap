@@ -1007,7 +1007,6 @@ vhd_util_scan_targets(int cnt, struct target *targets)
 	struct vhd_image image;
 
 	ret = 0;
-	err = 0;
 
 	err = iterator_init(&itr, cnt, targets);
 	if (err)

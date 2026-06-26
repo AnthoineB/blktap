@@ -752,7 +752,6 @@ vhd_journal_read_locators(vhd_journal_t *j, char ***locators, int *locs)
 
 		_locators[_locs++] = buf;
 		buf                = NULL;
-		err                = 0;
 	}
 
 
@@ -993,7 +992,6 @@ vhd_journal_restore_metadata(vhd_journal_t *j)
 
 	vhd      = &j->vhd;
 	locs     = 0;
-	hlocs    = 0;
 	locators = NULL;
 
 	err = vhd_journal_seek(j, sizeof(vhd_journal_header_t), SEEK_SET);
@@ -1443,7 +1441,6 @@ vhd_journal_revert(vhd_journal_t *j)
 	vhd_context_t *vhd;
 	vhd_journal_entry_t entry;
 
-	err  = 0;
 	vhd  = &j->vhd;
 	buf  = NULL;
 
